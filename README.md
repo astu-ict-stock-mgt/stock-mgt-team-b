@@ -95,6 +95,10 @@ npm run dev
 npm run dev
 ```
 
+## Project Status
+Currently: 🚧 In Development
+The project is being developed collaboratively by the ASTU ICT internship team.
+
 ## 📄 Documentation
 
 Full requirements, use cases, and design details are documented in the project's Software Requirements Specification (SRS).
