@@ -95,9 +95,7 @@ npm run dev
 npm run dev
 ```
 
-## Project Status
-Currently: 🚧 In Development
-The project is being developed collaboratively by the ASTU ICT internship team.
+##
 
 ## 📄 Documentation
 
