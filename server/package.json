@@ -1,0 +1,52 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "Stock Management System backend (Express + Prisma + PostgreSQL)",
+  "type": "module",
+  "main": "dist/server.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "prisma generate && tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^7.9.1",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "prisma": "^7.9.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.25",
+    "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.13.3",
+    "@types/supertest": "^7.2.1",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.8.1",
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.12",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.67.0"
+  }
+}

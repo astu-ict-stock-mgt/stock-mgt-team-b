@@ -1,0 +1,14 @@
+node_modules/
+.env
+.DS_Store
+
+# Server build
+server/build/
+server/dist/
+server/coverage/
+
+# Client build
+client/.next/
+client/out/
+client/build/
+client/coverage/
