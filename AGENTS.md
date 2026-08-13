@@ -9,7 +9,7 @@ This monorepo contains a `server/` (Node.js + Express + Prisma + PostgreSQL) and
 ## Tech stack
 
 - **Backend:** Node.js + Express, **TypeScript** (ESM, run with `tsx`), Prisma ORM, PostgreSQL
-- **Frontend:** React **JavaScript** (JSX, not TypeScript), Vite, Tailwind CSS v4, React Router, React Query, Axios
+- **Frontend:** React **TypeScript** (TSX), Vite, Tailwind CSS v4, React Router, React Query, Axios
 - **Auth:** JWT-based, role-based access control (RBAC)
 - **Validation:** express-validator (server), React Hook Form optional (client)
 - **Testing:** Jest + Supertest (server integration tests)
@@ -18,7 +18,7 @@ This monorepo contains a `server/` (Node.js + Express + Prisma + PostgreSQL) and
 ## Folder structure convention
 
 - **Backend modules:** `server/src/modules/<module>/` containing `controller.ts`, `service.ts`, `routes.ts`, and `validation.ts` files (colocated per module).
-- **Frontend features:** `client/src/features/<feature>/` containing `api.js`, `hooks.js`, and `components/` (colocated per feature).
+- **Frontend features:** `client/src/features/<feature>/` containing `api.ts`, `hooks.ts`, and `components/` (colocated per feature).
 - Shared server concerns live under `server/src/{middlewares,routes,utils,config}`; route aggregation happens in `server/src/routes/index.ts`.
 - **The 12 modules to implement:** `auth`, `users`, `suppliers`, `inventory`, `stock-receiving`, `stock-issuing`, `stock-transfer`, `stock-taking`, `reports`, `audit-log`, `stock-monitoring`, `damaged-obsolete`.
 
@@ -31,7 +31,7 @@ This monorepo contains a `server/` (Node.js + Express + Prisma + PostgreSQL) and
 
 ## Coding conventions
 
-- **Frontend is JavaScript** (no TypeScript). **Backend is TypeScript** (ESM, `"type": "module"`, imports use relative `.ts` extensions).
+- **Frontend is TypeScript** (TSX). **Backend is TypeScript** (ESM, `"type": "module"`, imports use relative `.ts` extensions).
 - **Prisma is the only DB access layer** — no raw SQL unless justified and documented.
 - **All input validation** uses express-validator (or zod) in module `validation` files; never trust raw request bodies.
 - **Consistent error-handling middleware:** extend/reuse `server/src/middlewares/errorHandler.ts` (`AppError` + `errorHandler` + `notFoundHandler`); never write ad-hoc inline error responses.
