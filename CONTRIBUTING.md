@@ -43,7 +43,7 @@ Before opening a PR against `develop`:
 - [ ] Branch is `feature/<module>-<short-desc>` branched from `develop`.
 - [ ] Re-read the relevant section of `docs/SRS.docx` and `docs/Stock_Management_Workflow.pdf`; the implementation matches it. Flag ambiguities in the PR instead of guessing.
 - [ ] Backend module uses `server/src/modules/<module>/` layout (`controller.ts`, `service.ts`, `routes.ts`, `validation.ts`).
-- [ ] Frontend feature uses `client/src/features/<feature>/` layout (`api.js`, `hooks.js`, `components/`).
+- [ ] Frontend feature uses `client/src/features/<feature>/` layout (`api.ts`, `hooks.ts`, `components/`).
 - [ ] All input is validated (express-validator/zod); errors go through the shared error middleware.
 - [ ] Every authenticated route declares its allowed roles (RBAC middleware).
 - [ ] DB access is Prisma-only (no raw SQL unless justified and documented).
