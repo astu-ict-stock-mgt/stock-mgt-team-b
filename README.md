@@ -64,7 +64,7 @@ The `AGENTS.md` file outlines strict architectural boundaries, technology choice
 If you are a human contributor, please familiarize yourself with the development workflow and rules outlined in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 **Key Takeaways:**
-- **Branching:** `main` and `develop` are protected. Base all feature branches off `develop` using the format `feature/<module>-<short-desc>`.
+- **Branching:** `main` and `dev` are protected. Base all feature branches off `dev` using the format `feature/<module>-<short-desc>`.
 - **Commits:** We follow Conventional Commits (e.g., `feat:`, `fix:`, `chore:`).
 - **PRs:** All code must be submitted via Pull Requests against `develop`.
 
