@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import AuthLayout from '../components/AuthLayout';
 import PasswordInput from '../components/PasswordInput';
+import { Link } from 'react-router-dom';
 
 interface FormErrors {
   email?: string;
@@ -104,14 +105,6 @@ export default function LoginPage() {
     if (authError) {
       setAuthError('');
     }
-  };
-
-  const handleForgotPassword = () => {
-    if (isSubmitting) {
-      return;
-    }
-
-    console.log('Forgot password clicked');
   };
 
   const handleGoogleLogin = () => {
@@ -262,14 +255,12 @@ export default function LoginPage() {
               <span>Remember this device</span>
             </label>
 
-            <button
-              type="button"
-              onClick={handleForgotPassword}
-              disabled={isSubmitting}
-              className="text-sm font-medium text-slate-700 transition hover:text-slate-950 focus:outline-none focus:underline disabled:cursor-not-allowed disabled:opacity-50"
+            <Link
+              to="/forgot-password"
+              className="text-sm font-medium text-slate-700 transition hover:text-slate-950 focus:outline-none focus:underline"
             >
               Forgot Password?
-            </button>
+            </Link>
           </div>
 
           {/* Login button */}
