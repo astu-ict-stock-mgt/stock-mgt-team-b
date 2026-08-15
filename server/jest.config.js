@@ -10,4 +10,5 @@ export default {
   },
   testMatch: ['<rootDir>/tests/**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.ts', '!src/generated/**', '!src/server.ts'],
+  setupFiles: ['dotenv/config'], 
 };
