@@ -5,14 +5,6 @@ import { PrismaClient } from '../../generated/prisma/client.js';
 import { AppError } from '../../middlewares/errorHandler.ts';
 import 'dotenv/config';
 
-const databaseUrl = process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL must be configured');
-}
-
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
-
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -35,9 +27,18 @@ const getJwtSecret = (): string => {
 };
 
 export const login = async ({ email, password }: LoginCredentials) => {
+  // 1. Get the URL inside the function so it doesn't crash on import
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL must be configured');
+  }
+
+  // 2. Initialize Prisma cleanly using the runtime URL string properties
+  const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
+
   const user = await prisma.user.findUnique({ where: { email } });
   const passwordMatches = user ? await bcrypt.compare(password, user.passwordHash) : false;
-  
 
   if (!user || !passwordMatches) {
     throw new AppError('Invalid email or password', 401);
