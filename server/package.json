@@ -15,7 +15,7 @@
     "prisma:migrate": "prisma migrate dev",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules dotenv -e .env -- jest"
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx dotenv-cli -e .env -- jest"
   },
   "keywords": [],
   "author": "",
