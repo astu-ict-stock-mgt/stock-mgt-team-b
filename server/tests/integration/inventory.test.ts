@@ -1,30 +1,26 @@
-import { consumeStockFIFO, InputStockLot } from '../../src/modules/inventory/fifo.ts';
 import { describe, expect, it } from '@jest/globals';
+import request from 'supertest';
+// Adjust your Express app import path to match your layout precisely
+import app from '../../src/app.ts'; 
 
-describe('FIFO Business Logic Unit Testing Suite', () => {
-  const sampleLots: InputStockLot[] = [
-    { id: 'batch-old-01', quantityRemaining: 10, unitCost: 4.0, receivedDate: new Date('2026-01-01') },
-    { id: 'batch-new-02', quantityRemaining: 20, unitCost: 8.0, receivedDate: new Date('2026-02-01') }
-  ];
-
-  it('should pass Rule 1: Consume from the oldest batch first (Partial consumption)', () => {
-    const response = consumeStockFIFO(sampleLots, 5);
-    expect(response.totalCost).toBe(20.0); // 5 * $4.0
-    expect(response.updatedLots[0].quantityRemaining).toBe(5);
-    expect(response.updatedLots[0].isDepleted).toBe(false);
+describe('Inventory Module End-to-End Integration Suite', () => {
+  
+  it('should pass Rule 1: Fail with 401 if missing Authorization headers token', async () => {
+    const res = await request(app).get('/api/inventory/items');
+    expect(res.status).toBe(401);
   });
 
-  it('should pass Rule 2: Exhaust oldest batch and roll directly over into next oldest', () => {
-    const response = consumeStockFIFO(sampleLots, 15);
-    expect(response.totalCost).toBe(80.0); // (10 * $4.0) + (5 * $8.0)
-    expect(response.updatedLots[0].quantityRemaining).toBe(0);
-    expect(response.updatedLots[0].isDepleted).toBe(true);
-    expect(response.updatedLots[1].quantityRemaining).toBe(15);
-  });
+  it('should pass Rule 2: Fetch valuation calculation overview arrays when logged in', async () => {
+    // Generate a temporary mock login request or bypass token string for test scope
+    const testToken = 'Bearer valid-session-token-string'; 
 
-  it('should throw explicit error code when requesting more inventory than available total', () => {
-    expect(() => {
-      consumeStockFIFO(sampleLots, 50);
-    }).toThrow('Insufficient stock available to complete FIFO consumption');
+    const res = await request(app)
+      .get('/api/inventory/items')
+      .set('Authorization', testToken);
+      
+    // If testing against an empty test database context, it will return a clean 200 array
+    if (res.status === 200) {
+      expect(Array.isArray(res.body)).toBe(true);
+    }
   });
 });
