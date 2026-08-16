@@ -132,15 +132,26 @@ export const updateInventoryItemController = async (req: Request, res: Response,
 export const updateStockLotController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { itemId, lotId } = req.params;
+
+    // Guard checking for a clean, non-empty update object keys length array block
+    if (!req.body || Object.keys(req.body).length === 0) {
+      res.status(400).json({
+        status: "error",
+        message: "Bad Request: No lot update properties were specified in the request body."
+      });
+      return;
+    }
+
     const result = await updateStockLot(itemId!, lotId!, req.body);
     res.status(200).json({ 
       message: 'Stock lot updated successfully', 
       count: result.count 
     });
-  } catch (error: any) {
+  } catch (error) {
     next(error);
   }
 };
+
 
 export const deleteInventoryItemController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
