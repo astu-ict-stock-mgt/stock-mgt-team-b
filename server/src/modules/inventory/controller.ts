@@ -13,6 +13,36 @@ import {
   deleteStockLot
 } from './service.ts';
 
+// Central error helper to translate Prisma exceptions into clear HTTP Responses
+const handleControllerError = (error: any, res: Response, next: NextFunction, structuralContext: string) => {
+  // P2002: Unique Constraint Violations (Duplicate names/SKUs)
+  if (error.code === 'P2002') {
+    return res.status(409).json({
+      status: 'error',
+      message: `Conflict: A record with unique parameters already exists within ${structuralContext}.`
+    });
+  }
+
+  // P2025: Record to update/delete not found in database rows
+  if (error.code === 'P2025' || error.message?.includes('not found')) {
+    return res.status(404).json({
+      status: 'error',
+      message: `Not Found: The specified ${structuralContext} record identifier does not exist.`
+    });
+  }
+
+  // Handle invalid UUID formatting cast conversion failures
+  if (error.message?.includes('invalid input syntax for type uuid') || error.code === 'P2023') {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Bad Request: The provided identifier does not match standard unique string rules.'
+    });
+  }
+
+  // Pass along to global system error handler middleware if unknown
+  next(error);
+};
+
 export const getInventoryItems = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const data = await getAllItemsValuationResult();
@@ -27,8 +57,8 @@ export const getInventoryItemById = async (req: Request, res: Response, next: Ne
     const { itemId } = req.params;
     const data = await getItemValuationResult(itemId!);
     res.status(200).json(data);
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    handleControllerError(error, res, next, 'Inventory Item');
   }
 };
 
@@ -37,8 +67,8 @@ export const getInventoryItemStockLots = async (req: Request, res: Response, nex
     const { itemId } = req.params;
     const data = await getItemStockLots(itemId!);
     res.status(200).json(data);
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    handleControllerError(error, res, next, 'Inventory Item Lots');
   }
 };
 
@@ -47,8 +77,8 @@ export const getInventoryItemStockLotById = async (req: Request, res: Response, 
     const { itemId, lotId } = req.params;
     const data = await getItemStockLotById(itemId!, lotId!);
     res.status(200).json(data);
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    handleControllerError(error, res, next, 'Stock Lot');
   }
 };
 
@@ -57,8 +87,8 @@ export const getInventoryItemStockLotValuation = async (req: Request, res: Respo
     const { itemId, lotId } = req.params;
     const data = await getItemStockLotValuation(itemId!, lotId!);
     res.status(200).json(data);
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    handleControllerError(error, res, next, 'Stock Lot Valuation');
   }
 };
 
@@ -70,18 +100,9 @@ export const createInventoryItemController = async (req: Request, res: Response,
       data: record 
     });
   } catch (error: any) {
-    // Check if it is a Prisma unique constraint violation code (P2002)
-    if (error.code === 'P2002') {
-      res.status(409).json({
-        status: 'error',
-        message: 'An item with this itemCode already exists. Please use a unique itemCode.'
-      });
-      return;
-    }
-    next(error);
+    handleControllerError(error, res, next, 'Inventory Item');
   }
 };
-
 
 export const createStockLotController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -92,15 +113,7 @@ export const createStockLotController = async (req: Request, res: Response, next
       data: record 
     });
   } catch (error: any) {
-    // Check if it is a Prisma unique constraint violation code (P2002)
-    if (error.code === 'P2002') {
-      res.status(409).json({
-        status: 'error',
-        message: 'A stock lot with this lotCode already exists. Please use a unique lotCode.'
-      });
-      return;
-    }
-    next(error);
+    handleControllerError(error, res, next, 'Stock Lot');
   }
 };
 
@@ -108,7 +121,6 @@ export const updateInventoryItemController = async (req: Request, res: Response,
   try {
     const { itemId } = req.params;
 
-    // 1. Check if the body payload is completely empty or has no keys
     if (!req.body || Object.keys(req.body).length === 0) {
       res.status(400).json({
         status: "error",
@@ -117,23 +129,20 @@ export const updateInventoryItemController = async (req: Request, res: Response,
       return;
     }
 
-    // 2. Proceed with database update if fields exist
     const result = await updateInventoryItem(itemId!, req.body);
     res.status(200).json({ 
       message: 'Inventory item updated successfully', 
       count: result.count 
     });
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    handleControllerError(error, res, next, 'Inventory Item');
   }
 };
-
 
 export const updateStockLotController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { itemId, lotId } = req.params;
 
-    // Guard checking for a clean, non-empty update object keys length array block
     if (!req.body || Object.keys(req.body).length === 0) {
       res.status(400).json({
         status: "error",
@@ -147,11 +156,10 @@ export const updateStockLotController = async (req: Request, res: Response, next
       message: 'Stock lot updated successfully', 
       count: result.count 
     });
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    handleControllerError(error, res, next, 'Stock Lot');
   }
 };
-
 
 export const deleteInventoryItemController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -159,7 +167,7 @@ export const deleteInventoryItemController = async (req: Request, res: Response,
     await deleteInventoryItem(itemId!);
     res.status(200).json({ message: 'Inventory item deleted successfully' });
   } catch (error: any) {
-    next(error);
+    handleControllerError(error, res, next, 'Inventory Item');
   }
 };
 
@@ -169,6 +177,6 @@ export const deleteStockLotController = async (req: Request, res: Response, next
     await deleteStockLot(itemId!, lotId!);
     res.status(200).json({ message: 'Stock lot deleted successfully' });
   } catch (error: any) {
-    next(error);
+    handleControllerError(error, res, next, 'Stock Lot');
   }
 };
