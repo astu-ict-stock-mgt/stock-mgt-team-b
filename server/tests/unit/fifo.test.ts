@@ -49,6 +49,7 @@ describe('applyFifoConsumption', () => {
     const older = makeLot('lot-1', 10, 4, new Date('2026-01-01T00:00:00Z'));
     const newer = makeLot('lot-2', 10, 6, new Date('2026-02-01T00:00:00Z'));
 
+    // Even if passed out of order [newer, older], FIFO must process older first!
     const result = applyFifoConsumption([newer, older], 15);
 
     expect(result.consumptions).toEqual([
@@ -57,8 +58,8 @@ describe('applyFifoConsumption', () => {
     ]);
     expect(result.totalValue).toBe(10 * 4 + 5 * 6);
     expect(result.updatedLots).toEqual([
-      { id: 'lot-1', quantityRemaining: 0, isDepleted: true },
       { id: 'lot-2', quantityRemaining: 5, isDepleted: false },
+      { id: 'lot-1', quantityRemaining: 0, isDepleted: true },
     ]);
   });
 
