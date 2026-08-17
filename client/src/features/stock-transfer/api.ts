@@ -1,11 +1,48 @@
-// @ts-nocheck
+export interface Item {
+  id: string;
+  name: string;
+  itemCode: string;
+  category: string;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+}
+
+export interface ItemStockLocation {
+  locationId: string;
+  locationName: string;
+  availableQuantity: number;
+}
+
+export interface TransferRecord {
+  id: string;
+  itemId: string;
+  itemName: string;
+  fromLocationId: string;
+  fromLocationName: string;
+  toLocationId: string;
+  toLocationName: string;
+  quantity: number;
+  date: string;
+  transferredBy: string;
+}
+
+export interface CreateTransferPayload {
+  itemId: string;
+  fromLocationId: string;
+  toLocationId: string;
+  quantity: number;
+  transferredBy?: string;
+}
 
 export const STORAGE_KEYS = {
   BALANCES: 'stock_transfer_balances',
   TRANSFERS: 'stock_transfer_history',
 };
 
-const INITIAL_ITEMS = [
+const INITIAL_ITEMS: Item[] = [
   { id: 'item-1', name: 'Keyboard', itemCode: 'IT-KB-001', category: 'Peripherals' },
   { id: 'item-2', name: 'Mouse', itemCode: 'IT-MS-002', category: 'Peripherals' },
   { id: 'item-3', name: 'Monitor', itemCode: 'IT-MN-003', category: 'Displays' },
@@ -14,7 +51,7 @@ const INITIAL_ITEMS = [
   { id: 'item-6', name: 'Desk Chair', itemCode: 'FUR-DC-006', category: 'Furniture' },
 ];
 
-const INITIAL_LOCATIONS = [
+const INITIAL_LOCATIONS: Location[] = [
   { id: 'loc-1', name: 'Main Warehouse' },
   { id: 'loc-2', name: 'Computer Lab' },
   { id: 'loc-3', name: 'Office' },
@@ -22,7 +59,7 @@ const INITIAL_LOCATIONS = [
   { id: 'loc-5', name: 'Shop' },
 ];
 
-const INITIAL_STOCK_BALANCES = {
+const INITIAL_STOCK_BALANCES: Record<string, Record<string, number>> = {
   'item-1': { 'loc-1': 50, 'loc-2': 10, 'loc-3': 0, 'loc-4': 0, 'loc-5': 0 },
   'item-2': { 'loc-1': 40, 'loc-2': 0, 'loc-3': 15, 'loc-4': 10, 'loc-5': 0 },
   'item-3': { 'loc-1': 20, 'loc-2': 5, 'loc-3': 0, 'loc-4': 15, 'loc-5': 0 },
@@ -31,7 +68,7 @@ const INITIAL_STOCK_BALANCES = {
   'item-6': { 'loc-1': 30, 'loc-2': 0, 'loc-3': 10, 'loc-4': 0, 'loc-5': 0 },
 };
 
-const INITIAL_TRANSFERS = [
+const INITIAL_TRANSFERS: TransferRecord[] = [
   {
     id: 'tr-1',
     itemId: 'item-1',
@@ -70,7 +107,7 @@ const INITIAL_TRANSFERS = [
   },
 ];
 
-function getStoredBalances() {
+function getStoredBalances(): Record<string, Record<string, number>> {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.BALANCES);
     if (data) return JSON.parse(data);
@@ -80,7 +117,7 @@ function getStoredBalances() {
   return INITIAL_STOCK_BALANCES;
 }
 
-function saveBalances(balances) {
+function saveBalances(balances: Record<string, Record<string, number>>): void {
   try {
     localStorage.setItem(STORAGE_KEYS.BALANCES, JSON.stringify(balances));
   } catch {
@@ -88,7 +125,7 @@ function saveBalances(balances) {
   }
 }
 
-function getStoredTransfers() {
+function getStoredTransfers(): TransferRecord[] {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.TRANSFERS);
     if (data) return JSON.parse(data);
@@ -98,7 +135,7 @@ function getStoredTransfers() {
   return INITIAL_TRANSFERS;
 }
 
-function saveTransfers(transfers) {
+function saveTransfers(transfers: TransferRecord[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.TRANSFERS, JSON.stringify(transfers));
   } catch {
@@ -106,7 +143,7 @@ function saveTransfers(transfers) {
   }
 }
 
-function formatCurrentDateTime() {
+function formatCurrentDateTime(): string {
   const now = new Date();
   return (
     now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
@@ -116,15 +153,15 @@ function formatCurrentDateTime() {
 }
 
 export const stockTransferApi = {
-  async getItems() {
+  async getItems(): Promise<Item[]> {
     return Promise.resolve(INITIAL_ITEMS);
   },
 
-  async getLocations() {
+  async getLocations(): Promise<Location[]> {
     return Promise.resolve(INITIAL_LOCATIONS);
   },
 
-  async getItemStockLocations(itemId) {
+  async getItemStockLocations(itemId: string): Promise<ItemStockLocation[]> {
     const balances = getStoredBalances();
     const itemBalances = balances[itemId] || {};
     return Promise.resolve(
@@ -136,7 +173,7 @@ export const stockTransferApi = {
     );
   },
 
-  async getTransferHistory(search) {
+  async getTransferHistory(search?: string): Promise<TransferRecord[]> {
     let transfers = getStoredTransfers();
     if (search && search.trim() !== '') {
       const q = search.toLowerCase().trim();
@@ -152,7 +189,7 @@ export const stockTransferApi = {
     return Promise.resolve(transfers);
   },
 
-  async createTransfer(payload) {
+  async createTransfer(payload: CreateTransferPayload): Promise<TransferRecord> {
     const balances = getStoredBalances();
     const itemBalances = { ...(balances[payload.itemId] || {}) };
     const currentFromQty = itemBalances[payload.fromLocationId] ?? 0;
@@ -162,7 +199,8 @@ export const stockTransferApi = {
     }
 
     itemBalances[payload.fromLocationId] = currentFromQty - payload.quantity;
-    itemBalances[payload.toLocationId] = (itemBalances[payload.toLocationId] ?? 0) + payload.quantity;
+    itemBalances[payload.toLocationId] =
+      (itemBalances[payload.toLocationId] ?? 0) + payload.quantity;
     balances[payload.itemId] = itemBalances;
     saveBalances(balances);
 
@@ -170,7 +208,7 @@ export const stockTransferApi = {
     const fromLoc = INITIAL_LOCATIONS.find((l) => l.id === payload.fromLocationId);
     const toLoc = INITIAL_LOCATIONS.find((l) => l.id === payload.toLocationId);
 
-    const newRecord = {
+    const newRecord: TransferRecord = {
       id: `tr-${Date.now()}`,
       itemId: payload.itemId,
       itemName: item?.name || 'Unknown Item',
