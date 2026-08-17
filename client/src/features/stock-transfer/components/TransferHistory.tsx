@@ -18,19 +18,20 @@ const ROW_STYLES = `
     animation: fadeIn 0.2s ease both;
   }
   .table-row-hover {
-    transition: background-color 0.15s;
+    transition: background-color 0.18s ease;
   }
   .table-row-hover:hover {
-    background-color: #eff6ff;
+    background-color: #f0f7ff;
   }
   .page-btn {
-    transition: background-color 0.15s, transform 0.12s, box-shadow 0.15s;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .page-btn:not(:disabled):hover {
-    transform: translateY(-1px);
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.18);
   }
   .page-btn:not(:disabled):active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.97);
   }
 `;
 
@@ -38,10 +39,10 @@ const ROW_STYLES = `
 function QtyBadge({ qty }) {
   const color =
     qty >= 20
-      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs'
       : qty >= 5
-      ? 'bg-blue-50 text-blue-700 border-blue-200'
-      : 'bg-amber-50 text-amber-700 border-amber-200';
+      ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-2xs'
+      : 'bg-amber-50 text-amber-700 border-amber-200 shadow-2xs';
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold ${color}`}>
       {qty}
@@ -109,7 +110,7 @@ export function TransferHistory() {
     <>
       <style>{ROW_STYLES}</style>
 
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
+      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md">
         {/* Header with responsive search bar */}
         <div className="flex flex-col justify-between gap-3 border-b border-gray-100 p-4 sm:p-5 sm:flex-row sm:items-center">
           <div>
@@ -119,7 +120,7 @@ export function TransferHistory() {
             </p>
           </div>
 
-          {/* Search Input */}
+          {/* Search Input Box */}
           <div className="relative w-full sm:w-60">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,13 +132,14 @@ export function TransferHistory() {
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Search history…"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-9 text-xs sm:text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:outline-none"
+              className="w-full rounded-xl border border-gray-300 bg-gray-50/50 py-2 pl-9 pr-9 text-xs sm:text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/15 focus:outline-hidden"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
-                className="cursor-pointer absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 transition-colors hover:text-gray-600"
+                className="cursor-pointer absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 transition-colors hover:text-gray-700"
+                aria-label="Clear search"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -151,7 +153,7 @@ export function TransferHistory() {
         <div className="flex-1 overflow-x-auto">
           <table className="w-full min-w-[580px] border-collapse text-left text-xs sm:text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/80">
+              <tr className="border-b border-gray-200 bg-gray-50/80">
                 <th scope="col" className="w-10 px-3 py-3 text-center text-[11px] font-bold tracking-wider text-gray-500 uppercase">
                   #
                 </th>
@@ -175,7 +177,7 @@ export function TransferHistory() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <LoadingRows />
               ) : currentRows.length === 0 ? (
@@ -232,17 +234,17 @@ export function TransferHistory() {
         {!isLoading && totalEntries > 0 && (
           <div className="flex flex-col items-center justify-between gap-2.5 border-t border-gray-100 bg-white px-4 py-3 sm:flex-row sm:px-5">
             <p className="text-xs text-gray-500">
-              Showing <span className="font-bold text-gray-700">{startIndex + 1}</span>–
-              <span className="font-bold text-gray-700">{endIndex}</span> of{' '}
-              <span className="font-bold text-gray-700">{totalEntries}</span>
+              Showing <strong className="font-bold text-gray-700">{startIndex + 1}</strong>–
+              <strong className="font-bold text-gray-700">{endIndex}</strong> of{' '}
+              <strong className="font-bold text-gray-700">{totalEntries}</strong>
             </p>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={validPage <= 1}
-                className="page-btn cursor-pointer inline-flex h-7 sm:h-8 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 sm:px-3 text-xs font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+                className="page-btn cursor-pointer inline-flex h-8 items-center gap-1 rounded-xl border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-2xs"
               >
                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -255,10 +257,10 @@ export function TransferHistory() {
                   key={p}
                   type="button"
                   onClick={() => setCurrentPage(p)}
-                  className={`page-btn cursor-pointer h-7 w-7 sm:h-8 sm:w-8 rounded-lg text-xs font-semibold ${
+                  className={`page-btn cursor-pointer h-8 w-8 rounded-xl text-xs font-bold shadow-2xs ${
                     validPage === p
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                      ? 'bg-blue-600 text-white shadow-blue-500/25 ring-2 ring-blue-500/20'
+                      : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   {p}
@@ -269,7 +271,7 @@ export function TransferHistory() {
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={validPage >= totalPages}
-                className="page-btn cursor-pointer inline-flex h-7 sm:h-8 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 sm:px-3 text-xs font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+                className="page-btn cursor-pointer inline-flex h-8 items-center gap-1 rounded-xl border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-2xs"
               >
                 Next
                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">

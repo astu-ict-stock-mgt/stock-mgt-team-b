@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   useItems,
   useLocations,
@@ -10,7 +10,7 @@ import {
 /* ─── Friendly error messages ─────────────────────────────────── */
 function friendlyError(key, ctx = {}) {
   const map = {
-    noItem: '👆 Please choose the item you want to move first.',
+    noItem: '👆 Please select the item you want to move first.',
     noSource: '📍 Pick a source location — where is the item coming from?',
     noDest: '🎯 Choose a destination — where should the item go?',
     sameLocation:
@@ -23,15 +23,19 @@ function friendlyError(key, ctx = {}) {
   return map[key] ?? '⚠️ Please review your inputs and try again.';
 }
 
-/* ─── Inline keyframe styles ───────────────────────────────────── */
+/* ─── Inline keyframe styles & micro-animations ────────────────── */
 const STYLES = `
   @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
+    from { opacity: 0; transform: translateY(-8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
+  @keyframes menuPop {
+    0%   { opacity: 0; transform: scale(0.96) translateY(-4px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes modalPop {
+    0%   { opacity: 0; transform: scale(0.92) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
   }
   @keyframes shake {
     0%,100% { transform: translateX(0); }
@@ -42,66 +46,249 @@ const STYLES = `
     75%      { transform: translateX(-2px); }
     90%      { transform: translateX(2px); }
   }
-  @keyframes modalPop {
-    0%   { opacity: 0; transform: scale(0.9) translateY(10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-  }
   @keyframes fadeIn {
     from { opacity: 0; }
     to   { opacity: 1; }
   }
-  @keyframes arrowPulse {
+  @keyframes arrowFlow {
     0%,100% { transform: translateX(0); opacity: 1; }
-    50%     { transform: translateX(4px); opacity: 0.6; }
+    50%     { transform: translateX(4px); opacity: 0.7; }
   }
-  @keyframes progressFill {
-    from { width: 0%; }
-  }
-  .anim-slide-down  { animation: slideDown 0.28s ease-out both; }
-  .anim-slide-up    { animation: slideUp 0.32s ease-out both; }
-  .anim-shake       { animation: shake 0.45s ease-in-out; }
-  .anim-modal-pop   { animation: modalPop 0.25s cubic-bezier(.175,.885,.32,1.15) both; }
-  .anim-fade-in     { animation: fadeIn 0.2s ease both; }
-  .anim-arrow       { animation: arrowPulse 1.4s ease-in-out infinite; }
-  .anim-progress    { animation: progressFill 0.6s ease-out both; }
 
-  .select-field {
-    appearance: none;
-    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  .anim-slide-down  { animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .anim-menu-pop    { animation: menuPop 0.18s cubic-bezier(0.16, 1, 0.3, 1) both; transform-origin: top center; }
+  .anim-modal-pop   { animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .anim-shake       { animation: shake 0.45s ease-in-out; }
+  .anim-fade-in     { animation: fadeIn 0.2s ease both; }
+  .anim-arrow       { animation: arrowFlow 1.5s ease-in-out infinite; }
+
+  /* ── Custom Trigger & Dropdown Menu ── */
+  .custom-dropdown-btn {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .select-field:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
-  }
-  .select-field:not(:disabled):hover {
+  .custom-dropdown-btn:hover:not(:disabled) {
     border-color: #93c5fd;
+    background-color: #f8fafc;
   }
-  .input-field {
-    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
-  }
-  .input-field:focus {
+  .custom-dropdown-btn:focus-visible {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
   }
-  .btn-primary {
-    transition: background-color 0.18s, transform 0.15s, box-shadow 0.18s;
+
+  .custom-option {
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .btn-primary:not(:disabled):hover {
+  .custom-option:hover {
+    background-color: #eff6ff;
+    transform: translateX(2px);
+  }
+
+  /* ── Enhanced Buttons ── */
+  .btn-submit {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.35);
+  }
+  .btn-submit:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+  }
+  .btn-submit:hover:not(:disabled) .btn-icon-slide {
+    transform: translateX(3px);
+  }
+  .btn-icon-slide {
+    transition: transform 0.2s ease;
+  }
+
+  .btn-reset {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-reset:hover {
+    border-color: #cbd5e1;
+    background-color: #f8fafc;
+    color: #1e293b;
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
-  .btn-primary:not(:disabled):active {
-    transform: translateY(0);
-  }
-  .btn-secondary {
-    transition: background-color 0.18s, transform 0.15s;
-  }
-  .btn-secondary:hover {
-    transform: translateY(-1px);
+  .btn-reset:active {
+    transform: translateY(0) scale(0.98);
   }
 `;
+
+/* ─── Custom Modern Hover & Click Dropdown Component ────────────── */
+function CustomDropdown({
+  id,
+  label,
+  value,
+  onChange,
+  options = [],
+  placeholder = 'Select an option…',
+  disabled = false,
+  isLoading = false,
+  hint,
+  emptyMessage,
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+  const closeTimeoutRef = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Hover handlers with debounce to prevent accidental close
+  const handleMouseEnter = () => {
+    if (disabled || isLoading) return;
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (disabled || isLoading) return;
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 150);
+  };
+
+  const handleToggleClick = () => {
+    if (disabled || isLoading) return;
+    setIsOpen((prev) => !prev);
+  };
+
+  const handleSelectOption = (optValue) => {
+    onChange(optValue);
+    setIsOpen(false);
+  };
+
+  // Find currently selected option object
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative space-y-1.5"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <label id={`${id}-label`} className="block text-xs sm:text-sm font-bold text-gray-700">
+        {label} <span className="text-red-500">*</span>
+      </label>
+
+      {/* Dropdown Trigger Button */}
+      <button
+        type="button"
+        id={id}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-labelledby={`${id}-label ${id}`}
+        disabled={disabled || isLoading}
+        onClick={handleToggleClick}
+        className={`custom-dropdown-btn relative flex w-full cursor-pointer items-center justify-between rounded-xl border bg-white px-3.5 py-2.5 text-left text-xs sm:text-sm font-medium shadow-2xs ${
+          isOpen
+            ? 'border-blue-500 ring-4 ring-blue-500/15'
+            : 'border-gray-300'
+        } ${disabled || isLoading ? 'cursor-not-allowed bg-gray-50 text-gray-400' : 'text-gray-900'}`}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          {isLoading && (
+            <svg className="h-4 w-4 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          )}
+
+          {selectedOption ? (
+            <span className="truncate font-semibold text-gray-900">
+              {selectedOption.label}
+            </span>
+          ) : (
+            <span className="truncate text-gray-400">
+              {isLoading ? 'Loading options…' : placeholder}
+            </span>
+          )}
+        </div>
+
+        {/* Chevron with smooth rotation */}
+        <div className="flex shrink-0 items-center pl-2 text-gray-400">
+          <svg
+            className={`h-4 w-4 transition-transform duration-200 ${
+              isOpen ? 'rotate-180 text-blue-600' : ''
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth="2.5"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {hint && <p className="text-[11px] font-medium text-gray-400">{hint}</p>}
+
+      {/* Floating Modern Dropdown Menu */}
+      {isOpen && (
+        <div
+          role="listbox"
+          tabIndex={-1}
+          className="anim-menu-pop absolute left-0 z-40 mt-1.5 max-h-60 w-full overflow-y-auto rounded-2xl border border-gray-100 bg-white p-1.5 shadow-xl ring-1 ring-black/5"
+        >
+          {options.length === 0 ? (
+            <div className="p-3 text-center text-xs font-medium text-gray-400">
+              {emptyMessage || 'No options available'}
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {options.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <div
+                    key={opt.value}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => handleSelectOption(opt.value)}
+                    className={`custom-option flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-xs sm:text-sm font-medium ${
+                      isSelected
+                        ? 'bg-blue-50 text-blue-900 font-bold'
+                        : 'text-gray-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="truncate">{opt.label}</span>
+                      {opt.badge && (
+                        <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">
+                          {opt.badge}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Checkmark indicator */}
+                    {isSelected && (
+                      <span className="shrink-0 text-blue-600">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ─── Stock availability bar ───────────────────────────────────── */
 function StockBar({ available, max }) {
@@ -113,13 +300,13 @@ function StockBar({ available, max }) {
     pct > 50 ? 'In Stock' : pct > 20 ? 'Low Stock' : 'Critical';
 
   return (
-    <div className="mt-2 space-y-1.5 rounded-xl border border-gray-100 bg-gray-50/70 p-2.5">
+    <div className="mt-2 space-y-1.5 rounded-xl border border-gray-100 bg-gray-50/80 p-2.5 shadow-2xs">
       <div className="flex items-center justify-between text-xs">
         <span className="font-medium text-gray-600">
-          Available: <span className="font-bold text-gray-900">{available} units</span>
+          Available: <strong className="font-bold text-gray-900">{available} units</strong>
         </span>
         <span
-          className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+          className={`rounded-full px-2 py-0.5 text-[11px] font-bold shadow-2xs ${
             pct > 50
               ? 'bg-emerald-100 text-emerald-800'
               : pct > 20
@@ -132,7 +319,7 @@ function StockBar({ available, max }) {
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
         <div
-          className={`anim-progress h-full rounded-full ${color}`}
+          className={`h-full rounded-full transition-all duration-500 ease-out ${color}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -144,9 +331,9 @@ function StockBar({ available, max }) {
 function TransferArrow({ from, to }) {
   if (!from || !to) return null;
   return (
-    <div className="anim-slide-down my-2 flex flex-col gap-2 rounded-xl border border-blue-100 bg-blue-50/70 p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="anim-slide-down my-2 flex flex-col gap-2 rounded-xl border border-blue-100 bg-blue-50/70 p-3 sm:flex-row sm:items-center sm:justify-between shadow-2xs">
       <div className="flex min-w-0 items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-xs">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-xs shadow-2xs">
           📤
         </span>
         <div className="min-w-0">
@@ -166,7 +353,7 @@ function TransferArrow({ from, to }) {
           <p className="text-[10px] font-bold tracking-wider text-indigo-500 uppercase">To</p>
           <p className="truncate text-xs font-semibold text-indigo-900">{to}</p>
         </div>
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-xs">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-xs shadow-2xs">
           📥
         </span>
       </div>
@@ -174,7 +361,7 @@ function TransferArrow({ from, to }) {
   );
 }
 
-/* ─── Compact, Attractive Modal (Not Fullscreen) ─────────────────── */
+/* ─── Confirmation Modal (Compact & Interactive) ───────────────── */
 function TransferConfirmModal({ isOpen, onClose, onConfirm, isPending, details }) {
   if (!isOpen) return null;
   return (
@@ -185,15 +372,14 @@ function TransferConfirmModal({ isOpen, onClose, onConfirm, isPending, details }
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      {/* Compact non-fullscreen container */}
       <div className="anim-modal-pop relative w-full max-w-sm sm:max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-100">
-        {/* Decorative Top Accent Bar */}
+        {/* Accent Bar */}
         <div className="h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
 
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-2 sm:px-6 sm:pt-5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-lg shadow-xs">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-lg shadow-2xs">
               📦
             </div>
             <div>
@@ -218,8 +404,7 @@ function TransferConfirmModal({ isOpen, onClose, onConfirm, isPending, details }
 
         {/* Modal Body */}
         <div className="space-y-3.5 px-5 py-3 sm:px-6">
-          {/* Details Card */}
-          <div className="space-y-2 rounded-xl border border-gray-100 bg-gray-50/80 p-3 text-xs sm:text-sm">
+          <div className="space-y-2 rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 text-xs sm:text-sm">
             <div className="flex items-center justify-between py-1 border-b border-gray-200/60">
               <span className="font-medium text-gray-500">Item:</span>
               <span className="font-bold text-gray-900">{details.itemName}</span>
@@ -240,24 +425,23 @@ function TransferConfirmModal({ isOpen, onClose, onConfirm, isPending, details }
             </div>
           </div>
 
-          {/* Alert Notice */}
-          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5 sm:p-3">
+          <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3">
             <span className="text-base shrink-0">⚠️</span>
             <p className="text-[11px] sm:text-xs leading-relaxed text-amber-900 font-medium">
-              This will immediately adjust the inventory count in{' '}
-              <span className="font-bold">{details.fromLocationName}</span> and{' '}
-              <span className="font-bold">{details.toLocationName}</span>.
+              This will transfer <strong className="font-bold">{details.quantity} units</strong> from{' '}
+              <strong className="font-bold">{details.fromLocationName}</strong> to{' '}
+              <strong className="font-bold">{details.toLocationName}</strong>.
             </p>
           </div>
         </div>
 
-        {/* Modal Footer Actions */}
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-3 sm:px-6 sm:py-3.5">
+        {/* Modal Footer */}
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-3.5 sm:px-6">
           <button
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="btn-secondary w-full sm:w-auto cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            className="btn-reset w-full sm:w-auto cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -265,7 +449,7 @@ function TransferConfirmModal({ isOpen, onClose, onConfirm, isPending, details }
             type="button"
             onClick={onConfirm}
             disabled={isPending}
-            className="btn-primary w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-blue-700 disabled:opacity-60"
+            className="btn-submit w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-blue-700 disabled:opacity-60"
           >
             {isPending ? (
               <>
@@ -278,7 +462,7 @@ function TransferConfirmModal({ isOpen, onClose, onConfirm, isPending, details }
             ) : (
               <>
                 <span>Confirm Transfer</span>
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <svg className="btn-icon-slide h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </>
@@ -286,44 +470,6 @@ function TransferConfirmModal({ isOpen, onClose, onConfirm, isPending, details }
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ─── SelectField helper with responsive touch targets ────────────── */
-function SelectField({ id, label, value, onChange, disabled, children, hint, isLoading }) {
-  return (
-    <div className="space-y-1">
-      <label htmlFor={id} className="block text-xs sm:text-sm font-semibold text-gray-700">
-        {label} <span className="text-red-500">*</span>
-      </label>
-      <div className="relative">
-        {isLoading && (
-          <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
-            <svg className="h-4 w-4 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-          </div>
-        )}
-        <select
-          id={id}
-          value={value}
-          onChange={onChange}
-          disabled={disabled}
-          className={`select-field w-full cursor-pointer rounded-xl border border-gray-200 bg-white py-2.5 pr-10 text-xs sm:text-sm text-gray-900 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 ${
-            isLoading ? 'pl-9' : 'pl-3.5'
-          }`}
-        >
-          {children}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </div>
-      {hint && <p className="text-[11px] text-gray-400">{hint}</p>}
     </div>
   );
 }
@@ -361,6 +507,24 @@ export function TransferForm({ onSuccessToast, onErrorToast }) {
   const selectedDest   = allDestLocations.find((l) => l.id === effectiveToLocationId);
   const availableStock = selectedSource ? selectedSource.availableQuantity : 0;
   const maxStock       = Math.max(availableStock, 50);
+
+  // Transform raw data to dropdown options format
+  const itemOptions = items.map((i) => ({
+    value: i.id,
+    label: i.name,
+    badge: i.itemCode,
+  }));
+
+  const sourceLocationOptions = sourceLocations.map((loc) => ({
+    value: loc.locationId,
+    label: loc.locationName,
+    badge: `${loc.availableQuantity} available`,
+  }));
+
+  const destinationLocationOptions = destinationOptions.map((loc) => ({
+    value: loc.id,
+    label: loc.name,
+  }));
 
   function triggerError(key, ctx = {}) {
     setErrorKey(key);
@@ -413,7 +577,7 @@ export function TransferForm({ onSuccessToast, onErrorToast }) {
       });
       setIsConfirmOpen(false);
       onSuccessToast?.(
-        `✅ Transferred ${quantity} × ${selectedItem?.name} from ${selectedSource?.locationName} → ${selectedDest?.name}.`
+        `✅ Transferred ${quantity} units of ${selectedItem?.name} from ${selectedSource?.locationName} to ${selectedDest?.name}.`
       );
       setQuantity('');
       clearError();
@@ -431,14 +595,14 @@ export function TransferForm({ onSuccessToast, onErrorToast }) {
 
       <div
         key={shakeKey > 0 ? `shake-${shakeKey}` : 'form'}
-        className={`overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md ${
+        className={`rounded-2xl border border-gray-200 bg-white shadow-md transition-all ${
           shakeKey > 0 && errorKey ? 'anim-shake' : ''
         }`}
       >
-        {/* Card header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-4 sm:px-6 sm:py-5">
+        {/* Card Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-4 sm:px-6 sm:py-5 rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-white/20 text-lg sm:text-xl shadow-xs">
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-white/20 text-lg sm:text-xl text-white shadow-xs backdrop-blur-xs">
               🔄
             </div>
             <div>
@@ -452,7 +616,7 @@ export function TransferForm({ onSuccessToast, onErrorToast }) {
         <div className="p-4 sm:p-6">
           {/* User-friendly Error Banner */}
           {errorKey && (
-            <div className="anim-slide-down mb-4 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3 sm:p-3.5">
+            <div className="anim-slide-down mb-4 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3 sm:p-3.5 shadow-2xs">
               <span className="mt-0.5 shrink-0 text-base">❗</span>
               <div className="flex-1">
                 <p className="text-xs sm:text-sm font-semibold text-red-800">
@@ -462,64 +626,51 @@ export function TransferForm({ onSuccessToast, onErrorToast }) {
               <button
                 type="button"
                 onClick={clearError}
-                className="cursor-pointer shrink-0 text-red-400 transition-colors hover:text-red-600"
+                className="cursor-pointer shrink-0 rounded-md text-red-400 transition-colors hover:text-red-600 hover:bg-red-100 p-0.5"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           )}
 
-          <form onSubmit={handleOpenConfirm} className="space-y-3.5 sm:space-y-4">
-            {/* 1. Item Selection */}
-            <SelectField
+          <form onSubmit={handleOpenConfirm} className="space-y-4">
+            {/* 1. Item Selection (Custom Hover/Click Dropdown) */}
+            <CustomDropdown
               id="item-select"
               label="Item"
               value={selectedItemId}
-              onChange={(e) => { setSelectedItemId(e.target.value); clearError(); }}
+              onChange={(val) => { setSelectedItemId(val); clearError(); }}
+              options={itemOptions}
               disabled={isLoadingItems}
               isLoading={isLoadingItems}
+              placeholder="Select an item…"
               hint={selectedItem ? `Category: ${selectedItem.category} · Code: ${selectedItem.itemCode}` : null}
-            >
-              <option value="" disabled>Select an item…</option>
-              {items.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
-              ))}
-            </SelectField>
+            />
 
-            {/* 2. From Location — AC1: only locations with availableQuantity > 0 */}
-            <SelectField
+            {/* 2. From Location (Source) Dropdown */}
+            <CustomDropdown
               id="from-location-select"
               label="From Location (Source)"
               value={effectiveFromLocationId}
-              onChange={(e) => { setFromLocationId(e.target.value); clearError(); }}
+              onChange={(val) => { setFromLocationId(val); clearError(); }}
+              options={sourceLocationOptions}
               disabled={!selectedItemId || isLoadingStock || sourceLocations.length === 0}
               isLoading={isLoadingStock}
-            >
-              {sourceLocations.length === 0 ? (
-                <option value="" disabled>
-                  {!selectedItemId
-                    ? 'Select an item first…'
-                    : isLoadingStock
-                    ? 'Checking stock…'
-                    : 'No locations have this item in stock'}
-                </option>
-              ) : (
-                <>
-                  <option value="" disabled>Select source location…</option>
-                  {sourceLocations.map((loc) => (
-                    <option key={loc.locationId} value={loc.locationId}>
-                      {loc.locationName} ({loc.availableQuantity} available)
-                    </option>
-                  ))}
-                </>
-              )}
-            </SelectField>
+              placeholder={
+                !selectedItemId
+                  ? 'Select an item first…'
+                  : isLoadingStock
+                  ? 'Checking stock…'
+                  : 'No locations have stock'
+              }
+              emptyMessage="No warehouses have available stock of this item."
+            />
 
             {/* No-stock Warning */}
             {selectedItemId && sourceLocations.length === 0 && !isLoadingStock && (
-              <div className="anim-slide-down rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <div className="anim-slide-down rounded-xl border border-amber-200 bg-amber-50 p-3 shadow-2xs">
                 <p className="text-xs sm:text-sm text-amber-800 font-medium">
                   🏷️ This item has <strong>no available stock</strong> at any location.
                 </p>
@@ -539,23 +690,21 @@ export function TransferForm({ onSuccessToast, onErrorToast }) {
               to={selectedDest?.name}
             />
 
-            {/* 3. To Location Selection */}
-            <SelectField
+            {/* 3. To Location (Destination) Dropdown */}
+            <CustomDropdown
               id="to-location-select"
               label="To Location (Destination)"
               value={effectiveToLocationId}
-              onChange={(e) => { setToLocationId(e.target.value); clearError(); }}
+              onChange={(val) => { setToLocationId(val); clearError(); }}
+              options={destinationLocationOptions}
               disabled={!effectiveFromLocationId || destinationOptions.length === 0}
-            >
-              <option value="" disabled>Select destination…</option>
-              {destinationOptions.map((loc) => (
-                <option key={loc.id} value={loc.id}>{loc.name}</option>
-              ))}
-            </SelectField>
+              placeholder="Select destination…"
+              emptyMessage="No available destination locations."
+            />
 
             {/* 4. Quantity Input */}
-            <div className="space-y-1">
-              <label htmlFor="transfer-quantity" className="block text-xs sm:text-sm font-semibold text-gray-700">
+            <div className="space-y-1.5">
+              <label htmlFor="transfer-quantity" className="block text-xs sm:text-sm font-bold text-gray-700">
                 Quantity <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -571,7 +720,7 @@ export function TransferForm({ onSuccessToast, onErrorToast }) {
                     clearError();
                   }}
                   placeholder="Enter quantity…"
-                  className="input-field w-full rounded-xl border border-gray-200 px-3.5 py-2.5 pr-16 text-xs sm:text-sm text-gray-900"
+                  className="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 pr-16 text-xs sm:text-sm font-medium text-gray-900 shadow-2xs transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-hidden"
                 />
                 {availableStock > 0 && (
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -582,18 +731,18 @@ export function TransferForm({ onSuccessToast, onErrorToast }) {
                 )}
               </div>
               {availableStock > 0 && Number(quantity) > availableStock && (
-                <p className="anim-slide-down text-xs font-medium text-red-600">
+                <p className="anim-slide-down text-xs font-bold text-red-600">
                   ⚡ Exceeds available stock of {availableStock} units!
                 </p>
               )}
             </div>
 
-            {/* Action Buttons — fully responsive */}
-            <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-2.5 pt-3">
+            {/* Action Buttons */}
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-2">
               <button
                 type="button"
                 onClick={handleReset}
-                className="btn-secondary w-full sm:w-auto cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                className="btn-reset w-full sm:w-auto cursor-pointer rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-gray-700"
               >
                 Reset
               </button>
@@ -605,12 +754,12 @@ export function TransferForm({ onSuccessToast, onErrorToast }) {
                   !effectiveFromLocationId ||
                   !effectiveToLocationId
                 }
-                className="btn-primary w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-submit w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <svg className="btn-icon-slide h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
-                Transfer Stock
+                <span>Transfer Stock</span>
               </button>
             </div>
           </form>
