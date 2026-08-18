@@ -79,9 +79,7 @@ function StockTransferView() {
     <div className="space-y-4 sm:space-y-6">
       <style>{TOAST_STYLES}</style>
       {/* Toast Notification */}
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
-      )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Page Header */}
       <div className="px-1">
