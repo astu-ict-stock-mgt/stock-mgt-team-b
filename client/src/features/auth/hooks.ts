@@ -1,23 +1,41 @@
+import { useState, useEffect } from 'react';
+
+export type Role =
+  | 'ADMINISTRATOR'
+  | 'PAO'
+  | 'STOREKEEPER'
+  | 'STOCK_CLERK'
+  | 'ACCOUNTANT'
+  | 'DEPARTMENT_HEAD'
+  | 'SECURITY_OFFICER';
+
 export interface User {
   id: string;
   name: string;
-  role:
-    | 'ADMINISTRATOR'
-    | 'PAO'
-    | 'STOREKEEPER'
-    | 'STOCK_CLERK'
-    | 'ACCOUNTANT'
-    | 'DEPARTMENT_HEAD'
-    | 'SECURITY_OFFICER';
+  email: string;
+  role: Role;
 }
 
 export function useAuth() {
-  // Mocked for now, as real Auth is tracked in Issue #6
+  const [currentRole, setCurrentRole] = useState<Role>(() => {
+    const saved = localStorage.getItem('sms_user_role');
+    return (saved as Role) || 'ADMINISTRATOR';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sms_user_role', currentRole);
+  }, [currentRole]);
+
   const user: User = {
-    id: 'mock-user-1',
-    name: 'Henok',
-    role: 'PAO', // Change to 'STOREKEEPER' to test RBAC logic
+    id: 'usr-admin-01',
+    name: 'Marcus Vance',
+    email: 'admin@system.local',
+    role: currentRole,
   };
 
-  return { user };
+  const setRole = (role: Role) => {
+    setCurrentRole(role);
+  };
+
+  return { user, setRole };
 }
