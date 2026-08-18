@@ -3,43 +3,60 @@ import LoginPage from './features/auth/pages/LoginPage';
 import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './features/auth/components/ProtectedRoute';
+import SuppliersPage from './features/suppliers/pages/SuppliersPage';
+import { Layout } from './components/Layout';
+import { PlaceholderPage } from './components/PlaceholderPage';
 
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-
+        {/* Public authentication routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-        <Route
-          path="/forgot-password"
-          element={<ForgotPasswordPage />}
-        />
-
-        {/* Protected routes */}
+        {/* Protected application routes */}
         <Route element={<ProtectedRoute />}>
-          <Route
-            path="/dashboard"
-            element={
-              <div className="mx-auto max-w-3xl px-6 py-16 text-center">
-                <h1 className="text-3xl font-bold text-slate-900">
-                  Dashboard
-                </h1>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-                <p className="mt-4 text-slate-600">
-                  Placeholder dashboard.
-                </p>
-              </div>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={<PlaceholderPage title="Dashboard" />}
+            />
+            <Route
+              path="/users"
+              element={<PlaceholderPage title="User Management" />}
+            />
+            <Route
+              path="/roles"
+              element={<PlaceholderPage title="Roles & Permissions" />}
+            />
+            <Route
+              path="/inventory"
+              element={<PlaceholderPage title="Inventory Management" />}
+            />
+            <Route
+              path="/reports"
+              element={<PlaceholderPage title="Reports" />}
+            />
+            <Route
+              path="/audit-log"
+              element={<PlaceholderPage title="Audit Logs" />}
+            />
+            <Route
+              path="/settings"
+              element={<PlaceholderPage title="Settings" />}
+            />
+
+            <Route path="/suppliers" element={<SuppliersPage />} />
+
+            <Route
+              path="*"
+              element={<PlaceholderPage title="Page Not Found" />}
+            />
+          </Route>
         </Route>
-
-        {/* Unknown routes */}
-        <Route
-          path="*"
-          element={<Navigate to="/login" replace />}
-        />
       </Routes>
     </AuthProvider>
   );
