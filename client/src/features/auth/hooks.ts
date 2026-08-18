@@ -1,23 +1,45 @@
-export interface User {
-  id: string;
-  name: string;
-  role:
-    | 'ADMINISTRATOR'
-    | 'PAO'
-    | 'STOREKEEPER'
-    | 'STOCK_CLERK'
-    | 'ACCOUNTANT'
-    | 'DEPARTMENT_HEAD'
-    | 'SECURITY_OFFICER';
-}
+import { useState } from 'react';
+import {
+  loginUser,
+  type LoginRequest,
+  type LoginResponse,
+} from './api';
+import { useAuth } from '../../context/AuthContext';
 
-export function useAuth() {
-  // Mocked for now, as real Auth is tracked in Issue #6
-  const user: User = {
-    id: 'mock-user-1',
-    name: 'Henok',
-    role: 'PAO', // Change to 'STOREKEEPER' to test RBAC logic
+export { useAuth };
+
+export function useLogin() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { login } = useAuth();
+
+  const submitLogin = async (
+    credentials: LoginRequest,
+  ): Promise<LoginResponse> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await loginUser(credentials);
+
+      login(response.token, response.user);
+
+      return response;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Login failed';
+
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  return { user };
+  return {
+    submitLogin,
+    isLoading,
+    error,
+  };
 }
