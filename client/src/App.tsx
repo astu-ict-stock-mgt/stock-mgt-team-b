@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import SuppliersPage from './features/suppliers/pages/SuppliersPage';
+import { Layout } from './components/Layout';
+import { PlaceholderPage } from './components/PlaceholderPage';
 import { TransferForm } from './features/stock-transfer/components/TransferForm';
 import { TransferHistory } from './features/stock-transfer/components/TransferHistory';
 
@@ -73,35 +76,33 @@ function StockTransferView() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 p-3 sm:p-6 lg:p-8">
+    <div className="space-y-4 sm:space-y-6">
       <style>{TOAST_STYLES}</style>
-      <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
-        {/* Toast Notification */}
-        {toast && (
-          <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
-        )}
+      {/* Toast Notification */}
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+      )}
 
-        {/* Page Header */}
-        <div className="px-1">
-          <h1 className="text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">
-            Stock Transfer
-          </h1>
-          <p className="mt-1 text-xs text-gray-500 sm:text-sm">
-            Manage, record, and track inventory movements between locations.
-          </p>
+      {/* Page Header */}
+      <div className="px-1">
+        <h1 className="text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">
+          Stock Transfer
+        </h1>
+        <p className="mt-1 text-xs text-gray-500 sm:text-sm">
+          Manage, record, and track inventory movements between locations.
+        </p>
+      </div>
+
+      {/* Responsive Grid Layout */}
+      <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <TransferForm
+            onSuccessToast={(msg) => showToast(msg, 'success')}
+            onErrorToast={(msg) => showToast(msg, 'error')}
+          />
         </div>
-
-        {/* Responsive Grid Layout */}
-        <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <TransferForm
-              onSuccessToast={(msg) => showToast(msg, 'success')}
-              onErrorToast={(msg) => showToast(msg, 'error')}
-            />
-          </div>
-          <div className="lg:col-span-7">
-            <TransferHistory />
-          </div>
+        <div className="lg:col-span-7">
+          <TransferHistory />
         </div>
       </div>
     </div>
@@ -110,10 +111,27 @@ function StockTransferView() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<StockTransferView />} />
-      <Route path="/stock-transfer" element={<StockTransferView />} />
-      <Route path="*" element={<StockTransferView />} />
-    </Routes>
+    <Layout>
+      <Routes>
+        {/* Default redirect to dashboard */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        {/* Placeholder pages for unimplemented modules */}
+        <Route path="/dashboard" element={<PlaceholderPage title="Dashboard" />} />
+        <Route path="/users" element={<PlaceholderPage title="User Management" />} />
+        <Route path="/roles" element={<PlaceholderPage title="Roles & Permissions" />} />
+        <Route path="/inventory" element={<PlaceholderPage title="Inventory Management" />} />
+        <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
+        <Route path="/audit-log" element={<PlaceholderPage title="Audit Logs" />} />
+        <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+
+        {/* Implemented modules */}
+        <Route path="/suppliers" element={<SuppliersPage />} />
+        <Route path="/stock-transfer" element={<StockTransferView />} />
+
+        {/* 404 fallback */}
+        <Route path="*" element={<PlaceholderPage title="Page Not Found" />} />
+      </Routes>
+    </Layout>
   );
 }
