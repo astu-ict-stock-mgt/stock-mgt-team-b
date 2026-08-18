@@ -12,4 +12,5 @@ coverage
 .agents/
 .claude/
 .windsurf/
-skills-lock.json
+# Local helper files
+src/seed.ts
