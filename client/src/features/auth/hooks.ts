@@ -1,41 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { loginUser, type LoginRequest, type LoginResponse } from './api';
+import { useAuth } from '../../context/AuthContext';
+import type { Role } from '../users/types';
 
-export type Role =
-  | 'ADMINISTRATOR'
-  | 'PAO'
-  | 'STOREKEEPER'
-  | 'STOCK_CLERK'
-  | 'ACCOUNTANT'
-  | 'DEPARTMENT_HEAD'
-  | 'SECURITY_OFFICER';
+export { useAuth };
+export type { Role };
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-}
+export function useLogin() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export function useAuth() {
-  const [currentRole, setCurrentRole] = useState<Role>(() => {
-    const saved = localStorage.getItem('sms_user_role');
-    return (saved as Role) || 'ADMINISTRATOR';
-  });
+  const { login } = useAuth();
 
-  useEffect(() => {
-    localStorage.setItem('sms_user_role', currentRole);
-  }, [currentRole]);
+  const submitLogin = async (credentials: LoginRequest): Promise<LoginResponse> => {
+    setIsLoading(true);
+    setError(null);
 
-  const user: User = {
-    id: 'usr-admin-01',
-    name: 'Marcus Vance',
-    email: 'admin@system.local',
-    role: currentRole,
+    try {
+      const response = await loginUser(credentials);
+      login(response.token, response.user);
+      return response;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const setRole = (role: Role) => {
-    setCurrentRole(role);
+  return {
+    submitLogin,
+    isLoading,
+    error,
   };
-
-  return { user, setRole };
 }

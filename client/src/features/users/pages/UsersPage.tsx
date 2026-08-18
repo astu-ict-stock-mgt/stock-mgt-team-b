@@ -1,12 +1,17 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, ShieldAlert, ShieldCheck, UserCheck, UserX, LayoutDashboard } from 'lucide-react';
-import { useAuth, type Role } from '../../auth/hooks';
+import { useAuth } from '../../auth/hooks';
 import { UserTable } from '../components/UserTable';
 import { useGetUsers } from '../hooks';
+import type { Role } from '../types';
 
 export function UsersPage() {
-  const { user, setRole } = useAuth();
-  const isAdmin = user?.role === 'ADMINISTRATOR';
+  const { user } = useAuth();
+  const [overrideRole, setOverrideRole] = useState<Role | null>(null);
+
+  const effectiveRole = (overrideRole || user?.role || 'ADMINISTRATOR') as Role;
+  const isAdmin = effectiveRole === 'ADMINISTRATOR';
 
   const { data } = useGetUsers();
   const allUsers = data?.data ?? [];
@@ -33,7 +38,7 @@ export function UsersPage() {
             User management is strictly restricted to users with the{' '}
             <strong className="font-semibold text-gray-900">ADMINISTRATOR</strong> role (SRS Section
             4.4.8). Your current assigned role is{' '}
-            <span className="font-mono font-bold text-red-600">{user?.role}</span>.
+            <span className="font-mono font-bold text-red-600">{effectiveRole}</span>.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -46,7 +51,7 @@ export function UsersPage() {
             </Link>
 
             <button
-              onClick={() => setRole('ADMINISTRATOR')}
+              onClick={() => setOverrideRole('ADMINISTRATOR')}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
             >
               <ShieldCheck className="h-4 w-4" />
@@ -81,8 +86,8 @@ export function UsersPage() {
           <span className="text-gray-500">Viewing as:</span>
           <select
             aria-label="Simulate User Role"
-            value={user?.role}
-            onChange={(e) => setRole(e.target.value as Role)}
+            value={effectiveRole}
+            onChange={(e) => setOverrideRole(e.target.value as Role)}
             className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 font-semibold text-gray-800 shadow-2xs focus:border-blue-500 focus:outline-none"
           >
             <option value="ADMINISTRATOR">ADMINISTRATOR (Full Access)</option>
