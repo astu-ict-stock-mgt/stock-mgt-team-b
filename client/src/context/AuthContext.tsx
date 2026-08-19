@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
 export interface AuthUser {
   id: string;
@@ -48,7 +42,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       login,
       logout,
     }),
-    [token, user],
+    [token, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

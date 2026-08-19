@@ -33,9 +33,7 @@ export default function ForgotPasswordPage() {
 
       setIsSubmitted(true);
     } catch {
-      setSubmitError(
-        'Something went wrong. Please try again.',
-      );
+      setSubmitError('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -72,14 +70,7 @@ export default function ForgotPasswordPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <rect
-                    width="18"
-                    height="11"
-                    x="3"
-                    y="11"
-                    rx="2"
-                    ry="2"
-                  />
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
               </div>
@@ -92,8 +83,7 @@ export default function ForgotPasswordPage() {
               </h1>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Enter your username or email address and we&apos;ll
-                help you reset your password.
+                Enter your username or email address and we&apos;ll help you reset your password.
               </p>
             </header>
 
@@ -120,27 +110,16 @@ export default function ForgotPasswordPage() {
                   >
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
-                    <line
-                      x1="12"
-                      y1="16"
-                      x2="12.01"
-                      y2="16"
-                    />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
 
-                  <p className="text-sm text-red-700">
-                    {submitError}
-                  </p>
+                  <p className="text-sm text-red-700">{submitError}</p>
                 </div>
               </div>
             )}
 
             {/* Form */}
-            <form
-              className="space-y-5"
-              onSubmit={handleSubmit}
-              noValidate
-            >
+            <form className="space-y-5" onSubmit={handleSubmit} noValidate>
               <div>
                 <label
                   htmlFor="reset-email"
@@ -155,32 +134,20 @@ export default function ForgotPasswordPage() {
                   type="text"
                   autoComplete="username"
                   value={email}
-                  onChange={(event) =>
-                    handleEmailChange(event.target.value)
-                  }
+                  onChange={(event) => handleEmailChange(event.target.value)}
                   placeholder="Enter your username or email"
                   disabled={isSubmitting}
                   aria-invalid={Boolean(error)}
-                  aria-describedby={
-                    error ? 'reset-email-error' : undefined
-                  }
-                  className={`w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
+                  aria-describedby={error ? 'reset-email-error' : undefined}
+                  className={`w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-900 transition outline-none placeholder:text-slate-400 focus:ring-2 ${
                     error
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10'
                       : 'border-slate-300 focus:border-slate-900 focus:ring-slate-900/10'
-                  } ${
-                    isSubmitting
-                      ? 'cursor-not-allowed bg-slate-100'
-                      : ''
-                  }`}
+                  } ${isSubmitting ? 'cursor-not-allowed bg-slate-100' : ''}`}
                 />
 
                 {error && (
-                  <p
-                    id="reset-email-error"
-                    className="mt-1.5 text-sm text-red-600"
-                    role="alert"
-                  >
+                  <p id="reset-email-error" className="mt-1.5 text-sm text-red-600" role="alert">
                     {error}
                   </p>
                 )}
@@ -190,7 +157,7 @@ export default function ForgotPasswordPage() {
                 type="submit"
                 disabled={isSubmitting}
                 aria-busy={isSubmitting}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-500"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-500"
               >
                 {isSubmitting && (
                   <svg
@@ -217,11 +184,7 @@ export default function ForgotPasswordPage() {
                   </svg>
                 )}
 
-                <span>
-                  {isSubmitting
-                    ? 'Sending request...'
-                    : 'Send Reset Instructions'}
-                </span>
+                <span>{isSubmitting ? 'Sending request...' : 'Send Reset Instructions'}</span>
               </button>
             </form>
 
@@ -229,7 +192,7 @@ export default function ForgotPasswordPage() {
             <div className="mt-6 text-center">
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition hover:text-slate-950 focus:outline-none focus:underline"
+                className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition hover:text-slate-950 focus:underline focus:outline-none"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -245,7 +208,6 @@ export default function ForgotPasswordPage() {
                 >
                   <path d="m15 18-6-6 6-6" />
                 </svg>
-
                 Back to Login
               </Link>
             </div>
@@ -272,27 +234,20 @@ export default function ForgotPasswordPage() {
               </svg>
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              Check Your Email
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Check Your Email</h1>
 
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              If an account exists for{' '}
-              <span className="font-medium text-slate-700">
-                {email}
-              </span>
-              , you&apos;ll receive password reset instructions
-              shortly.
+              If an account exists for <span className="font-medium text-slate-700">{email}</span>,
+              you&apos;ll receive password reset instructions shortly.
             </p>
 
             <p className="mt-3 text-xs leading-5 text-slate-400">
-              For security reasons, we don&apos;t reveal whether an
-              account exists.
+              For security reasons, we don&apos;t reveal whether an account exists.
             </p>
 
             <Link
               to="/login"
-              className="mt-6 flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+              className="mt-6 flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 focus:outline-none"
             >
               Return to Login
             </Link>

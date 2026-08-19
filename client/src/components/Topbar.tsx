@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import { Menu, Bell, Settings, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../features/auth/hooks';
 
@@ -7,6 +8,30 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick }: TopbarProps) {
   const { user } = useAuth();
+  const location = useLocation();
+
+  const getPageMeta = (pathname: string) => {
+    switch (pathname) {
+      case '/users':
+        return { section: 'Administration', title: 'User Management & Access Control' };
+      case '/suppliers':
+        return { section: 'Directory', title: 'System Supplier Directory' };
+      case '/dashboard':
+        return { section: 'Overview', title: 'Operational Dashboard' };
+      case '/inventory':
+        return { section: 'Inventory', title: 'Stock & Inventory Catalog' };
+      case '/roles':
+        return { section: 'Administration', title: 'Roles & Permissions Matrix' };
+      case '/reports':
+        return { section: 'Analytics', title: 'Inventory Valuation & Reports' };
+      case '/audit-log':
+        return { section: 'Security', title: 'System Audit Logs' };
+      default:
+        return { section: 'System', title: 'Stock Management Platform' };
+    }
+  };
+
+  const { section, title } = getPageMeta(location.pathname);
 
   const handleComingSoon = (feature: string) => {
     alert(`${feature} — this feature is not yet available in the current version.`);
@@ -34,13 +59,11 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               </li>
               <li className="flex items-center">
                 <span className="mx-2">/</span>
-                <span>Directory</span>
+                <span>{section}</span>
               </li>
             </ol>
           </nav>
-          <h1 className="mt-0.5 text-lg font-bold text-gray-900 sm:text-2xl">
-            System Supplier Directory
-          </h1>
+          <h1 className="mt-0.5 text-lg font-bold text-gray-900 sm:text-2xl">{title}</h1>
         </div>
       </div>
 
@@ -87,7 +110,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           </div>
           <div className="hidden text-sm sm:block">
             <p className="font-semibold text-gray-900">{user?.username || 'Marcus Vance'}</p>
-            <p className="text-gray-500">System Administrator</p>
+            <p className="text-xs font-medium text-gray-500">{user?.role || 'ADMINISTRATOR'}</p>
           </div>
         </div>
       </div>

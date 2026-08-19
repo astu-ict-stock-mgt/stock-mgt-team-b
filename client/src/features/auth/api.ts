@@ -14,9 +14,7 @@ export interface LoginResponse {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 
-export async function loginUser(
-  credentials: LoginRequest,
-): Promise<LoginResponse> {
+export async function loginUser(credentials: LoginRequest): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {

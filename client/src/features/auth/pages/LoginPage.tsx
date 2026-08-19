@@ -74,7 +74,7 @@ export default function LoginPage() {
       setAuthError(
         error?.response?.data?.message ||
           error?.message ||
-          'Unable to sign in. Please check your credentials and try again.',
+          'Unable to sign in. Please check your credentials and try again.'
       );
     } finally {
       setIsSubmitting(false);
@@ -208,7 +208,9 @@ export default function LoginPage() {
 
           {/* Remember device / Forgot password */}
           <div className="flex items-center justify-between gap-4">
-            <label className={`flex items-center gap-2 text-sm text-slate-600 ${isSubmitting ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+            <label
+              className={`flex items-center gap-2 text-sm text-slate-600 ${isSubmitting ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+            >
               <input
                 type="checkbox"
                 name="remember"
@@ -221,7 +223,10 @@ export default function LoginPage() {
               <span>Remember this device</span>
             </label>
 
-            <Link to="/forgot-password" className="text-sm font-medium text-slate-700 transition hover:text-slate-950 focus:underline focus:outline-none">
+            <Link
+              to="/forgot-password"
+              className="text-sm font-medium text-slate-700 transition hover:text-slate-950 focus:underline focus:outline-none"
+            >
               Forgot Password?
             </Link>
           </div>
