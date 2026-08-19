@@ -86,7 +86,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             <UserIcon className="h-6 w-6 text-gray-500" />
           </div>
           <div className="hidden text-sm sm:block">
-            <p className="font-semibold text-gray-900">{user?.name || 'Marcus Vance'}</p>
+            <p className="font-semibold text-gray-900">{user?.username || 'Marcus Vance'}</p>
             <p className="text-gray-500">System Administrator</p>
           </div>
         </div>
