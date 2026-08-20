@@ -14,6 +14,8 @@ const reportCreate = jest.fn<() => Promise<unknown>>();
 const reportFindMany = jest.fn<() => Promise<unknown[]>>();
 const reportFindUnique = jest.fn<() => Promise<unknown | null>>();
 const auditLogCreate = jest.fn<() => Promise<unknown>>();
+const warehouseFindMany = jest.fn<() => Promise<unknown[]>>();
+const categoryFindMany = jest.fn<() => Promise<unknown[]>>();
 
 jest.unstable_mockModule('../../src/generated/prisma/client.js', () => ({
   PrismaClient: jest.fn(() => ({
@@ -29,6 +31,12 @@ jest.unstable_mockModule('../../src/generated/prisma/client.js', () => ({
     },
     stockLot: {
       findMany: stockLotFindMany,
+    },
+    warehouse: {
+      findMany: warehouseFindMany,
+    },
+    category: {
+      findMany: categoryFindMany,
     },
     report: {
       create: reportCreate,
@@ -423,6 +431,95 @@ describe('Reports Module API (/api/reports)', () => {
     });
   });
 
+  describe('Data Aggregation & Analytics APIs', () => {
+    it('GET /api/reports/analytics/category-movements returns aggregated movements by category', async () => {
+      stockTransactionFindMany.mockResolvedValue(mockTransactions);
+
+      const response = await request(app)
+        .get('/api/reports/analytics/category-movements')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.status).toBe('success');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data[0].categoryName).toBe('Networking');
+      expect(response.body.data[0].totalReceivedQty).toBe(50);
+      expect(response.body.data[0].totalIssuedQty).toBe(10);
+    });
+
+    it('GET /api/reports/analytics/warehouse-movements returns aggregated statistics by warehouse', async () => {
+      warehouseFindMany.mockResolvedValue([
+        {
+          id: 'wh-001',
+          name: 'Main Warehouse',
+          location: 'Building A',
+          StockTransaction: mockTransactions,
+          Inventory: mockItemsWithLots,
+        },
+      ]);
+
+      const response = await request(app)
+        .get('/api/reports/analytics/warehouse-movements')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.status).toBe('success');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data[0].warehouseName).toBe('Main Warehouse');
+      expect(response.body.data[0].totalReceivedQty).toBe(50);
+      expect(response.body.data[0].totalValuation).toBe(4000);
+    });
+
+    it('GET /api/reports/analytics/monthly-trends returns time-series monthly trend data', async () => {
+      stockTransactionFindMany.mockResolvedValue(mockTransactions);
+
+      const response = await request(app)
+        .get('/api/reports/analytics/monthly-trends')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.status).toBe('success');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data[0].month).toBe('2026-02');
+      expect(response.body.data[0].totalReceivedValue).toBe(5000);
+      expect(response.body.data[0].totalIssuedValue).toBe(1000);
+    });
+
+    it('GET /api/reports/analytics/top-issued-items returns top issued inventory leaderboard', async () => {
+      stockTransactionFindMany.mockResolvedValue([mockTransactions[1]]);
+
+      const response = await request(app)
+        .get('/api/reports/analytics/top-issued-items?limit=5')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.status).toBe('success');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data[0].itemCode).toBe('ITM-001');
+      expect(response.body.data[0].totalQuantityIssued).toBe(10);
+    });
+
+    it('GET /api/reports/analytics/category-valuation returns FIFO valuation breakdown per category', async () => {
+      categoryFindMany.mockResolvedValue([
+        {
+          id: 'cat-001',
+          name: 'Networking',
+          Inventory: mockItemsWithLots,
+        },
+      ]);
+
+      const response = await request(app)
+        .get('/api/reports/analytics/category-valuation')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(response.body.status).toBe('success');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data[0].categoryName).toBe('Networking');
+      expect(response.body.data[0].totalFifoValuation).toBe(4000);
+    });
+  });
+
   describe('Validation Error Handling', () => {
     it('returns 400 Bad Request on invalid date format', async () => {
       await request(app)
@@ -439,3 +536,4 @@ describe('Reports Module API (/api/reports)', () => {
     });
   });
 });
+

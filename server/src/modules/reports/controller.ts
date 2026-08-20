@@ -2,8 +2,11 @@ import type { NextFunction, Request, Response } from 'express';
 import {
   createReportRecord,
   generateReportCsv,
+  getCategoryMovementAggregation,
+  getCategoryValuationAggregation,
   getInventoryValuationReport,
   getIssuingReport,
+  getMonthlyTrendsAggregation,
   getReceivingReport,
   getReportRecordById,
   getReportRecords,
@@ -11,6 +14,8 @@ import {
   getStockMovementReport,
   getStockStatusReport,
   getSupplierReport,
+  getTopIssuedItemsAggregation,
+  getWarehouseMovementAggregation,
 } from './service.ts';
 import type { ReportFilters } from './types.ts';
 
@@ -204,9 +209,82 @@ export const getReportRecordByIdHandler = async (
   }
 };
 
+// Data Aggregation & Analytics Endpoints Handlers
+export const getCategoryMovementAggregationHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const filters = extractFilters(req);
+    const data = await getCategoryMovementAggregation(filters);
+    res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getWarehouseMovementAggregationHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const filters = extractFilters(req);
+    const data = await getWarehouseMovementAggregation(filters);
+    res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMonthlyTrendsAggregationHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const filters = extractFilters(req);
+    const data = await getMonthlyTrendsAggregation(filters);
+    res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTopIssuedItemsAggregationHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+    const filters = extractFilters(req);
+    const data = await getTopIssuedItemsAggregation(limit, filters);
+    res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCategoryValuationAggregationHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const filters = extractFilters(req);
+    const data = await getCategoryValuationAggregation(filters);
+    res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Aliases for backward compatibility
 export const stockMovementReport = getStockMovementReportHandler;
 export const receivingReport = getReceivingReportHandler;
 export const issuingReport = getIssuingReportHandler;
 export const getStockTransactionSummary = getReportsSummaryHandler;
+
 

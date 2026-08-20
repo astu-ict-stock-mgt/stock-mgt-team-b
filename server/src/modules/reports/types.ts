@@ -219,3 +219,55 @@ export interface SavedReportRecord {
   fileUrl: string | null;
   createdAt: Date;
 }
+
+// Data Aggregation & Analytics Interfaces
+export interface CategoryMovementAggregation {
+  categoryId: string;
+  categoryName: string;
+  totalReceivedQty: number;
+  totalIssuedQty: number;
+  totalReceivedValue: number;
+  totalIssuedValue: number;
+  netQuantity: number;
+  totalTransactions: number;
+}
+
+export interface WarehouseMovementAggregation {
+  warehouseId: string;
+  warehouseName: string;
+  location: string | null;
+  totalReceivedQty: number;
+  totalIssuedQty: number;
+  totalTransferredQty: number;
+  totalTransactions: number;
+  totalValuation: number;
+}
+
+export interface MonthlyTrendAggregation {
+  month: string; // YYYY-MM
+  totalReceivedValue: number;
+  totalIssuedValue: number;
+  totalReceivedQty: number;
+  totalIssuedQty: number;
+  totalTransactions: number;
+}
+
+export interface TopIssuedItemAggregation {
+  inventoryItemId: string;
+  itemCode: string;
+  itemName: string;
+  categoryName: string;
+  totalQuantityIssued: number;
+  totalValueIssued: number;
+  issueTransactionCount: number;
+}
+
+export interface CategoryValuationAggregation {
+  categoryId: string;
+  categoryName: string;
+  totalItemsCount: number;
+  totalQuantityOnHand: number;
+  totalFifoValuation: number;
+  percentageOfTotalValuation: number;
+}
+
