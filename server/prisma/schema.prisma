@@ -1,0 +1,212 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider            = "prisma-client-js"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMINISTRATOR
+  PAO
+  STOREKEEPER
+  STOCK_CLERK
+  ACCOUNTANT
+  DEPARTMENT_HEAD
+  SECURITY_OFFICER
+}
+
+enum ItemState {
+  CREATED
+  AVAILABLE
+  RESERVED
+  ISSUED
+  DAMAGED
+  OBSOLETE
+  DISPOSED
+}
+
+enum TransactionType {
+  RECEIVE
+  ISSUE
+  TRANSFER
+  ADJUSTMENT
+}
+
+model User {
+  id               String             @id @default(uuid())
+  email            String             @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  role             Role
+  department       String?
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  
+  StockTransaction StockTransaction[]
+  AuditLog         AuditLog[]
+  Report           Report[]
+}
+
+model Supplier {
+  id              String             @id @default(uuid())
+  name            String
+  contactName     String?
+  email           String?
+  phone           String?
+  address         String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  
+  StockTransaction StockTransaction[]
+}
+
+model Category {
+  id          String          @id @default(uuid())
+  name        String          @unique
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  Inventory   InventoryItem[]
+}
+
+model Warehouse {
+  id               String             @id @default(uuid())
+  name             String             @unique
+  location         String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  
+  Inventory        InventoryItem[]
+  StockTransaction StockTransaction[]
+  BinCard          BinCard[]
+}
+
+model InventoryItem {
+  id           String    @id @default(uuid())
+  itemCode     String    @unique
+  name         String
+  description  String?
+  categoryId   String
+  warehouseId  String
+  state        ItemState @default(CREATED)
+  minLevel     Int       @default(0)
+  maxLevel     Int       @default(0)
+  reorderLevel Int       @default(0)
+  safetyStock  Int       @default(0)
+
+  category  Category  @relation(fields: [categoryId], references: [id])
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  StockTransaction StockTransaction[]
+  BinCard          BinCard[]
+  StockLot         StockLot[]
+}
+
+// Represents a batch/lot of received items for FIFO tracking
+model StockLot {
+  id                String   @id @default(uuid())
+  inventoryItemId   String
+  quantityReceived  Int
+  quantityRemaining Int
+  unitCost          Float
+  receivedDate      DateTime @default(now())
+  isDepleted        Boolean  @default(false)
+  
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  LotConsumptions LotConsumption[]
+}
+
+// Tracks which specific lots were consumed by an issue transaction
+model LotConsumption {
+  id                 String   @id @default(uuid())
+  stockLotId         String
+  stockTransactionId String
+  quantityConsumed   Int
+  
+  stockLot         StockLot         @relation(fields: [stockLotId], references: [id])
+  stockTransaction StockTransaction @relation(fields: [stockTransactionId], references: [id])
+  
+  createdAt DateTime @default(now())
+}
+
+model StockTransaction {
+  id              String          @id @default(uuid())
+  type            TransactionType
+  inventoryItemId String
+  warehouseId     String
+  quantity        Int
+  unitCost        Float?
+  totalValue      Float?
+  receivedDate    DateTime?
+  referenceNumber String? // Requisition number, PO number, etc
+  supplierId      String?
+  userId          String
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  warehouse     Warehouse     @relation(fields: [warehouseId], references: [id])
+  supplier      Supplier?     @relation(fields: [supplierId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  
+  LotConsumptions LotConsumption[]
+
+  createdAt DateTime @default(now())
+}
+
+model BinCard {
+  id              String   @id @default(uuid())
+  inventoryItemId String
+  warehouseId     String
+  balance         Int      @default(0)
+  lastUpdated     DateTime @default(now())
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  warehouse     Warehouse     @relation(fields: [warehouseId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([inventoryItemId, warehouseId])
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  name        String
+  type        String
+  generatedBy String
+  parameters  Json?
+  fileUrl     String?
+  
+  user User @relation(fields: [generatedBy], references: [id])
+  
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  
+  user User @relation(fields: [userId], references: [id])
+  
+  createdAt DateTime @default(now())
+}

@@ -1,16 +1,25 @@
 import { Routes, Route, Link } from 'react-router-dom';
+import ReportsPage from './features/reports/pages/ReportsPage';
 
 function Home() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16 text-center">
-      <h1 className="text-3xl text-gray-900">Stock Management System</h1>
+      <h1 className="text-3xl font-bold text-gray-900">Stock Management System</h1>
       <p className="mt-4 text-gray-600">
-        Welcome to the stock management platform. Feature modules will be added under{' '}
-        <code className="rounded bg-gray-200 px-1.5 py-0.5">client/src/features/</code>.
+        Enterprise Inventory Lifecycle & Stock Control System.
       </p>
       <nav className="mt-8 flex justify-center gap-4">
-        <Link to="/dashboard" className="bg-primary-600 rounded px-4 py-2 text-white">
+        <Link
+          to="/dashboard"
+          className="rounded-lg bg-gray-800 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
+        >
           Dashboard
+        </Link>
+        <Link
+          to="/reports"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm shadow-blue-500/20"
+        >
+          Reports & Analytics
         </Link>
       </nav>
     </div>
@@ -20,11 +29,19 @@ function Home() {
 function Dashboard() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16 text-center">
-      <h1 className="text-3xl text-gray-900">Dashboard</h1>
-      <p className="mt-4 text-gray-600">Placeholder dashboard.</p>
-      <Link to="/" className="text-primary-600 mt-8 inline-block">
-        Back home
-      </Link>
+      <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+      <p className="mt-4 text-gray-600">Central inventory monitoring and quick links.</p>
+      <div className="mt-8 flex justify-center gap-4">
+        <Link to="/" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+          ← Back home
+        </Link>
+        <Link
+          to="/reports"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          Open Reports
+        </Link>
+      </div>
     </div>
   );
 }
@@ -34,6 +51,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/reports" element={<ReportsPage />} />
     </Routes>
   );
 }
