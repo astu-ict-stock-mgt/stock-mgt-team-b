@@ -2,9 +2,12 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { AppError } from '../../middlewares/errorHandler.ts';
 import type {
+  CategoryMovementAggregation,
+  CategoryValuationAggregation,
   CreateReportRecordDto,
   InventoryValuationReportResult,
   IssuingReportResult,
+  MonthlyTrendAggregation,
   ReceivingReportResult,
   ReportFilters,
   ReportsOverviewSummary,
@@ -12,6 +15,8 @@ import type {
   StockMovementReportResult,
   StockStatusReportResult,
   SupplierReportResult,
+  TopIssuedItemAggregation,
+  WarehouseMovementAggregation,
 } from './types.ts';
 import 'dotenv/config';
 
@@ -881,6 +886,337 @@ export const getReportRecordById = async (id: string): Promise<SavedReportRecord
   };
 };
 
+/**
+ * Data Aggregation: Movement analytics grouped by Item Category
+ */
+export const getCategoryMovementAggregation = async (
+  filters: ReportFilters = {}
+): Promise<CategoryMovementAggregation[]> => {
+  const prisma = getPrisma();
+  const createdAt = buildDateFilter(filters.dateFrom, filters.dateTo);
+
+  const where: Record<string, unknown> = {};
+  if (createdAt) where.createdAt = createdAt;
+  if (filters.warehouseId) where.warehouseId = filters.warehouseId;
+
+  const transactions = await prisma.stockTransaction.findMany({
+    where,
+    include: {
+      inventoryItem: {
+        include: {
+          category: true,
+        },
+      },
+    },
+  });
+
+  const categoryMap = new Map<
+    string,
+    {
+      categoryId: string;
+      categoryName: string;
+      totalReceivedQty: number;
+      totalIssuedQty: number;
+      totalReceivedValue: number;
+      totalIssuedValue: number;
+      netQuantity: number;
+      totalTransactions: number;
+    }
+  >();
+
+  for (const t of transactions) {
+    const catId = t.inventoryItem?.categoryId || 'uncategorized';
+    const catName = t.inventoryItem?.category?.name || 'Uncategorized';
+    const qty = t.quantity || 0;
+    const val = t.totalValue ?? (t.unitCost ? t.unitCost * qty : 0);
+
+    if (!categoryMap.has(catId)) {
+      categoryMap.set(catId, {
+        categoryId: catId,
+        categoryName: catName,
+        totalReceivedQty: 0,
+        totalIssuedQty: 0,
+        totalReceivedValue: 0,
+        totalIssuedValue: 0,
+        netQuantity: 0,
+        totalTransactions: 0,
+      });
+    }
+
+    const entry = categoryMap.get(catId)!;
+    entry.totalTransactions += 1;
+
+    if (t.type === 'RECEIVE') {
+      entry.totalReceivedQty += qty;
+      entry.totalReceivedValue += val;
+      entry.netQuantity += qty;
+    } else if (t.type === 'ISSUE') {
+      entry.totalIssuedQty += qty;
+      entry.totalIssuedValue += val;
+      entry.netQuantity -= qty;
+    } else if (t.type === 'ADJUSTMENT') {
+      entry.netQuantity += qty;
+    }
+  }
+
+  return Array.from(categoryMap.values()).map((c) => ({
+    ...c,
+    totalReceivedValue: Math.round(c.totalReceivedValue * 100) / 100,
+    totalIssuedValue: Math.round(c.totalIssuedValue * 100) / 100,
+  }));
+};
+
+/**
+ * Data Aggregation: Movement and valuation analytics grouped by Warehouse
+ */
+export const getWarehouseMovementAggregation = async (
+  filters: ReportFilters = {}
+): Promise<WarehouseMovementAggregation[]> => {
+  const prisma = getPrisma();
+  const createdAt = buildDateFilter(filters.dateFrom, filters.dateTo);
+
+  const warehouses = await prisma.warehouse.findMany({
+    include: {
+      StockTransaction: {
+        where: createdAt ? { createdAt } : {},
+      },
+      Inventory: {
+        include: {
+          StockLot: {
+            where: { quantityRemaining: { gt: 0 } },
+          },
+        },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  return warehouses.map((wh) => {
+    let totalReceivedQty = 0;
+    let totalIssuedQty = 0;
+    let totalTransferredQty = 0;
+
+    (wh.StockTransaction || []).forEach((t) => {
+      if (t.type === 'RECEIVE') totalReceivedQty += t.quantity;
+      else if (t.type === 'ISSUE') totalIssuedQty += t.quantity;
+      else if (t.type === 'TRANSFER') totalTransferredQty += t.quantity;
+    });
+
+    let totalValuation = 0;
+    (wh.Inventory || []).forEach((item) => {
+      (item.StockLot || []).forEach((lot) => {
+        totalValuation += lot.quantityRemaining * lot.unitCost;
+      });
+    });
+
+    return {
+      warehouseId: wh.id,
+      warehouseName: wh.name,
+      location: wh.location,
+      totalReceivedQty,
+      totalIssuedQty,
+      totalTransferredQty,
+      totalTransactions: (wh.StockTransaction || []).length,
+      totalValuation: Math.round(totalValuation * 100) / 100,
+    };
+  });
+};
+
+/**
+ * Data Aggregation: Time-series monthly trends for received vs issued metrics
+ */
+export const getMonthlyTrendsAggregation = async (
+  filters: ReportFilters = {}
+): Promise<MonthlyTrendAggregation[]> => {
+  const prisma = getPrisma();
+  const createdAt = buildDateFilter(filters.dateFrom, filters.dateTo);
+
+  const where: Record<string, unknown> = {};
+  if (createdAt) where.createdAt = createdAt;
+  if (filters.warehouseId) where.warehouseId = filters.warehouseId;
+
+  const transactions = await prisma.stockTransaction.findMany({
+    where,
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const monthMap = new Map<
+    string,
+    {
+      month: string;
+      totalReceivedValue: number;
+      totalIssuedValue: number;
+      totalReceivedQty: number;
+      totalIssuedQty: number;
+      totalTransactions: number;
+    }
+  >();
+
+  for (const t of transactions) {
+    const d = new Date(t.createdAt);
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const qty = t.quantity || 0;
+    const val = t.totalValue ?? (t.unitCost ? t.unitCost * qty : 0);
+
+    if (!monthMap.has(monthKey)) {
+      monthMap.set(monthKey, {
+        month: monthKey,
+        totalReceivedValue: 0,
+        totalIssuedValue: 0,
+        totalReceivedQty: 0,
+        totalIssuedQty: 0,
+        totalTransactions: 0,
+      });
+    }
+
+    const entry = monthMap.get(monthKey)!;
+    entry.totalTransactions += 1;
+
+    if (t.type === 'RECEIVE') {
+      entry.totalReceivedQty += qty;
+      entry.totalReceivedValue += val;
+    } else if (t.type === 'ISSUE') {
+      entry.totalIssuedQty += qty;
+      entry.totalIssuedValue += val;
+    }
+  }
+
+  return Array.from(monthMap.values()).map((m) => ({
+    ...m,
+    totalReceivedValue: Math.round(m.totalReceivedValue * 100) / 100,
+    totalIssuedValue: Math.round(m.totalIssuedValue * 100) / 100,
+  }));
+};
+
+/**
+ * Data Aggregation: Top issued inventory items by quantity and financial value
+ */
+export const getTopIssuedItemsAggregation = async (
+  limit = 10,
+  filters: ReportFilters = {}
+): Promise<TopIssuedItemAggregation[]> => {
+  const prisma = getPrisma();
+  const createdAt = buildDateFilter(filters.dateFrom, filters.dateTo);
+
+  const where: Record<string, unknown> = {
+    type: 'ISSUE',
+  };
+  if (createdAt) where.createdAt = createdAt;
+  if (filters.warehouseId) where.warehouseId = filters.warehouseId;
+
+  const transactions = await prisma.stockTransaction.findMany({
+    where,
+    include: {
+      inventoryItem: {
+        include: {
+          category: true,
+        },
+      },
+    },
+  });
+
+  const itemMap = new Map<
+    string,
+    {
+      inventoryItemId: string;
+      itemCode: string;
+      itemName: string;
+      categoryName: string;
+      totalQuantityIssued: number;
+      totalValueIssued: number;
+      issueTransactionCount: number;
+    }
+  >();
+
+  for (const t of transactions) {
+    const itemId = t.inventoryItemId;
+    const qty = t.quantity || 0;
+    const val = t.totalValue ?? (t.unitCost ? t.unitCost * qty : 0);
+
+    if (!itemMap.has(itemId)) {
+      itemMap.set(itemId, {
+        inventoryItemId: itemId,
+        itemCode: t.inventoryItem?.itemCode || 'N/A',
+        itemName: t.inventoryItem?.name || 'Unknown Item',
+        categoryName: t.inventoryItem?.category?.name || 'Uncategorized',
+        totalQuantityIssued: 0,
+        totalValueIssued: 0,
+        issueTransactionCount: 0,
+      });
+    }
+
+    const entry = itemMap.get(itemId)!;
+    entry.issueTransactionCount += 1;
+    entry.totalQuantityIssued += qty;
+    entry.totalValueIssued += val;
+  }
+
+  return Array.from(itemMap.values())
+    .sort((a, b) => b.totalQuantityIssued - a.totalQuantityIssued)
+    .slice(0, limit)
+    .map((item) => ({
+      ...item,
+      totalValueIssued: Math.round(item.totalValueIssued * 100) / 100,
+    }));
+};
+
+/**
+ * Data Aggregation: FIFO valuation breakdown grouped by Category
+ */
+export const getCategoryValuationAggregation = async (
+  filters: ReportFilters = {}
+): Promise<CategoryValuationAggregation[]> => {
+  const prisma = getPrisma();
+
+  const categories = await prisma.category.findMany({
+    include: {
+      Inventory: {
+        where: filters.warehouseId ? { warehouseId: filters.warehouseId } : {},
+        include: {
+          StockLot: {
+            where: { quantityRemaining: { gt: 0 } },
+          },
+        },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  let grandTotalFifoValuation = 0;
+
+  const results = categories.map((cat) => {
+    let totalQuantityOnHand = 0;
+    let totalFifoValuation = 0;
+
+    (cat.Inventory || []).forEach((item) => {
+      (item.StockLot || []).forEach((lot) => {
+        totalQuantityOnHand += lot.quantityRemaining;
+        totalFifoValuation += lot.quantityRemaining * lot.unitCost;
+      });
+    });
+
+    grandTotalFifoValuation += totalFifoValuation;
+
+    return {
+      categoryId: cat.id,
+      categoryName: cat.name,
+      totalItemsCount: (cat.Inventory || []).length,
+      totalQuantityOnHand,
+      totalFifoValuation: Math.round(totalFifoValuation * 100) / 100,
+      percentageOfTotalValuation: 0, // Calculated below
+    };
+  });
+
+  return results.map((r) => ({
+    ...r,
+    percentageOfTotalValuation:
+      grandTotalFifoValuation > 0
+        ? Math.round((r.totalFifoValuation / grandTotalFifoValuation) * 1000) / 10
+        : 0,
+  }));
+};
+
 // Alias for lowercase casing
 export const getstockMovementReport = getStockMovementReport;
+
 

@@ -3,8 +3,11 @@ import { requireAuth, requireRole } from '../../middlewares/rbac.ts';
 import {
   createReportRecordHandler,
   exportReportHandler,
+  getCategoryMovementAggregationHandler,
+  getCategoryValuationAggregationHandler,
   getInventoryValuationReportHandler,
   getIssuingReportHandler,
+  getMonthlyTrendsAggregationHandler,
   getReceivingReportHandler,
   getReportRecordByIdHandler,
   getReportRecordsHandler,
@@ -12,6 +15,8 @@ import {
   getStockMovementReportHandler,
   getStockStatusReportHandler,
   getSupplierReportHandler,
+  getTopIssuedItemsAggregationHandler,
+  getWarehouseMovementAggregationHandler,
 } from './controller.ts';
 import {
   validateCreateReport,
@@ -46,6 +51,13 @@ router.get('/issuing', validateReportFilters, getIssuingReportHandler);
 router.get('/valuation', validateReportFilters, getInventoryValuationReportHandler);
 router.get('/suppliers', validateReportFilters, getSupplierReportHandler);
 router.get('/stock-status', validateReportFilters, getStockStatusReportHandler);
+
+// Data Aggregation & Analytical APIs (Issue: Build data aggregation apis for reports)
+router.get('/analytics/category-movements', validateReportFilters, getCategoryMovementAggregationHandler);
+router.get('/analytics/warehouse-movements', validateReportFilters, getWarehouseMovementAggregationHandler);
+router.get('/analytics/monthly-trends', validateReportFilters, getMonthlyTrendsAggregationHandler);
+router.get('/analytics/top-issued-items', validateReportFilters, getTopIssuedItemsAggregationHandler);
+router.get('/analytics/category-valuation', validateReportFilters, getCategoryValuationAggregationHandler);
 
 // Report export (CSV / JSON)
 router.get('/export', validateExportQuery, exportReportHandler);
