@@ -1,10 +1,4 @@
-import {Router} from "express";
-import { getStockTransactionSummary } from "./reports.controller.ts";
-
-const router = Router();
-
-router.get("/summary",
-    getStockTransactionSummary
-);
+import router from './routes.ts';
 
 export default router;
+export * from './routes.ts';

@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import authRoutes from '../modules/auth/routes.ts';
-import stockReceivingRoutes from '../modules/stock-receiving/routes.ts';
+import reportsRoutes from '../modules/reports/routes.ts';
 
 const router = Router();
 
-router.use('/auth', authRoutes);
-router.use('/stock-receiving', stockReceivingRoutes);
+// Mount reports module router under /reports (SRS Section 3.1 & 4.4.8)
+router.use('/reports', reportsRoutes);
 
 export default router;
