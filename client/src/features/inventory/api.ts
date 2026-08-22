@@ -66,7 +66,7 @@ export const inventoryApi = {
     if (filters?.category) params.append('category', filters.category);
     if (filters?.page) params.append('page', String(filters.page || 1));
     if (filters?.limit) params.append('limit', String(filters.limit || 10));
-    
+
     const response = await axios.get(`${API_BASE}/inventory?${params.toString()}`);
     return response.data;
   },
@@ -115,7 +115,7 @@ export const inventoryApi = {
 export const inventoryKeys = {
   all: ['inventory'] as const,
   lists: () => [...inventoryKeys.all, 'list'] as const,
-  list: (filters?: any) => [...inventoryKeys.lists(), { filters }] as const,
+  list: (filters?: InventoryFilters) => [...inventoryKeys.lists(), { filters }] as const,
   details: () => [...inventoryKeys.all, 'detail'] as const,
   detail: (id: string) => [...inventoryKeys.details(), id] as const,
   lots: (itemId: string) => [...inventoryKeys.detail(itemId), 'lots'] as const,

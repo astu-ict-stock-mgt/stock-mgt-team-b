@@ -1,7 +1,7 @@
 // client/src/features/inventory/hooks.ts
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { inventoryApi, inventoryKeys, InventoryFilters } from './api';
+import { inventoryApi, inventoryKeys, InventoryFilters, InventoryItem } from './api';
 
 // ============================================================
 // QUERY HOOKS
@@ -49,7 +49,7 @@ export const useCreateInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<any>) => inventoryApi.create(data),
+    mutationFn: (data: Partial<InventoryItem>) => inventoryApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
     },
@@ -60,7 +60,7 @@ export const useUpdateInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<InventoryItem> }) =>
       inventoryApi.update(id, data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });

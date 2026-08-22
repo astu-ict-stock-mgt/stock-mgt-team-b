@@ -87,6 +87,7 @@ export function useReportsData() {
   }, [filters]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, [loadData]);
 
@@ -103,7 +104,7 @@ export function useReportsData() {
   };
 
   const saveReport = async (name: string, type: string) => {
-    const newReport = await createReport({ name, type, parameters: filters as any });
+    const newReport = await createReport({ name, type, parameters: { ...filters } });
     setHistory((prev) => [newReport, ...prev]);
   };
 

@@ -35,7 +35,7 @@ export default function ReportsPage() {
     saveReport,
   } = useReportsData();
 
-  const tabs: { id: ReportType; label: string; count?: number } = [
+  const tabs: { id: ReportType; label: string; count?: number }[] = [
     { id: 'overview', label: 'Dashboard Overview' },
     {
       id: 'stock-movement',
@@ -52,7 +52,7 @@ export default function ReportsPage() {
       count: stockStatus?.summary.lowStockItemsCount,
     },
     { id: 'history', label: 'Archive & History', count: history.length },
-  ] as any;
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50/50 pb-12">
@@ -64,21 +64,21 @@ export default function ReportsPage() {
         loading={loading}
       />
 
-      <div className="mx-auto max-w-7xl px-4 py-6 space-y-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
         {/* KPI Summary Cards */}
         <ReportSummaryCards summary={summary} loading={loading} />
 
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 bg-white px-3 py-2 rounded-2xl shadow-xs">
+        <div className="rounded-2xl border-b border-gray-200 bg-white px-3 py-2 shadow-xs">
           <nav className="flex space-x-2 overflow-x-auto pb-1 text-xs font-semibold sm:text-sm">
-            {tabs.map((tab: any) => {
+            {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 whitespace-nowrap transition-all cursor-pointer ${
+                  className={`inline-flex cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 whitespace-nowrap transition-all ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -135,35 +135,19 @@ export default function ReportsPage() {
           )}
 
           {activeTab === 'valuation' && (
-            <ValuationReportTable
-              data={valuation}
-              loading={loading}
-              searchQuery={filters.search}
-            />
+            <ValuationReportTable data={valuation} loading={loading} searchQuery={filters.search} />
           )}
 
           {activeTab === 'receiving' && (
-            <ReceivingReportTable
-              data={receiving}
-              loading={loading}
-              searchQuery={filters.search}
-            />
+            <ReceivingReportTable data={receiving} loading={loading} searchQuery={filters.search} />
           )}
 
           {activeTab === 'issuing' && (
-            <IssuingReportTable
-              data={issuing}
-              loading={loading}
-              searchQuery={filters.search}
-            />
+            <IssuingReportTable data={issuing} loading={loading} searchQuery={filters.search} />
           )}
 
           {activeTab === 'suppliers' && (
-            <SupplierReportTable
-              data={suppliers}
-              loading={loading}
-              searchQuery={filters.search}
-            />
+            <SupplierReportTable data={suppliers} loading={loading} searchQuery={filters.search} />
           )}
 
           {activeTab === 'stock-status' && (
@@ -175,11 +159,7 @@ export default function ReportsPage() {
           )}
 
           {activeTab === 'history' && (
-            <GeneratedReportsHistory
-              history={history}
-              loading={loading}
-              onExportCsv={exportCsv}
-            />
+            <GeneratedReportsHistory history={history} loading={loading} onExportCsv={exportCsv} />
           )}
         </div>
       </div>

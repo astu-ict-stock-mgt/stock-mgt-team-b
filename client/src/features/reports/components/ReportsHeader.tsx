@@ -5,12 +5,7 @@ interface ReportsHeaderProps {
   loading: boolean;
 }
 
-export function ReportsHeader({
-  onOpenExport,
-  onPrint,
-  onRefresh,
-  loading,
-}: ReportsHeaderProps) {
+export function ReportsHeader({ onOpenExport, onPrint, onRefresh, loading }: ReportsHeaderProps) {
   return (
     <div className="flex flex-col gap-4 border-b border-gray-200 bg-white px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
@@ -46,7 +41,7 @@ export function ReportsHeader({
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-xs transition-colors hover:bg-gray-50 disabled:opacity-50"
         >
           <svg
             className={`h-4 w-4 text-gray-500 ${loading ? 'animate-spin' : ''}`}
@@ -67,7 +62,7 @@ export function ReportsHeader({
         <button
           type="button"
           onClick={onPrint}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50 transition-colors"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-xs transition-colors hover:bg-gray-50"
         >
           <svg
             className="h-4 w-4 text-gray-500"
@@ -88,7 +83,7 @@ export function ReportsHeader({
         <button
           type="button"
           onClick={onOpenExport}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors shadow-blue-500/20"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm shadow-blue-500/20 transition-colors hover:bg-blue-700"
         >
           <svg
             className="h-4 w-4 text-white"
