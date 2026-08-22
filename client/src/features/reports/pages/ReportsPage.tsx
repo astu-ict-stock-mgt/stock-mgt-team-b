@@ -35,7 +35,7 @@ export default function ReportsPage() {
     saveReport,
   } = useReportsData();
 
-  const tabs: { id: ReportType; label: string; count?: number } = [
+  const tabs: { id: ReportType; label: string; count?: number }[] = [
     { id: 'overview', label: 'Dashboard Overview' },
     {
       id: 'stock-movement',
@@ -52,7 +52,7 @@ export default function ReportsPage() {
       count: stockStatus?.summary.lowStockItemsCount,
     },
     { id: 'history', label: 'Archive & History', count: history.length },
-  ] as any;
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50/50 pb-12">
