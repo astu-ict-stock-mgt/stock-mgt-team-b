@@ -5,6 +5,7 @@ import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage';
 import { AuthProvider } from './context/AuthContext';
 import SuppliersPage from './features/suppliers/pages/SuppliersPage';
 import UsersPage from './features/users/pages/UsersPage';
+import { DashboardPage } from './features/stock-monitoring/pages/DashboardPage';
 import AuditLogPage from './features/audit-log/pages/AuditLogPage';
 import { Layout } from './components/Layout';
 import { PlaceholderPage } from './components/PlaceholderPage';
@@ -127,7 +128,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            <Route path="/dashboard" element={<PlaceholderPage title="Dashboard" />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/roles" element={<PlaceholderPage title="Roles & Permissions" />} />
             <Route path="/inventory" element={<PlaceholderPage title="Inventory Management" />} />
