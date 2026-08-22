@@ -7,6 +7,7 @@ import SuppliersPage from './features/suppliers/pages/SuppliersPage';
 import UsersPage from './features/users/pages/UsersPage';
 import { DashboardPage } from './features/stock-monitoring/pages/DashboardPage';
 import AuditLogPage from './features/audit-log/pages/AuditLogPage';
+import { StockTakingPage } from './features/stock-taking/pages/StockTakingPage';
 import { Layout } from './components/Layout';
 import { PlaceholderPage } from './components/PlaceholderPage';
 import { TransferForm } from './features/stock-transfer/components/TransferForm';
@@ -132,6 +133,7 @@ export default function App() {
             <Route path="/users" element={<UsersPage />} />
             <Route path="/roles" element={<PlaceholderPage title="Roles & Permissions" />} />
             <Route path="/inventory" element={<PlaceholderPage title="Inventory Management" />} />
+            <Route path="/stock-taking" element={<StockTakingPage />} />
             <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
             <Route path="/audit-log" element={<AuditLogPage />} />
             <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
