@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useCreateWriteOff, useInventoryItems, useApprovalAuthority } from '../hooks';
 import { getReasonCodes } from '../api';
+import type { WriteOffRequest } from '../api';
 
 interface WriteOffFormProps {
   onSuccess?: () => void;
@@ -10,11 +11,11 @@ interface WriteOffFormProps {
 }
 
 export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Omit<WriteOffRequest, 'id' | 'requestedAt'>>({
     itemId: '',
     itemName: '',
     quantity: 0,
-    reasonCode: 'DAMAGED' as const,
+    reasonCode: 'DAMAGED',
     reasonDescription: '',
     notes: '',
   });
@@ -24,7 +25,7 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
 
   const createWriteOff = useCreateWriteOff();
   const { data: items = [], isLoading: itemsLoading } = useInventoryItems();
-  const { isAuthorized, userRole } = useApprovalAuthority();
+  const { isAuthorized } = useApprovalAuthority();
   const reasonCodes = getReasonCodes();
 
   const handleSubmit = async (e: React.FormEvent) => {
