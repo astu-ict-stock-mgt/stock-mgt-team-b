@@ -3,10 +3,10 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import LoginPage from './features/auth/pages/LoginPage';
 import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage';
 import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './features/auth/components/ProtectedRoute';
 import SuppliersPage from './features/suppliers/pages/SuppliersPage';
 import UsersPage from './features/users/pages/UsersPage';
 import { DashboardPage } from './features/stock-monitoring/pages/DashboardPage';
+import AuditLogPage from './features/audit-log/pages/AuditLogPage';
 import { Layout } from './components/Layout';
 import { PlaceholderPage } from './components/PlaceholderPage';
 import { TransferForm } from './features/stock-transfer/components/TransferForm';
@@ -113,6 +113,8 @@ function StockTransferView() {
   );
 }
 
+import ProtectedRoute from './features/auth/components/ProtectedRoute';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -130,12 +132,12 @@ export default function App() {
             <Route path="/users" element={<UsersPage />} />
             <Route path="/roles" element={<PlaceholderPage title="Roles & Permissions" />} />
             <Route path="/inventory" element={<PlaceholderPage title="Inventory Management" />} />
-            <Route path="/stock-transfer" element={<StockTransferView />} />
             <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
-            <Route path="/audit-log" element={<PlaceholderPage title="Audit Logs" />} />
+            <Route path="/audit-log" element={<AuditLogPage />} />
             <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
 
             <Route path="/suppliers" element={<SuppliersPage />} />
+            <Route path="/stock-transfer" element={<StockTransferView />} />
 
             <Route path="*" element={<PlaceholderPage title="Page Not Found" />} />
           </Route>
