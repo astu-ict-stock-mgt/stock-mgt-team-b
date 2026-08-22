@@ -13,3 +13,7 @@ coverage
 .claude/
 .windsurf/
 skills-lock.json
+
+.env.save
+# Seed file
+src/seed.ts
