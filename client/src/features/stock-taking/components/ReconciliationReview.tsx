@@ -1,13 +1,11 @@
 import { useStockTakeItems, useProcessStockTake } from '../hooks';
 import { useAuth } from '../../auth/hooks';
-import { Check, X, ArrowRight } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useState } from 'react';
 
 export function ReconciliationReview() {
   const { user } = useAuth();
   const [notes, setNotes] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  
   const { data, isLoading, isError } = useStockTakeItems('pending');
   const { mutate: processStockTake, isPending } = useProcessStockTake();
 
@@ -18,28 +16,32 @@ export function ReconciliationReview() {
 
   const handleDecision = (id: string, action: 'approve' | 'reject') => {
     if (!canApprove) return;
-    processStockTake({ id, action, notes: notes.trim() || undefined }, {
-      onSuccess: () => {
-        setSelectedId(null);
-        setNotes('');
+    processStockTake(
+      { id, action, notes: notes.trim() || undefined },
+      {
+        onSuccess: () => {
+          setNotes('');
+        },
       }
-    });
+    );
   };
 
-  if (isLoading) return <div className="text-center py-6 text-gray-400">Loading pending reconciliations...</div>;
-  if (isError) return <div className="text-center py-6 text-red-500">Failed to load pending items.</div>;
-  
+  if (isLoading)
+    return <div className="py-6 text-center text-gray-400">Loading pending reconciliations...</div>;
+  if (isError)
+    return <div className="py-6 text-center text-red-500">Failed to load pending items.</div>;
+
   if (!canApprove) {
     return (
-      <div className="p-6 text-center text-gray-400 bg-white rounded-xl border border-gray-100 shadow-sm">
+      <div className="rounded-xl border border-gray-100 bg-white p-6 text-center text-gray-400 shadow-sm">
         You do not have permission to review and approve reconciliations.
       </div>
     );
   }
 
   return (
-    <div className="w-full rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-200">
+    <div className="w-full overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+      <div className="border-b border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-800">Reconciliation Review</h2>
         <p className="text-sm text-gray-500">Review submitted counts and authorize corrections.</p>
       </div>
@@ -48,12 +50,24 @@ export function ReconciliationReview() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">System</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actual</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discrepancy</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Item
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                System
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Actual
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Discrepancy
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Reason
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
@@ -63,16 +77,30 @@ export function ReconciliationReview() {
                 <tr key={item.id} className="hover:bg-gray-50/50">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.itemName}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.systemQuantity}</td>
-                  <td className="px-6 py-4 text-sm font-semibold text-blue-600">{item.actualQuantity}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-blue-600">
+                    {item.actualQuantity}
+                  </td>
                   <td className="px-6 py-4 text-sm">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      discrepancy > 0 ? 'bg-red-100 text-red-700' : 
-                      discrepancy < 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
-                    }`}>
-                      {discrepancy === 0 ? '0' : (discrepancy > 0 ? `-${discrepancy}` : `+${Math.abs(discrepancy)}`)}
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        discrepancy > 0
+                          ? 'bg-red-100 text-red-700'
+                          : discrepancy < 0
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-green-100 text-green-700'
+                      }`}
+                    >
+                      {discrepancy === 0
+                        ? '0'
+                        : discrepancy > 0
+                          ? `-${discrepancy}`
+                          : `+${Math.abs(discrepancy)}`}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={item.submittedReason}>
+                  <td
+                    className="max-w-[200px] truncate px-6 py-4 text-sm text-gray-500"
+                    title={item.submittedReason}
+                  >
                     {item.submittedReason || '—'}
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -97,21 +125,27 @@ export function ReconciliationReview() {
               );
             })}
             {items.length === 0 && (
-              <tr><td colSpan={6} className="py-8 text-center text-sm text-gray-400">No pending reconciliations.</td></tr>
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-sm text-gray-400">
+                  No pending reconciliations.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
 
       {/* Optional Note Field for Approver */}
-      <div className="border-t border-gray-200 bg-gray-50 p-6 flex items-end justify-end gap-4">
-        <div className="flex-1 max-w-sm">
-          <label htmlFor="approverNotes" className="block text-xs font-medium text-gray-500 mb-1">Approver Notes (Optional)</label>
+      <div className="flex items-end justify-end gap-4 border-t border-gray-200 bg-gray-50 p-6">
+        <div className="max-w-sm flex-1">
+          <label htmlFor="approverNotes" className="mb-1 block text-xs font-medium text-gray-500">
+            Approver Notes (Optional)
+          </label>
           <input
             id="approverNotes"
             type="text"
             placeholder="e.g. Checked physical stock, OK."
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+            className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
