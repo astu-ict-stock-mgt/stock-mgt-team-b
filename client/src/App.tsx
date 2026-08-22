@@ -15,6 +15,7 @@ import { PlaceholderPage } from './components/PlaceholderPage';
 import ReportsPage from './features/reports/pages/ReportsPage';
 import { InventoryTable } from './features/inventory/components/InventoryTable';
 import { ItemDetailView } from './features/inventory/components/ItemDetailView';
+import { IssuingView } from './features/stock-issuing/components/IssuingView';
 
 function Home() {
   return (
@@ -59,6 +60,9 @@ export default function App() {
             <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/suppliers" element={<SuppliersPage />} />
+
+            {/* Stock Issuing & Requisitions Route */}
+            <Route path="/stock-issuing" element={<IssuingView />} />
 
             {/* Inventory Routes - Feven-korso */}
             <Route path="/inventory" element={<InventoryTable />} />

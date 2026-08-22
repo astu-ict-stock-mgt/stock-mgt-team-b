@@ -39,6 +39,11 @@ enum TransactionType {
   ADJUSTMENT
 }
 
+enum InspectionStatus {
+  ACCEPTED
+  REJECTED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -50,21 +55,11 @@ model User {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  id               String             @id @default(uuid())
-  email            String             @unique
-  passwordHash     String
-  firstName        String
-  lastName         String
-  role             Role
-  department       String?
-  isActive         Boolean            @default(true)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
   
   StockTransaction StockTransaction[]
   auditLogs        AuditLog[]
   reports          Report[]
+  goodsReceivingNotes GoodsReceivingNote[]
 }
 
 model Supplier {
@@ -78,6 +73,7 @@ model Supplier {
   updatedAt   DateTime @updatedAt
 
   stockTransactions StockTransaction[]
+  goodsReceivingNotes GoodsReceivingNote[]
 }
 
 model Category {
@@ -100,6 +96,41 @@ model Warehouse {
   Inventory        InventoryItem[]
   StockTransaction StockTransaction[]
   BinCard          BinCard[]
+  goodsReceivingNotes GoodsReceivingNote[]
+}
+
+model GoodsReceivingNote {
+  id           String   @id @default(uuid())
+  grnNumber    String   @unique
+  supplierId   String
+  warehouseId  String
+  receivedDate DateTime @default(now())
+  receivedBy   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  supplier  Supplier               @relation(fields: [supplierId], references: [id])
+  warehouse Warehouse              @relation(fields: [warehouseId], references: [id])
+  user      User                   @relation(fields: [receivedBy], references: [id])
+  items     GoodsReceivingNoteItem[]
+}
+
+model GoodsReceivingNoteItem {
+  id               String           @id @default(uuid())
+  grnId            String
+  inventoryItemId  String
+  quantity         Int
+  unitCost         Float
+  inspectionStatus InspectionStatus
+  rejectionReason  String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  goodsReceivingNote GoodsReceivingNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  inventoryItem     InventoryItem       @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([grnId])
+  @@index([inventoryItemId])
 }
 
 model InventoryItem {
@@ -124,6 +155,7 @@ model InventoryItem {
   StockTransaction StockTransaction[]
   BinCard          BinCard[]
   StockLot         StockLot[]
+  goodsReceivingNoteItems GoodsReceivingNoteItem[]
 }
 
 // Represents a batch/lot of received items for FIFO tracking
