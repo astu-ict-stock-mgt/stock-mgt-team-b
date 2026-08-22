@@ -1,5 +1,33 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { useState } from 'react';
+
+import { Navigate, Route, Routes } from 'react-router-dom';
+
+import LoginPage from './features/auth/pages/LoginPage';
+
+import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage';
+
+import { AuthProvider } from './context/AuthContext';
+
+import SuppliersPage from './features/suppliers/pages/SuppliersPage';
+
+import UsersPage from './features/users/pages/UsersPage';
+
+import { DashboardPage } from './features/stock-monitoring/pages/DashboardPage';
+
+import AuditLogPage from './features/audit-log/pages/AuditLogPage';
+
+import { StockTakingPage } from './features/stock-taking/pages/StockTakingPage';
+
+import { Layout } from './components/Layout';
+
+import { PlaceholderPage } from './components/PlaceholderPage';
+
+import { TransferForm } from './features/stock-transfer/components/TransferForm';
+
+import { TransferHistory } from './features/stock-transfer/components/TransferHistory';
+
 import ReportsPage from './features/reports/pages/ReportsPage';
+
 
 function Home() {
   return (
@@ -46,12 +74,43 @@ function Dashboard() {
   );
 }
 
+import ProtectedRoute from './features/auth/components/ProtectedRoute';
+
 export default function App() {
-  return (
+  return
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/reports" element={<ReportsPage />} />
     </Routes>
+    <AuthProvider>
+      <Routes>
+        {/* Public authentication routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+        {/* Protected application routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/users" element={<UsersPage />} />
+            <Route path="/roles" element={<PlaceholderPage title="Roles & Permissions" />} />
+            <Route path="/inventory" element={<PlaceholderPage title="Inventory Management" />} />
+            <Route path="/stock-taking" element={<StockTakingPage />} />
+            <Route path="/audit-log" element={<AuditLogPage />} />
+            <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+            <Route path="/reports" element={<ReportsPage />} />
+
+            <Route path="/suppliers" element={<SuppliersPage />} />
+            <Route path="/stock-transfer" element={<StockTransferView />} />
+
+            <Route path="*" element={<PlaceholderPage title="Page Not Found" />} />
+          </Route>
+        </Route>
+      </Routes>
+    </AuthProvider>
+
   );
 }

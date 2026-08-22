@@ -51,6 +51,17 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  id               String             @id @default(uuid())
+  email            String             @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  role             Role
+  department       String?
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  
   StockTransaction StockTransaction[]
   auditLogs        AuditLog[]
   reports          Report[]
