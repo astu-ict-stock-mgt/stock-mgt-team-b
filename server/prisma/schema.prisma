@@ -39,11 +39,6 @@ enum TransactionType {
   ADJUSTMENT
 }
 
-enum InspectionStatus {
-  ACCEPTED
-  REJECTED
-}
-
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -52,13 +47,24 @@ model User {
   lastName     String
   role         Role
   department   String?
+  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  StockTransaction   StockTransaction[]
-  AuditLog           AuditLog[]
-  Report             Report[]
-  GoodsReceivingNote GoodsReceivingNote[]
+  id               String             @id @default(uuid())
+  email            String             @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  role             Role
+  department       String?
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  
+  StockTransaction StockTransaction[]
+  auditLogs        AuditLog[]
+  reports          Report[]
 }
 
 model Supplier {
@@ -71,8 +77,7 @@ model Supplier {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  StockTransaction   StockTransaction[]
-  GoodsReceivingNote GoodsReceivingNote[]
+  stockTransactions StockTransaction[]
 }
 
 model Category {
@@ -92,10 +97,9 @@ model Warehouse {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  Inventory          InventoryItem[]
-  StockTransaction   StockTransaction[]
-  BinCard            BinCard[]
-  GoodsReceivingNote GoodsReceivingNote[]
+  Inventory        InventoryItem[]
+  StockTransaction StockTransaction[]
+  BinCard          BinCard[]
 }
 
 model InventoryItem {
@@ -117,12 +121,12 @@ model InventoryItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  StockTransaction       StockTransaction[]
-  BinCard                BinCard[]
-  StockLot               StockLot[]
-  GoodsReceivingNoteItem GoodsReceivingNoteItem[]
+  StockTransaction StockTransaction[]
+  BinCard          BinCard[]
+  StockLot         StockLot[]
 }
 
+// Represents a batch/lot of received items for FIFO tracking
 model StockLot {
   id                String   @id @default(uuid())
   inventoryItemId   String
@@ -216,39 +220,4 @@ model AuditLog {
   user User @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
-}
-
-model GoodsReceivingNote {
-  id           String   @id @default(uuid())
-  grnNumber    String   @unique
-  supplierId   String
-  warehouseId  String
-  receivedDate DateTime @default(now())
-  receivedBy   String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  supplier  Supplier  @relation(fields: [supplierId], references: [id])
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
-  user      User      @relation(fields: [receivedBy], references: [id])
-
-  items GoodsReceivingNoteItem[]
-}
-
-model GoodsReceivingNoteItem {
-  id               String           @id @default(uuid())
-  grnId            String
-  inventoryItemId  String
-  quantity         Int
-  unitCost         Float
-  inspectionStatus InspectionStatus
-  rejectionReason  String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-
-  grn           GoodsReceivingNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
-  inventoryItem InventoryItem      @relation(fields: [inventoryItemId], references: [id])
-
-  @@index([grnId])
-  @@index([inventoryItemId])
 }

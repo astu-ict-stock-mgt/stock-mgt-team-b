@@ -85,7 +85,7 @@ export function Sidebar({ onClose }: SidebarProps) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-white">
-              {user?.name || 'Marcus Vance'}
+              {user?.username || 'Marcus Vance'}
             </p>
             <p className="truncate text-xs text-gray-400">
               {user?.role === 'PAO' ? 'Super Admin' : user?.role}
