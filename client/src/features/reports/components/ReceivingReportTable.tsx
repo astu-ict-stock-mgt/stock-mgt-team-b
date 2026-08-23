@@ -39,7 +39,7 @@ export function ReceivingReportTable({ data, loading, searchQuery }: ReceivingRe
             Summary of all incoming deliveries, vendor shipments, and cost layering
           </p>
         </div>
-        <div className="mt-2 text-xs text-gray-500 sm:mt-0 font-medium">
+        <div className="mt-2 text-xs font-medium text-gray-500 sm:mt-0">
           Total Received Value:{' '}
           <span className="font-bold text-emerald-600">
             ETB {(data?.summary.totalValue || 0).toLocaleString()}
@@ -50,7 +50,7 @@ export function ReceivingReportTable({ data, loading, searchQuery }: ReceivingRe
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
             <tr>
               <th className="px-5 py-3.5">GRN / Ref No</th>
               <th className="px-4 py-3.5">Item Code & Description</th>
@@ -71,7 +71,7 @@ export function ReceivingReportTable({ data, loading, searchQuery }: ReceivingRe
               </tr>
             ) : (
               transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-50/60 transition-colors">
+                <tr key={tx.id} className="transition-colors hover:bg-gray-50/60">
                   <td className="px-5 py-3.5 font-mono font-semibold text-blue-600">
                     {tx.referenceNumber || 'N/A'}
                   </td>
@@ -92,7 +92,7 @@ export function ReceivingReportTable({ data, loading, searchQuery }: ReceivingRe
                   <td className="px-4 py-3.5 text-right font-semibold text-gray-900">
                     {tx.totalValue ? `ETB ${tx.totalValue.toLocaleString()}` : '-'}
                   </td>
-                  <td className="px-5 py-3.5 text-right text-xs text-gray-500 whitespace-nowrap">
+                  <td className="px-5 py-3.5 text-right text-xs whitespace-nowrap text-gray-500">
                     {tx.receivedDate
                       ? new Date(tx.receivedDate).toLocaleDateString()
                       : new Date(tx.createdAt).toLocaleDateString()}

@@ -54,14 +54,14 @@ export function StockMovementTable({ data, loading, searchQuery }: StockMovement
             Real-time audit record of all receipts, issues, transfers, and adjustments
           </p>
         </div>
-        <div className="mt-2 text-xs text-gray-500 sm:mt-0 font-medium">
+        <div className="mt-2 text-xs font-medium text-gray-500 sm:mt-0">
           Showing <span className="font-bold text-gray-900">{transactions.length}</span> movements
         </div>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
             <tr>
               <th className="px-5 py-3.5">Type</th>
               <th className="px-4 py-3.5">Item Code / Name</th>
@@ -96,7 +96,7 @@ export function StockMovementTable({ data, loading, searchQuery }: StockMovement
               </tr>
             ) : (
               transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-50/60 transition-colors">
+                <tr key={tx.id} className="transition-colors hover:bg-gray-50/60">
                   <td className="px-5 py-3.5 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-bold ${getTypeBadge(
@@ -108,7 +108,7 @@ export function StockMovementTable({ data, loading, searchQuery }: StockMovement
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="font-semibold text-gray-900">{tx.itemCode}</div>
-                    <div className="text-xs text-gray-500 truncate max-w-xs">{tx.itemName}</div>
+                    <div className="max-w-xs truncate text-xs text-gray-500">{tx.itemName}</div>
                   </td>
                   <td className="px-4 py-3.5 text-xs text-gray-600">
                     {tx.warehouseName || 'Main Warehouse'}
@@ -126,7 +126,7 @@ export function StockMovementTable({ data, loading, searchQuery }: StockMovement
                     {tx.referenceNumber || 'N/A'}
                   </td>
                   <td className="px-4 py-3.5 text-xs text-gray-600">{tx.userName || 'System'}</td>
-                  <td className="px-5 py-3.5 text-right text-xs text-gray-500 whitespace-nowrap">
+                  <td className="px-5 py-3.5 text-right text-xs whitespace-nowrap text-gray-500">
                     {new Date(tx.createdAt).toLocaleDateString()}
                   </td>
                 </tr>

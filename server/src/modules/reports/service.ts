@@ -1,11 +1,11 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client.js';
+import type { Prisma } from '../../generated/prisma/client.js';
 import { AppError } from '../../middlewares/errorHandler.ts';
 import type {
   CategoryMovementAggregation,
   CategoryValuationAggregation,
   CreateReportRecordDto,
-  InventoryValuationReportResult,
   IssuingReportResult,
   MonthlyTrendAggregation,
   ReceivingReportResult,
@@ -16,6 +16,7 @@ import type {
   StockStatusReportResult,
   SupplierReportResult,
   TopIssuedItemAggregation,
+  ValuationReportResult,
   WarehouseMovementAggregation,
 } from './types.ts';
 import 'dotenv/config';
@@ -384,7 +385,7 @@ export const getSupplierReport = async (
   const suppliers = await prisma.supplier.findMany({
     where,
     include: {
-      StockTransaction: {
+      stockTransactions: {
         where: {
           type: 'RECEIVE',
           ...(createdAt ? { createdAt } : {}),
@@ -400,7 +401,7 @@ export const getSupplierReport = async (
   let totalValueSupplied = 0;
 
   const mappedSuppliers = suppliers.map((s) => {
-    const transactions = s.StockTransaction || [];
+    const transactions = s.stockTransactions || [];
     let qtySupplied = 0;
     let valSupplied = 0;
     let lastDate: Date | null = null;
@@ -776,7 +777,7 @@ export const createReportRecord = async (
       name: data.name,
       type: data.type,
       generatedBy: userId,
-      parameters: (data.parameters || {}) as any,
+      parameters: (data.parameters || {}) as Prisma.InputJsonValue,
       fileUrl: data.fileUrl ?? null,
     },
     include: {

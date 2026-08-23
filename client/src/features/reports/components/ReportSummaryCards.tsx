@@ -96,7 +96,7 @@ export function ReportSummaryCards({ summary, loading }: ReportSummaryCardsProps
           className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br p-5 shadow-xs transition-all hover:shadow-md ${card.color} ${card.borderColor}`}
         >
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
               {card.title}
             </p>
             <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.iconBg}`}>
@@ -115,9 +115,7 @@ export function ReportSummaryCards({ summary, loading }: ReportSummaryCardsProps
             {loading ? (
               <div className="h-7 w-28 animate-pulse rounded-md bg-gray-200" />
             ) : (
-              <p className={`text-xl font-extrabold sm:text-2xl ${card.textColor}`}>
-                {card.value}
-              </p>
+              <p className={`text-xl font-extrabold sm:text-2xl ${card.textColor}`}>{card.value}</p>
             )}
             <p className="mt-1 text-xs text-gray-500">{card.subtitle}</p>
           </div>

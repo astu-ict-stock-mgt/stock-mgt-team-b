@@ -65,8 +65,7 @@ export const useRejectWriteOff = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      writeOffApi.reject(id, reason),
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) => writeOffApi.reject(id, reason),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: writeOffKeys.lists() });
       queryClient.invalidateQueries({ queryKey: writeOffKeys.detail(data.id) });

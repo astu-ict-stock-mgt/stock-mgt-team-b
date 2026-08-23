@@ -6,11 +6,7 @@ interface ReportFiltersBarProps {
   onReset: () => void;
 }
 
-export function ReportFiltersBar({
-  filters,
-  onUpdateFilter,
-  onReset,
-}: ReportFiltersBarProps) {
+export function ReportFiltersBar({ filters, onUpdateFilter, onReset }: ReportFiltersBarProps) {
   const setQuickRange = (preset: 'today' | 'week' | 'month' | 'year') => {
     const now = new Date();
     const to = now.toISOString().slice(0, 10);
@@ -109,28 +105,28 @@ export function ReportFiltersBar({
           <button
             type="button"
             onClick={() => setQuickRange('today')}
-            className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-gray-600 hover:bg-gray-200 transition-colors"
+            className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-gray-600 transition-colors hover:bg-gray-200"
           >
             Today
           </button>
           <button
             type="button"
             onClick={() => setQuickRange('week')}
-            className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-gray-600 hover:bg-gray-200 transition-colors"
+            className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-gray-600 transition-colors hover:bg-gray-200"
           >
             Last 7 Days
           </button>
           <button
             type="button"
             onClick={() => setQuickRange('month')}
-            className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-gray-600 hover:bg-gray-200 transition-colors"
+            className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-gray-600 transition-colors hover:bg-gray-200"
           >
             Last 30 Days
           </button>
           <button
             type="button"
             onClick={() => setQuickRange('year')}
-            className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-gray-600 hover:bg-gray-200 transition-colors"
+            className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-gray-600 transition-colors hover:bg-gray-200"
           >
             This Year
           </button>

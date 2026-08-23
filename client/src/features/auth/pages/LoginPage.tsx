@@ -59,7 +59,7 @@ export default function LoginPage() {
 
     try {
       const response = await submitLogin({
-        username: email,
+        email,
         password,
       });
 

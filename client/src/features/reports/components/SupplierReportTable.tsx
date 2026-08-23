@@ -32,14 +32,16 @@ export function SupplierReportTable({ data, loading, searchQuery }: SupplierRepo
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xs">
       <div className="border-b border-gray-200 px-5 py-4 sm:flex sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-bold text-gray-900">Supplier Performance & Delivery Report</h2>
+          <h2 className="text-base font-bold text-gray-900">
+            Supplier Performance & Delivery Report
+          </h2>
           <p className="text-xs text-gray-500">
             Fulfillment volume, delivery frequency, and monetary order metrics
           </p>
         </div>
-        <div className="mt-2 text-xs text-gray-500 sm:mt-0 font-medium">
+        <div className="mt-2 text-xs font-medium text-gray-500 sm:mt-0">
           Total Value Supplied:{' '}
-          <span className="font-bold text-blue-600 text-sm">
+          <span className="text-sm font-bold text-blue-600">
             ETB {(data?.summary.totalValueSupplied || 0).toLocaleString()}
           </span>
         </div>
@@ -47,7 +49,7 @@ export function SupplierReportTable({ data, loading, searchQuery }: SupplierRepo
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
             <tr>
               <th className="px-5 py-3.5">Supplier Name</th>
               <th className="px-4 py-3.5">Contact Person</th>
@@ -67,7 +69,7 @@ export function SupplierReportTable({ data, loading, searchQuery }: SupplierRepo
               </tr>
             ) : (
               suppliers.map((s) => (
-                <tr key={s.supplierId} className="hover:bg-gray-50/60 transition-colors">
+                <tr key={s.supplierId} className="transition-colors hover:bg-gray-50/60">
                   <td className="px-5 py-3.5">
                     <div className="font-bold text-gray-900">{s.supplierName}</div>
                   </td>
@@ -85,7 +87,7 @@ export function SupplierReportTable({ data, loading, searchQuery }: SupplierRepo
                   <td className="px-4 py-3.5 text-right font-bold text-emerald-600">
                     ETB {s.totalSuppliedValue.toLocaleString()}
                   </td>
-                  <td className="px-5 py-3.5 text-right text-xs text-gray-500 whitespace-nowrap">
+                  <td className="px-5 py-3.5 text-right text-xs whitespace-nowrap text-gray-500">
                     {s.lastDeliveryDate
                       ? new Date(s.lastDeliveryDate).toLocaleDateString()
                       : 'No deliveries'}

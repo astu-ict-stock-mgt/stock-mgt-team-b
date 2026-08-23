@@ -106,7 +106,7 @@ export function ReportExportModal({
                 onClick={() => setSelectedFormat('csv')}
                 className={`cursor-pointer rounded-xl border p-3 text-center transition-all ${
                   selectedFormat === 'csv'
-                    ? 'border-blue-600 bg-blue-50/50 text-blue-700 font-bold'
+                    ? 'border-blue-600 bg-blue-50/50 font-bold text-blue-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                 }`}
               >
@@ -119,7 +119,7 @@ export function ReportExportModal({
                 onClick={() => setSelectedFormat('print')}
                 className={`cursor-pointer rounded-xl border p-3 text-center transition-all ${
                   selectedFormat === 'print'
-                    ? 'border-blue-600 bg-blue-50/50 text-blue-700 font-bold'
+                    ? 'border-blue-600 bg-blue-50/50 font-bold text-blue-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                 }`}
               >
@@ -132,7 +132,7 @@ export function ReportExportModal({
                 onClick={() => setSelectedFormat('json')}
                 className={`cursor-pointer rounded-xl border p-3 text-center transition-all ${
                   selectedFormat === 'json'
-                    ? 'border-blue-600 bg-blue-50/50 text-blue-700 font-bold'
+                    ? 'border-blue-600 bg-blue-50/50 font-bold text-blue-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                 }`}
               >
@@ -150,7 +150,7 @@ export function ReportExportModal({
               onChange={(e) => setSaveToHistory(e.target.checked)}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <label htmlFor="saveReportCheckbox" className="text-xs text-gray-600 font-medium">
+            <label htmlFor="saveReportCheckbox" className="text-xs font-medium text-gray-600">
               Save snapshot in system report history & audit log
             </label>
           </div>
@@ -166,7 +166,7 @@ export function ReportExportModal({
             <button
               type="submit"
               disabled={saving}
-              className="cursor-pointer rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="cursor-pointer rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
             >
               {saving ? 'Exporting...' : 'Generate & Download'}
             </button>

@@ -16,7 +16,9 @@ export function StockStatusReportTable({
       <div className="flex h-64 items-center justify-center rounded-2xl border border-gray-200 bg-white">
         <div className="flex flex-col items-center gap-2">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          <p className="text-xs font-medium text-gray-500">Checking stock levels & safety buffers...</p>
+          <p className="text-xs font-medium text-gray-500">
+            Checking stock levels & safety buffers...
+          </p>
         </div>
       </div>
     );
@@ -59,10 +61,10 @@ export function StockStatusReportTable({
           </p>
         </div>
         <div className="mt-2 flex items-center gap-2 sm:mt-0">
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
             {data?.summary.lowStockItemsCount ?? 0} Low Stock
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 border border-red-200">
+          <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
             {data?.summary.belowSafetyStockCount ?? 0} Critical
           </span>
         </div>
@@ -70,7 +72,7 @@ export function StockStatusReportTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
             <tr>
               <th className="px-5 py-3.5">Item Code & Name</th>
               <th className="px-4 py-3.5">Category</th>
@@ -91,7 +93,7 @@ export function StockStatusReportTable({
               </tr>
             ) : (
               items.map((item) => (
-                <tr key={item.inventoryItemId} className="hover:bg-gray-50/60 transition-colors">
+                <tr key={item.inventoryItemId} className="transition-colors hover:bg-gray-50/60">
                   <td className="px-5 py-3.5">
                     <div className="font-bold text-gray-900">{item.itemCode}</div>
                     <div className="text-xs text-gray-500">{item.itemName}</div>
