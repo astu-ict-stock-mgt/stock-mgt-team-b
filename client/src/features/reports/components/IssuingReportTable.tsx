@@ -34,12 +34,14 @@ export function IssuingReportTable({ data, loading, searchQuery }: IssuingReport
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xs">
       <div className="border-b border-gray-200 px-5 py-4 sm:flex sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-bold text-gray-900">Stock Issuing Report (Issue Vouchers)</h2>
+          <h2 className="text-base font-bold text-gray-900">
+            Stock Issuing Report (Issue Vouchers)
+          </h2>
           <p className="text-xs text-gray-500">
             Records of inventory issued to departments, units, and approved requests
           </p>
         </div>
-        <div className="mt-2 text-xs text-gray-500 sm:mt-0 font-medium">
+        <div className="mt-2 text-xs font-medium text-gray-500 sm:mt-0">
           Total Issues Value:{' '}
           <span className="font-bold text-purple-600">
             ETB {(data?.summary.totalValue || 0).toLocaleString()}
@@ -50,7 +52,7 @@ export function IssuingReportTable({ data, loading, searchQuery }: IssuingReport
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
             <tr>
               <th className="px-5 py-3.5">Issue Voucher No</th>
               <th className="px-4 py-3.5">Item Code & Name</th>
@@ -72,7 +74,7 @@ export function IssuingReportTable({ data, loading, searchQuery }: IssuingReport
               </tr>
             ) : (
               transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-50/60 transition-colors">
+                <tr key={tx.id} className="transition-colors hover:bg-gray-50/60">
                   <td className="px-5 py-3.5 font-mono font-semibold text-purple-600">
                     {tx.referenceNumber || 'N/A'}
                   </td>
@@ -96,7 +98,7 @@ export function IssuingReportTable({ data, loading, searchQuery }: IssuingReport
                     {tx.totalValue ? `ETB ${tx.totalValue.toLocaleString()}` : '-'}
                   </td>
                   <td className="px-4 py-3.5 text-xs text-gray-600">{tx.issuedByName}</td>
-                  <td className="px-5 py-3.5 text-right text-xs text-gray-500 whitespace-nowrap">
+                  <td className="px-5 py-3.5 text-right text-xs whitespace-nowrap text-gray-500">
                     {new Date(tx.createdAt).toLocaleDateString()}
                   </td>
                 </tr>

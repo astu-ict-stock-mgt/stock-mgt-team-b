@@ -15,7 +15,9 @@ export function ValuationReportTable({ data, loading, searchQuery }: ValuationRe
       <div className="flex h-64 items-center justify-center rounded-2xl border border-gray-200 bg-white">
         <div className="flex flex-col items-center gap-2">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          <p className="text-xs font-medium text-gray-500">Calculating FIFO inventory valuation...</p>
+          <p className="text-xs font-medium text-gray-500">
+            Calculating FIFO inventory valuation...
+          </p>
         </div>
       </div>
     );
@@ -41,9 +43,7 @@ export function ValuationReportTable({ data, loading, searchQuery }: ValuationRe
       <div className="border-b border-gray-200 px-5 py-4 sm:flex sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-gray-900">
-              FIFO Inventory Valuation Report
-            </h2>
+            <h2 className="text-base font-bold text-gray-900">FIFO Inventory Valuation Report</h2>
             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
               FIFO Layered
             </span>
@@ -52,9 +52,9 @@ export function ValuationReportTable({ data, loading, searchQuery }: ValuationRe
             Valuation calculated against earliest active received cost layers (SRS Section 4.4.7)
           </p>
         </div>
-        <div className="mt-2 text-xs text-gray-500 sm:mt-0 font-medium">
+        <div className="mt-2 text-xs font-medium text-gray-500 sm:mt-0">
           Total Valuation:{' '}
-          <span className="font-bold text-emerald-600 text-sm">
+          <span className="text-sm font-bold text-emerald-600">
             ETB {(data?.summary.totalFifoValuation || 0).toLocaleString()}
           </span>
         </div>
@@ -62,7 +62,7 @@ export function ValuationReportTable({ data, loading, searchQuery }: ValuationRe
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
             <tr>
               <th className="w-8 px-4 py-3.5" />
               <th className="px-4 py-3.5">Item Code</th>
@@ -88,7 +88,7 @@ export function ValuationReportTable({ data, loading, searchQuery }: ValuationRe
                   <tbody key={item.inventoryItemId} className="divide-y divide-gray-50">
                     <tr
                       onClick={() => toggleExpand(item.inventoryItemId)}
-                      className="cursor-pointer hover:bg-blue-50/40 transition-colors"
+                      className="cursor-pointer transition-colors hover:bg-blue-50/40"
                     >
                       <td className="px-4 py-3.5 text-center">
                         <svg
@@ -100,11 +100,7 @@ export function ValuationReportTable({ data, loading, searchQuery }: ValuationRe
                           viewBox="0 0 24 24"
                           strokeWidth="2"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 5l7 7-7 7"
-                          />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </td>
                       <td className="px-4 py-3.5 font-mono font-bold text-gray-900">
@@ -137,7 +133,7 @@ export function ValuationReportTable({ data, loading, searchQuery }: ValuationRe
                         <td colSpan={8} className="px-8 py-3.5">
                           <div className="rounded-xl border border-gray-200 bg-white p-3.5 shadow-2xs">
                             <div className="mb-2 flex items-center justify-between">
-                              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600">
+                              <h4 className="text-xs font-bold tracking-wider text-gray-600 uppercase">
                                 FIFO Cost Layers (Oldest Batch Consumed First)
                               </h4>
                               <span className="text-[11px] text-gray-400">
@@ -156,7 +152,7 @@ export function ValuationReportTable({ data, loading, searchQuery }: ValuationRe
                                     className="rounded-lg border border-gray-100 bg-gray-50/50 p-2.5 text-xs"
                                   >
                                     <div className="flex items-center justify-between font-semibold">
-                                      <span className="text-blue-700 font-mono">
+                                      <span className="font-mono text-blue-700">
                                         Batch #{idx + 1}
                                       </span>
                                       <span className="text-gray-500">
@@ -175,7 +171,7 @@ export function ValuationReportTable({ data, loading, searchQuery }: ValuationRe
                                         ETB {lot.unitCost.toLocaleString()}
                                       </span>
                                     </div>
-                                    <div className="mt-1 border-t border-gray-200/60 pt-1 flex justify-between font-bold text-emerald-700">
+                                    <div className="mt-1 flex justify-between border-t border-gray-200/60 pt-1 font-bold text-emerald-700">
                                       <span>Lot Value:</span>
                                       <span>ETB {lot.totalLotValue.toLocaleString()}</span>
                                     </div>

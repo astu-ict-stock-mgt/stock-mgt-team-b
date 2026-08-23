@@ -87,7 +87,10 @@ export function useReportsData() {
   }, [filters]);
 
   useEffect(() => {
-    loadData();
+    const fetchData = async () => {
+      await loadData();
+    };
+    fetchData();
   }, [loadData]);
 
   const updateFilter = (key: keyof ReportFiltersState, value: string) => {
@@ -103,7 +106,7 @@ export function useReportsData() {
   };
 
   const saveReport = async (name: string, type: string) => {
-    const newReport = await createReport({ name, type, parameters: filters as any });
+    const newReport = await createReport({ name, type, parameters: filters });
     setHistory((prev) => [newReport, ...prev]);
   };
 

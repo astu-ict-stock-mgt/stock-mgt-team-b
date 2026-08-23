@@ -90,7 +90,7 @@ export const writeOffApi = {
 export const writeOffKeys = {
   all: ['write-off'] as const,
   lists: () => [...writeOffKeys.all, 'list'] as const,
-  list: (filters?: any) => [...writeOffKeys.lists(), { filters }] as const,
+  list: (filters?: Record<string, unknown>) => [...writeOffKeys.lists(), { filters }] as const,
   details: () => [...writeOffKeys.all, 'detail'] as const,
   detail: (id: string) => [...writeOffKeys.details(), id] as const,
 };
@@ -102,8 +102,18 @@ export const getReasonCodes = (): Array<{
   icon: string;
 }> => {
   return [
-    { code: 'DAMAGED', label: 'Damaged', description: 'Physically damaged and unusable', icon: '🔨' },
-    { code: 'OBSOLETE', label: 'Obsolete', description: 'No longer needed or outdated', icon: '📅' },
+    {
+      code: 'DAMAGED',
+      label: 'Damaged',
+      description: 'Physically damaged and unusable',
+      icon: '🔨',
+    },
+    {
+      code: 'OBSOLETE',
+      label: 'Obsolete',
+      description: 'No longer needed or outdated',
+      icon: '📅',
+    },
     { code: 'EXPIRED', label: 'Expired', description: 'Passed expiration date', icon: '⏰' },
     { code: 'OTHER', label: 'Other', description: 'Other reasons for write-off', icon: '📝' },
   ];
@@ -111,7 +121,12 @@ export const getReasonCodes = (): Array<{
 
 export const getStatusConfig = (status: string) => {
   const config: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-    PENDING: { bg: 'bg-yellow-50', text: 'text-yellow-700', dot: 'bg-yellow-400', label: 'Pending' },
+    PENDING: {
+      bg: 'bg-yellow-50',
+      text: 'text-yellow-700',
+      dot: 'bg-yellow-400',
+      label: 'Pending',
+    },
     APPROVED: { bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-400', label: 'Approved' },
     REJECTED: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-400', label: 'Rejected' },
     DISPOSED: { bg: 'bg-gray-50', text: 'text-gray-700', dot: 'bg-gray-400', label: 'Disposed' },

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useCreateWriteOff, useInventoryItems, useApprovalAuthority } from '../hooks';
 import { getReasonCodes } from '../api';
-import type { WriteOffRequest } from '../api';
+import type { InventoryItem, WriteOffRequest } from '../api';
 
 interface WriteOffFormProps {
   onSuccess?: () => void;
@@ -21,7 +21,7 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   const createWriteOff = useCreateWriteOff();
   const { data: items = [], isLoading: itemsLoading } = useInventoryItems();
@@ -81,7 +81,7 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
   };
 
   const handleItemSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const item = items.find((i: any) => i.id === e.target.value);
+    const item = items.find((i: InventoryItem) => i.id === e.target.value);
     setSelectedItem(item || null);
     setFormData((prev) => ({
       ...prev,
@@ -93,16 +93,16 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-start mb-6">
+      <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">Damaged / Obsolete Stock</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 text-sm text-gray-500">
             Report damaged or obsolete items for write-off approval
           </p>
         </div>
         <div className="flex items-center gap-3">
           {isAuthorized && (
-            <span className="px-3 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full border border-green-200">
+            <span className="rounded-full border border-green-200 bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
               ● Authorized
             </span>
           )}
@@ -110,14 +110,14 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
           <h2 className="text-sm font-semibold text-gray-700">Write-Off Request Form</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5 p-6">
           {createWriteOff.isSuccess && (
-            <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center gap-3">
+            <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">
               <span className="text-xl">✓</span>
               <div>
                 <p className="font-medium">Write-off request submitted successfully!</p>
@@ -127,36 +127,36 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
           )}
 
           {createWriteOff.isError && (
-            <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-3">
+            <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
               <span className="text-xl">✕</span>
               <p>{createWriteOff.error?.message || 'Failed to submit request'}</p>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
               Select Item <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.itemId}
               onChange={handleItemSelect}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+              className={`w-full rounded-lg border px-4 py-2.5 transition focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                 formErrors.itemId ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
-              } ${itemsLoading ? 'bg-gray-100 cursor-wait' : 'bg-white'}`}
+              } ${itemsLoading ? 'cursor-wait bg-gray-100' : 'bg-white'}`}
               disabled={itemsLoading}
             >
               <option value="">Select an item...</option>
-              {items.map((item: any) => (
+              {items.map((item: InventoryItem) => (
                 <option key={item.id} value={item.id}>
                   {item.name} ({item.code}) — Available: {item.quantity} {item.unit}
                 </option>
               ))}
             </select>
-            {formErrors.itemId && <p className="text-sm text-red-500 mt-1">{formErrors.itemId}</p>}
+            {formErrors.itemId && <p className="mt-1 text-sm text-red-500">{formErrors.itemId}</p>}
           </div>
 
           {selectedItem && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 md:grid-cols-4">
               <div>
                 <p className="text-xs text-gray-500">Item Name</p>
                 <p className="text-sm font-medium text-gray-800">{selectedItem.name}</p>
@@ -179,7 +179,7 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
               Quantity to Write Off <span className="text-red-500">*</span>
             </label>
             <input
@@ -189,26 +189,30 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
               onChange={handleChange}
               min="1"
               max={selectedItem?.quantity || 9999}
-              className={`w-full max-w-xs px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+              className={`w-full max-w-xs rounded-lg border px-4 py-2.5 transition focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                 formErrors.quantity ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
               }`}
               placeholder="Enter quantity"
             />
-            {formErrors.quantity && <p className="text-sm text-red-500 mt-1">{formErrors.quantity}</p>}
+            {formErrors.quantity && (
+              <p className="mt-1 text-sm text-red-500">{formErrors.quantity}</p>
+            )}
             {selectedItem && !formErrors.quantity && (
-              <p className="text-xs text-gray-500 mt-1">Max: {selectedItem.quantity} {selectedItem.unit}</p>
+              <p className="mt-1 text-xs text-gray-500">
+                Max: {selectedItem.quantity} {selectedItem.unit}
+              </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
               Reason <span className="text-red-500">*</span>
             </label>
             <select
               name="reasonCode"
               value={formData.reasonCode}
               onChange={handleChange}
-              className={`w-full max-w-md px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+              className={`w-full max-w-md rounded-lg border px-4 py-2.5 transition focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                 formErrors.reasonCode ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
               }`}
             >
@@ -218,12 +222,14 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
                 </option>
               ))}
             </select>
-            {formErrors.reasonCode && <p className="text-sm text-red-500 mt-1">{formErrors.reasonCode}</p>}
+            {formErrors.reasonCode && (
+              <p className="mt-1 text-sm text-red-500">{formErrors.reasonCode}</p>
+            )}
           </div>
 
           {formData.reasonCode === 'OTHER' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Reason Description <span className="text-red-500">*</span>
               </label>
               <input
@@ -231,46 +237,48 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
                 name="reasonDescription"
                 value={formData.reasonDescription || ''}
                 onChange={handleChange}
-                className={`w-full max-w-lg px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                  formErrors.reasonDescription ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
+                className={`w-full max-w-lg rounded-lg border px-4 py-2.5 transition focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  formErrors.reasonDescription
+                    ? 'border-red-500 ring-1 ring-red-500'
+                    : 'border-gray-300'
                 }`}
                 placeholder="Describe the reason in detail"
               />
               {formErrors.reasonDescription && (
-                <p className="text-sm text-red-500 mt-1">{formErrors.reasonDescription}</p>
+                <p className="mt-1 text-sm text-red-500">{formErrors.reasonDescription}</p>
               )}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Additional Notes <span className="text-gray-400 text-xs">(optional)</span>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Additional Notes <span className="text-xs text-gray-400">(optional)</span>
             </label>
             <textarea
               name="notes"
               value={formData.notes || ''}
               onChange={handleChange}
               rows={3}
-              className="w-full max-w-lg px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-y"
+              className="w-full max-w-lg resize-y rounded-lg border border-gray-300 px-4 py-2.5 transition focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
               placeholder="e.g., Condition, location, supporting details..."
             />
           </div>
 
           {isAuthorized && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700 flex items-center gap-2">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <p className="flex items-center gap-2 text-sm text-blue-700">
                 <span>🔑</span>
                 You have approval authority. Approve/Reject buttons will appear in the history view.
               </p>
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-4">
             {onCancel && (
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-5 py-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium text-sm"
+                className="rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
               >
                 Cancel
               </button>
@@ -278,11 +286,11 @@ export const WriteOffForm: React.FC<WriteOffFormProps> = ({ onSuccess, onCancel 
             <button
               type="submit"
               disabled={createWriteOff.isPending || itemsLoading}
-              className="px-6 py-2.5 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium text-sm flex items-center gap-2"
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             >
               {createWriteOff.isPending ? (
                 <>
-                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                   Submitting...
                 </>
               ) : (

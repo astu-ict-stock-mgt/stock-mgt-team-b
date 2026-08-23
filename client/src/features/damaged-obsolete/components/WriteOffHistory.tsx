@@ -9,11 +9,12 @@ import {
   useApprovalAuthority,
 } from '../hooks';
 import { getStatusConfig } from '../api';
+import type { WriteOffResponse } from '../api';
 
 export const WriteOffHistory: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedRequest, setSelectedRequest] = useState<WriteOffResponse | null>(null);
   const [showDisposeConfirm, setShowDisposeConfirm] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -36,11 +37,12 @@ export const WriteOffHistory: React.FC = () => {
     return () => window.removeEventListener('inventory-update', handleUpdate);
   }, [refetch]);
 
-  const filteredHistory = history.filter((request: any) =>
-    request.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.reasonCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.requestedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredHistory = history.filter(
+    (request: WriteOffResponse) =>
+      request.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.reasonCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.requestedBy?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleApprove = async (id: string) => {
@@ -49,7 +51,7 @@ export const WriteOffHistory: React.FC = () => {
     refetch();
   };
 
-  const handleReject = (request: any) => {
+  const handleReject = (request: WriteOffResponse) => {
     setSelectedRequest(request);
     setRejectReason('');
     setShowRejectDialog(true);
@@ -64,7 +66,7 @@ export const WriteOffHistory: React.FC = () => {
     refetch();
   };
 
-  const handleDispose = (request: any) => {
+  const handleDispose = (request: WriteOffResponse) => {
     setSelectedRequest(request);
     setShowDisposeConfirm(true);
   };
@@ -81,9 +83,9 @@ export const WriteOffHistory: React.FC = () => {
     const config = getStatusConfig(status);
     return (
       <span
-        className={`px-3 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text} flex items-center gap-1.5 w-fit`}
+        className={`rounded-full px-3 py-1 text-xs font-medium ${config.bg} ${config.text} flex w-fit items-center gap-1.5`}
       >
-        <span className={`w-2 h-2 rounded-full ${config.dot}`}></span>
+        <span className={`h-2 w-2 rounded-full ${config.dot}`}></span>
         {config.label}
       </span>
     );
@@ -92,7 +94,7 @@ export const WriteOffHistory: React.FC = () => {
   if (isLoading) {
     return (
       <div className="p-6 text-center">
-        <div className="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
         <p className="mt-3 text-gray-600">Loading write-off history...</p>
       </div>
     );
@@ -101,7 +103,7 @@ export const WriteOffHistory: React.FC = () => {
   if (error) {
     return (
       <div className="p-6">
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
           ❌ Error loading history: {error.message}
         </div>
       </div>
@@ -110,16 +112,16 @@ export const WriteOffHistory: React.FC = () => {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-start mb-6">
+      <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">Write-Off History</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 text-sm text-gray-500">
             View and manage damaged/obsolete stock write-off requests
           </p>
         </div>
         <div className="flex items-center gap-3">
           {isAuthorized && (
-            <span className="px-3 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+            <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
               ● Approver
             </span>
           )}
@@ -127,19 +129,19 @@ export const WriteOffHistory: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
+            <div className="relative max-w-md min-w-[200px] flex-1">
               <input
                 type="text"
                 placeholder="Search requests..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <svg
-                className="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
+                className="absolute top-2.5 left-3 h-4 w-4 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -156,7 +158,7 @@ export const WriteOffHistory: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
               >
                 <option value="ALL">All Status</option>
                 <option value="PENDING">Pending</option>
@@ -166,7 +168,7 @@ export const WriteOffHistory: React.FC = () => {
               </select>
               <button
                 onClick={() => refetch()}
-                className="px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition text-sm font-medium"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50 hover:text-blue-800"
               >
                 ⟳ Refresh
               </button>
@@ -176,41 +178,61 @@ export const WriteOffHistory: React.FC = () => {
 
         <div className="overflow-x-auto">
           {filteredHistory.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="py-12 text-center text-gray-500">
               <p className="text-lg">No write-off requests found</p>
               <p className="text-sm text-gray-400">Create a new request using the form above</p>
             </div>
           ) : (
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested By</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                    Item
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                    Qty
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                    Reason
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                    Requested By
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredHistory.map((request: any) => (
-                  <tr key={request.id} className="hover:bg-gray-50 transition">
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {filteredHistory.map((request: WriteOffResponse) => (
+                  <tr key={request.id} className="transition hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{request.itemName}</div>
-                      <div className="text-xs text-gray-500 font-mono">ID: {request.id.slice(0, 8)}</div>
+                      <div className="font-mono text-xs text-gray-500">
+                        ID: {request.id.slice(0, 8)}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-700 font-medium">{request.quantity}</td>
+                    <td className="px-6 py-4 font-medium text-gray-700">{request.quantity}</td>
                     <td className="px-6 py-4">
-                      <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded font-medium">
+                      <span className="inline-block rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
                         {request.reasonCode}
                       </span>
                       {request.reasonDescription && (
-                        <div className="text-xs text-gray-500 mt-0.5">{request.reasonDescription}</div>
+                        <div className="mt-0.5 text-xs text-gray-500">
+                          {request.reasonDescription}
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4">{renderStatusBadge(request.status)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{request.requestedBy || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {request.requestedBy || 'N/A'}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {new Date(request.requestedAt).toLocaleDateString('en-US', {
                         month: 'short',
@@ -225,14 +247,14 @@ export const WriteOffHistory: React.FC = () => {
                             <button
                               onClick={() => handleApprove(request.id)}
                               disabled={approveMutation.isPending}
-                              className="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 transition"
+                              className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none disabled:opacity-50"
                             >
                               Approve
                             </button>
                             <button
                               onClick={() => handleReject(request)}
                               disabled={rejectMutation.isPending}
-                              className="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 transition"
+                              className="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:outline-none disabled:opacity-50"
                             >
                               Reject
                             </button>
@@ -242,7 +264,7 @@ export const WriteOffHistory: React.FC = () => {
                           <button
                             onClick={() => handleDispose(request)}
                             disabled={disposeMutation.isPending}
-                            className="px-3 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 transition"
+                            className="rounded bg-purple-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:opacity-50"
                           >
                             Dispose
                           </button>
@@ -252,7 +274,7 @@ export const WriteOffHistory: React.FC = () => {
                         )}
                       </div>
                       {request.notes && (
-                        <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                        <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
                           <span>📝</span> {request.notes}
                         </div>
                       )}
@@ -264,19 +286,19 @@ export const WriteOffHistory: React.FC = () => {
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
           <p className="text-sm text-gray-500">
             Showing <span className="font-medium">{filteredHistory.length}</span> of{' '}
             <span className="font-medium">{history.length}</span> requests
           </p>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 transition">
+            <button className="rounded border border-gray-300 bg-white px-3 py-1 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50">
               Previous
             </button>
-            <button className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 transition">
+            <button className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition hover:bg-blue-700">
               1
             </button>
-            <button className="px-3 py-1 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50 transition">
+            <button className="rounded border border-gray-300 bg-white px-3 py-1 text-sm text-gray-600 transition hover:bg-gray-50">
               Next
             </button>
           </div>
@@ -284,31 +306,39 @@ export const WriteOffHistory: React.FC = () => {
       </div>
 
       {showDisposeConfirm && selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-xl">⚠️</div>
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-xl">
+                ⚠️
+              </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Confirm Disposal</h3>
                 <p className="text-sm text-gray-500">This action cannot be undone</p>
               </div>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg mb-4">
-              <p className="text-sm"><span className="font-medium">Item:</span> {selectedRequest.itemName}</p>
-              <p className="text-sm"><span className="font-medium">Quantity:</span> {selectedRequest.quantity}</p>
-              <p className="text-sm"><span className="font-medium">Reason:</span> {selectedRequest.reasonCode}</p>
+            <div className="mb-4 rounded-lg bg-gray-50 p-4">
+              <p className="text-sm">
+                <span className="font-medium">Item:</span> {selectedRequest.itemName}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">Quantity:</span> {selectedRequest.quantity}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">Reason:</span> {selectedRequest.reasonCode}
+              </p>
             </div>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDisposeConfirm(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium"
+                className="rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDispose}
                 disabled={disposeMutation.isPending}
-                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition font-medium"
+                className="rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
               >
                 {disposeMutation.isPending ? 'Processing...' : 'Confirm Disposal'}
               </button>
@@ -318,28 +348,28 @@ export const WriteOffHistory: React.FC = () => {
       )}
 
       {showRejectDialog && selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Reject Request</h3>
-            <p className="text-sm text-gray-600 mb-2">Reason for rejection (optional):</p>
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">Reject Request</h3>
+            <p className="mb-2 text-sm text-gray-600">Reason for rejection (optional):</p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
               placeholder="Enter rejection reason..."
             />
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="mt-4 flex justify-end gap-3">
               <button
                 onClick={() => setShowRejectDialog(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium"
+                className="rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmReject}
                 disabled={rejectMutation.isPending}
-                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition font-medium"
+                className="rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
               >
                 {rejectMutation.isPending ? 'Processing...' : 'Confirm Reject'}
               </button>

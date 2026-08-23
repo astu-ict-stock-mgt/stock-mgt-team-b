@@ -247,4 +247,3 @@ export interface CategoryValuationAggregation {
   totalFifoValuation: number;
   percentageOfTotalValuation: number;
 }
-

@@ -38,7 +38,7 @@ export function GeneratedReportsHistory({
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+          <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
             <tr>
               <th className="px-5 py-3.5">Report Title</th>
               <th className="px-4 py-3.5">Module Type</th>
@@ -57,7 +57,7 @@ export function GeneratedReportsHistory({
               </tr>
             ) : (
               history.map((rep) => (
-                <tr key={rep.id} className="hover:bg-gray-50/60 transition-colors">
+                <tr key={rep.id} className="transition-colors hover:bg-gray-50/60">
                   <td className="px-5 py-3.5">
                     <div className="font-bold text-gray-900">{rep.name}</div>
                     <div className="font-mono text-[11px] text-gray-400">ID: {rep.id}</div>
@@ -70,17 +70,17 @@ export function GeneratedReportsHistory({
                   <td className="px-4 py-3.5 text-gray-700">
                     {rep.generatorName || 'System User'}
                   </td>
-                  <td className="px-4 py-3.5 font-mono text-[11px] text-gray-500 max-w-xs truncate">
+                  <td className="max-w-xs truncate px-4 py-3.5 font-mono text-[11px] text-gray-500">
                     {JSON.stringify(rep.parameters)}
                   </td>
-                  <td className="px-4 py-3.5 text-right text-xs text-gray-500 whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-right text-xs whitespace-nowrap text-gray-500">
                     {new Date(rep.createdAt).toLocaleString()}
                   </td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => onExportCsv(rep.type)}
-                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors shadow-2xs"
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-600 shadow-2xs transition-colors hover:bg-blue-50"
                     >
                       <svg
                         className="h-3.5 w-3.5"
