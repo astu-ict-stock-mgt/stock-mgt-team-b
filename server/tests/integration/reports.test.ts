@@ -168,7 +168,7 @@ const mockSuppliers = [
     contactName: 'Abebe Kebede',
     email: 'info@ethiotelecomsupplies.et',
     phone: '+251911223344',
-    StockTransaction: [
+    stockTransactions: [
       {
         id: 'tx-001',
         type: 'RECEIVE',

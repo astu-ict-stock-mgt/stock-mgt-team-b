@@ -8,7 +8,7 @@ router.use('/reports', reportsRoutes);
 import authRoutes from '../modules/auth/routes.ts';
 import usersRoutes from '../modules/users/routes.ts';
 
-const router = Router();
+// const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);

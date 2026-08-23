@@ -37,7 +37,6 @@ export function useReportsData() {
   const [filters, setFilters] = useState<ReportFiltersState>(defaultFilters);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
   const [summary, setSummary] = useState<ReportsSummaryData | null>(null);
   const [stockMovement, setStockMovement] = useState<StockMovementReportData | null>(null);
   const [receiving, setReceiving] = useState<ReceivingReportData | null>(null);
@@ -70,7 +69,6 @@ export function useReportsData() {
         fetchStockStatusReport(filters),
         fetchReportHistory(),
       ]);
-
       setSummary(summaryRes);
       setStockMovement(movementRes);
       setReceiving(receivingRes);
@@ -106,7 +104,7 @@ export function useReportsData() {
   };
 
   const saveReport = async (name: string, type: string) => {
-    const newReport = await createReport({ name, type, parameters: filters });
+    const newReport = await createReport({ name, type, parameters: { ...filters } });
     setHistory((prev) => [newReport, ...prev]);
   };
 

@@ -10,6 +10,7 @@ import {
   Settings,
   User as UserIcon,
   X,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '../features/auth/hooks';
 
@@ -25,6 +26,7 @@ export function Sidebar({ onClose }: SidebarProps) {
     { name: 'Users', path: '/users', icon: Users },
     { name: 'Roles & Permissions', path: '/roles', icon: UserCog },
     { name: 'Inventory', path: '/inventory', icon: Package },
+    { name: 'Stock Issuing', path: '/stock-issuing', icon: ClipboardList },
     { name: 'Suppliers', path: '/suppliers', icon: Truck },
     { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'Audit Logs', path: '/audit-log', icon: Activity },
@@ -85,7 +87,7 @@ export function Sidebar({ onClose }: SidebarProps) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-white">
-              {user?.username || 'Marcus Vance'}
+              {user ? `${user.firstName} ${user.lastName}` : 'Marcus Vance'}
             </p>
             <p className="truncate text-xs text-gray-400">
               {user?.role === 'PAO' ? 'Super Admin' : user?.role}

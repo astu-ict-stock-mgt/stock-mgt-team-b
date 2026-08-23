@@ -31,7 +31,7 @@ export function DashboardPage() {
               Real-time Inventory Monitoring Active
             </span>
             <h1 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
-              Welcome back, {user?.username || 'Operator'}
+              Welcome back, {user ? `${user.firstName} ${user.lastName}` : 'Operator'}
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-blue-200/90">
               ASTU Stock Management System Dashboard — continuously monitoring stock levels, reorder

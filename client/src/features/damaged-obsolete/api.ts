@@ -1,5 +1,4 @@
 // client/src/features/damaged-obsolete/api.ts
-
 import axios from 'axios';
 
 // Types
@@ -55,32 +54,26 @@ export const writeOffApi = {
     });
     return response.data;
   },
-
   getAll: async (params?: { status?: string }): Promise<WriteOffResponse[]> => {
     const response = await axios.get(`${API_BASE}/write-off`, { params });
     return response.data;
   },
-
   getById: async (id: string): Promise<WriteOffResponse> => {
     const response = await axios.get(`${API_BASE}/write-off/${id}`);
     return response.data;
   },
-
   approve: async (id: string): Promise<WriteOffResponse> => {
     const response = await axios.put(`${API_BASE}/write-off/${id}/approve`);
     return response.data;
   },
-
   reject: async (id: string, reason?: string): Promise<WriteOffResponse> => {
     const response = await axios.put(`${API_BASE}/write-off/${id}/reject`, { reason });
     return response.data;
   },
-
   dispose: async (id: string): Promise<WriteOffResponse> => {
     const response = await axios.put(`${API_BASE}/write-off/${id}/dispose`);
     return response.data;
   },
-
   getInventoryItems: async (): Promise<InventoryItem[]> => {
     const response = await axios.get(`${API_BASE}/inventory/items`);
     return response.data;
@@ -90,7 +83,7 @@ export const writeOffApi = {
 export const writeOffKeys = {
   all: ['write-off'] as const,
   lists: () => [...writeOffKeys.all, 'list'] as const,
-  list: (filters?: Record<string, unknown>) => [...writeOffKeys.lists(), { filters }] as const,
+  list: (filters?: { status?: string }) => [...writeOffKeys.lists(), { filters }] as const,
   details: () => [...writeOffKeys.all, 'detail'] as const,
   detail: (id: string) => [...writeOffKeys.details(), id] as const,
 };
