@@ -2,8 +2,11 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 
 export interface AuthUser {
   id: string;
-  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
   role: string;
+  department?: string | null;
 }
 
 interface AuthContextValue {
