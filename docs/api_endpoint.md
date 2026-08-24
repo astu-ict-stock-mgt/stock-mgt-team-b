@@ -15,23 +15,6 @@ Reference for the **currently implemented** backend endpoints of the Stock Manag
 
 ## Conventions
 
-### Response envelope
-
-Most endpoints wrap their payload:
-
-```json
-{ "status": "success", "data": { } }
-```
-
-**Four endpoints deliberately do not use this envelope** — see their sections for details:
-
-| Endpoint | Body shape |
-| --- | --- |
-| `GET /api/health` | `{ "status": "ok", "message": "..." }` |
-| `POST /api/auth/login` | `{ "token": "...", "user": { } }` (bare) |
-| `GET /api/reports/export?format=csv` | raw `text/csv` |
-| `GET /api/reports/export?format=json` | bare report object |
-
 ### Error envelope
 
 Every error flows through `errorHandler` (`server/src/middlewares/errorHandler.ts`):
@@ -69,46 +52,6 @@ A token whose `role` is not one of the seven known roles is rejected with `401`.
 ### Roles
 
 `ADMINISTRATOR` · `PAO` · `STOREKEEPER` · `STOCK_CLERK` · `ACCOUNTANT` · `DEPARTMENT_HEAD` · `SECURITY_OFFICER`
-
-### Dates
-
-All `DateTime` fields serialize as ISO-8601 UTC strings, e.g. `"2026-02-01T10:00:00.000Z"`.
-
----
-
-## Endpoint index
-
-| Method | Path | Allowed roles | Backing model(s) |
-| --- | --- | --- | --- |
-| `GET` | `/api/health` | public | — |
-| `POST` | `/api/auth/login` | public | `User` |
-| `GET` | `/api/users` | `ADMINISTRATOR` | `User` |
-| `POST` | `/api/users` | `ADMINISTRATOR` | `User`, `AuditLog` |
-| `GET` | `/api/users/:id` | `ADMINISTRATOR` | `User` |
-| `PUT` | `/api/users/:id` | `ADMINISTRATOR` | `User`, `AuditLog` |
-| `DELETE` | `/api/users/:id` | `ADMINISTRATOR` | `User`, `AuditLog` |
-| `POST` | `/api/stock-receiving` | `STOREKEEPER`, `STOCK_CLERK`, `PAO` | `GoodsReceivingNote`, `GoodsReceivingNoteItem`, `StockLot`, `StockTransaction`, `BinCard`, `InventoryItem` |
-| `GET` | `/api/reports/summary` | reporting roles¹ | `StockTransaction`, `InventoryItem`, `StockLot`, `Supplier` |
-| `GET` | `/api/reports/stock-movement` | reporting roles¹ | `StockTransaction` |
-| `GET` | `/api/reports/receiving` | reporting roles¹ | `StockTransaction` |
-| `GET` | `/api/reports/issuing` | reporting roles¹ | `StockTransaction` |
-| `GET` | `/api/reports/valuation` | reporting roles¹ | `InventoryItem`, `StockLot` |
-| `GET` | `/api/reports/suppliers` | reporting roles¹ | `Supplier`, `StockTransaction` |
-| `GET` | `/api/reports/stock-status` | reporting roles¹ | `InventoryItem`, `BinCard` |
-| `GET` | `/api/reports/analytics/category-movements` | reporting roles¹ | `StockTransaction`, `Category` |
-| `GET` | `/api/reports/analytics/warehouse-movements` | reporting roles¹ | `Warehouse`, `StockTransaction`, `StockLot` |
-| `GET` | `/api/reports/analytics/monthly-trends` | reporting roles¹ | `StockTransaction` |
-| `GET` | `/api/reports/analytics/top-issued-items` | reporting roles¹ | `StockTransaction` |
-| `GET` | `/api/reports/analytics/category-valuation` | reporting roles¹ | `Category`, `StockLot` |
-| `GET` | `/api/reports/export` | reporting roles¹ | varies by `type` |
-| `POST` | `/api/reports` | reporting roles¹ | `Report`, `AuditLog` |
-| `GET` | `/api/reports/history` | reporting roles¹ | `Report` |
-| `GET` | `/api/reports/history/:id` | reporting roles¹ | `Report` |
-
-¹ **reporting roles** = `ADMINISTRATOR`, `PAO`, `STOREKEEPER`, `STOCK_CLERK`, `ACCOUNTANT`, `DEPARTMENT_HEAD`.
-`SECURITY_OFFICER` is **excluded** from every `/api/reports/*` route (`403`).
-
----
 
 ## Health
 
