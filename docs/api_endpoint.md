@@ -13,6 +13,32 @@ Reference for the **currently implemented** backend endpoints of the Stock Manag
 
 ---
 
+## Initial Setup: Creating the First Administrator
+
+Because all User management endpoints require an `ADMINISTRATOR` token, you must manually seed or create your first administrator account directly using Prisma. 
+
+### Step 1: Generate a Valid Bcrypt Password Hash
+Do **not** type plain text passwords into your database, or login verification will fail. Open your system terminal and run this command to generate a valid hash:
+```bash
+node -e "console.log(require('bcrypt').hashSync('password123', 10))"
+```
+*This will output a secure string starting with `$2b$10$...`*
+
+### Step 2: Insert the Record via Prisma Studio
+1. Run `npx prisma studio` in your server directory.
+2. Open the **User** model data grid layout.
+3. Click **Add Record** and populate the fields precisely:
+   * **id:** *Leave blank (database auto-generates UUID)*
+   * **email:** `admin@example.com`
+   * **passwordHash:** *Paste the exact `$2b$10$...` string generated in Step 1*
+   * **firstName:** `Ada`
+   * **lastName:** `Admin`
+   * **role:** `ADMINISTRATOR`
+   * **department:** `null` (or any text string)
+4. Click the green **Save 1 Change** button at the top bar. You can now use these credentials to log in via Thunder Client and get your Bearer Token.
+
+---
+
 ## Conventions
 
 ### Error envelope
@@ -53,6 +79,8 @@ A token whose `role` is not one of the seven known roles is rejected with `401`.
 
 `ADMINISTRATOR` · `PAO` · `STOREKEEPER` · `STOCK_CLERK` · `ACCOUNTANT` · `DEPARTMENT_HEAD` · `SECURITY_OFFICER`
 
+---
+
 ## Health
 
 ### `GET /api/health`
@@ -80,7 +108,7 @@ Authenticates by email + password and returns a signed JWT. No auth required.
 ```json
 {
   "email": "admin@example.com",
-  "password": "correct-horse-battery-staple"
+  "password": "password123"
 }
 ```
 
@@ -116,8 +144,6 @@ Authenticates by email + password and returns a signed JWT. No auth required.
 | `401` | `Invalid email or password` | Unknown email **or** wrong password (deliberately indistinguishable) |
 | `500` | `JWT_SECRET must be configured` | Env var absent |
 
-> Login does **not** currently check `isActive`; a deactivated user can still obtain a token.
-
 ---
 
 ## Users
@@ -135,7 +161,6 @@ Lists users, newest first (`createdAt desc`).
 | Param | Type | Notes |
 | --- | --- | --- |
 | `role` | enum | Must be a valid role, else `400 Invalid role filter` |
-| `isActive` | boolean | `"true"` / `"false"`, else `400 isActive filter must be boolean` |
 | `search` | string | Case-insensitive partial match on `firstName`, `lastName`, or `email` |
 
 **`200 OK`**
@@ -151,15 +176,12 @@ Lists users, newest first (`createdAt desc`).
       "lastName": "Doe",
       "role": "STOREKEEPER",
       "department": "Warehouse",
-      "isActive": true,
       "createdAt": "2026-01-01T00:00:00.000Z",
       "updatedAt": "2026-01-01T00:00:00.000Z"
     }
   ]
 }
 ```
-
-There is no pagination — the full filtered set is returned.
 
 ### `POST /api/users`
 
@@ -187,8 +209,6 @@ Creates a user and writes a `USER_CREATED` audit log entry.
 | `role` | enum | Required, one of the seven roles |
 | `department` | string \| null | Optional; defaults to `null` |
 
-`isActive` is always `true` on creation and cannot be set here.
-
 **`201 Created`**
 
 ```json
@@ -201,22 +221,36 @@ Creates a user and writes a `USER_CREATED` audit log entry.
     "lastName": "Smith",
     "role": "PAO",
     "department": "Property Admin",
-    "isActive": true,
     "createdAt": "2026-01-01T00:00:00.000Z",
     "updatedAt": "2026-01-01T00:00:00.000Z"
   }
 }
 ```
 
-**Errors:** `400 User with this email already exists`, `400 Password must be at least 6 characters`, `400 Invalid role specified`, `400 First name is required`, `400 Last name is required`.
+**Errors:** `400 User with this email already exists`, `400 Password must be at least 6 characters`, `400 Invalid role specified`.
 
 ### `GET /api/users/:id`
 
-`:id` must be a UUID.
+`:id` must be a valid UUID string.
 
-**`200 OK`** — `{ "status": "success", "data": { <user object> } }`
+**`200 OK`**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "40000000-0000-4000-8000-000000000004",
+    "email": "newuser@example.com",
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "role": "PAO",
+    "department": "Property Admin",
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "updatedAt": "2026-01-01T00:00:00.000Z"
+  }
+}
+```
 
-**Errors:** `400 Invalid user ID format`, `404 User not found`.
+**Errors:** `404 User not found`.
 
 ### `PUT /api/users/:id`
 
@@ -226,34 +260,37 @@ Partial update — send only the fields you want changed. A **role change** writ
 **Request** (all fields optional)
 
 ```json
-{ "role": "PAO" }
+{ 
+  "role": "PAO" 
+}
 ```
 
 | Field | Rules |
 | --- | --- |
 | `email` | Valid email, normalized, must not collide with another user |
-| `password` | Min 6 characters; re-hashed with bcrypt |
-| `firstName` / `lastName` | Non-empty if present |
-| `role` | One of the seven roles |
-| `department` | String or `null` |
-| `isActive` | Boolean — this is how a user is **re**activated |
+| `password` | Min 6 characters; re-hashed automatically with bcrypt |
+| `firstName` / `lastName` | Non-empty text strings if provided |
+| `role` | One of the seven enum system roles |
+| `department` | String description or `null` |
 
-**`200 OK`** — `{ "status": "success", "data": { <updated user object> } }`
-
-**Errors:** `400 Invalid user ID format`, `400 User with this email already exists`, `400 Invalid role specified`, `404 User not found`.
+**`200 OK`**
+```json
+{ 
+  "status": "success", 
+  "data": { "id": "40000000-...", "role": "PAO", "...": "..." } 
+}
+```
 
 ### `DELETE /api/users/:id`
 
-**Soft delete** — sets `isActive: false` to preserve foreign-key integrity with
-`StockTransaction`, `AuditLog`, `Report`, and `GoodsReceivingNote`. The row is never removed.
-Writes a `USER_DEACTIVATED` audit entry. Reactivate via `PUT` with `{"isActive": true}`.
+**Hard Delete** — Permanently purges the designated user record from the PostgreSQL relational tables. Writes a `USER_DEACTIVATED` audit log fallback tracking entry context before execution.
 
-**`200 OK`** — this response carries an extra `message` field:
+**`200 OK`**
 
 ```json
 {
   "status": "success",
-  "message": "User deactivated successfully",
+  "message": "User deleted successfully",
   "data": {
     "id": "30000000-0000-4000-8000-000000000003",
     "email": "john@example.com",
@@ -261,13 +298,9 @@ Writes a `USER_DEACTIVATED` audit entry. Reactivate via `PUT` with `{"isActive":
     "lastName": "Doe",
     "role": "STOREKEEPER",
     "department": "Warehouse",
-    "isActive": false,
     "createdAt": "2026-01-01T00:00:00.000Z",
-    "updatedAt": "2026-01-01T00:00:00.000Z"
+    "updatedAt": "2026-02-24T19:45:00.000Z"
   }
 }
 ```
-
-**Errors:** `400 Invalid user ID format`, `404 User not found`.
-
----
+**Errors:** `404 User not found`.
