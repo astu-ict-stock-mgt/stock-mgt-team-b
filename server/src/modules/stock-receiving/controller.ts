@@ -6,16 +6,29 @@ export const createReceivingNote = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> => {
+) => {
   try {
+    const { supplierId, warehouseId, receivedDate, items } = req.body;
+
+    // Check authorization using your team's template check rules
     if (!req.user) {
       throw new AppError('Authentication required', 401);
     }
 
-    const result = await createReceiving(req.body, req.user.id);
+    // Call your team's pre-configured service function
+    const result = await createReceiving(
+      {
+        supplierId,
+        warehouseId,
+        receivedDate,
+        items,
+      },
+      req.user.id
+    );
 
     res.status(201).json({
-      status: 'success',
+      success: true,
+      message: 'Goods Receiving Note and Items created successfully.',
       data: result,
     });
   } catch (error) {
