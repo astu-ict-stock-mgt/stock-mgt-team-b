@@ -7,7 +7,7 @@ import { useAuth } from '../../auth/hooks';
 
 export const ApprovalQueue: React.FC = () => {
   const { user } = useAuth();
-  
+
   // Queries & Mutations
   const { data: requisitions = [], isLoading, refetch, isRefetching } = useRequisitions();
   const { mutate: approveReq, isPending: isApproving } = useApproveRequisition();
@@ -23,7 +23,7 @@ export const ApprovalQueue: React.FC = () => {
 
   const handleApprove = (id: string) => {
     const approverName = user ? `${user.firstName} ${user.lastName}` : 'PAO Officer';
-    
+
     if (window.confirm('Are you sure you want to APPROVE this requisition?')) {
       approveReq(
         { id, approvedBy: approverName },
@@ -98,7 +98,9 @@ export const ApprovalQueue: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Approval Queue (PAO View)</h2>
-          <p className="text-sm text-gray-500">Review, authorize, or reject department requisition requests.</p>
+          <p className="text-sm text-gray-500">
+            Review, authorize, or reject department requisition requests.
+          </p>
         </div>
         <button
           onClick={() => refetch()}
@@ -149,13 +151,16 @@ export const ApprovalQueue: React.FC = () => {
 
       {/* Rejection Modal (Inline) */}
       {rejectingReqId && (
-        <div className="rounded-xl border border-red-200 bg-red-50/50 p-6 space-y-4">
+        <div className="space-y-4 rounded-xl border border-red-200 bg-red-50/50 p-6">
           <div className="flex gap-2.5">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+            <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-600" />
             <div>
               <h4 className="text-sm font-bold text-gray-800">Reject Requisition</h4>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Provide a reason for rejecting requisition: <strong>{requisitions.find(r => r.id === rejectingReqId)?.requisitionNumber}</strong>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Provide a reason for rejecting requisition:{' '}
+                <strong>
+                  {requisitions.find((r) => r.id === rejectingReqId)?.requisitionNumber}
+                </strong>
               </p>
             </div>
           </div>
@@ -180,7 +185,7 @@ export const ApprovalQueue: React.FC = () => {
                 type="button"
                 onClick={handleRejectSubmit}
                 disabled={isRejecting}
-                className="rounded-md bg-red-600 text-white px-3.5 py-1.5 text-xs font-semibold hover:bg-red-700 transition"
+                className="rounded-md bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
               >
                 {isRejecting ? 'Rejecting...' : 'Confirm Rejection'}
               </button>
@@ -196,17 +201,19 @@ export const ApprovalQueue: React.FC = () => {
         <div className="space-y-4">
           {pendingReqs.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-500">
-              <FileCheck className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+              <FileCheck className="mx-auto mb-3 h-12 w-12 text-gray-300" />
               <h3 className="text-md font-semibold text-gray-700">Clear queue!</h3>
-              <p className="text-xs text-gray-400 mt-0.5">There are no pending stock requisitions to authorize.</p>
+              <p className="mt-0.5 text-xs text-gray-400">
+                There are no pending stock requisitions to authorize.
+              </p>
             </div>
           ) : (
             pendingReqs.map((req) => (
               <div
                 key={req.id}
-                className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col md:flex-row justify-between gap-6 hover:shadow-md transition duration-200"
+                className="flex flex-col justify-between gap-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:shadow-md md:flex-row"
               >
-                <div className="space-y-3 flex-1">
+                <div className="flex-1 space-y-3">
                   {/* Card Header info */}
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-lg font-bold text-gray-800">{req.requisitionNumber}</span>
@@ -223,11 +230,16 @@ export const ApprovalQueue: React.FC = () => {
                   </div>
 
                   {/* Requested Items List */}
-                  <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Items Requested</p>
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
+                  <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+                    <p className="mb-2 text-xs font-semibold tracking-wider text-gray-400 uppercase">
+                      Items Requested
+                    </p>
+                    <ul className="grid grid-cols-1 gap-2 text-sm text-gray-700 sm:grid-cols-2">
                       {req.items.map((item, idx) => (
-                        <li key={idx} className="flex justify-between border-b border-gray-100 pb-1 pr-4">
+                        <li
+                          key={idx}
+                          className="flex justify-between border-b border-gray-100 pr-4 pb-1"
+                        >
                           <span>{item.itemName}</span>
                           <span className="font-bold text-gray-900">x{item.quantityRequested}</span>
                         </li>
@@ -243,18 +255,18 @@ export const ApprovalQueue: React.FC = () => {
                 </div>
 
                 {/* Approver Actions */}
-                <div className="flex md:flex-col justify-end gap-2 md:justify-center md:border-l md:border-gray-100 md:pl-6 min-w-[150px]">
+                <div className="flex min-w-[150px] justify-end gap-2 md:flex-col md:justify-center md:border-l md:border-gray-100 md:pl-6">
                   <button
                     onClick={() => handleApprove(req.id)}
                     disabled={isApproving || isRejecting}
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:opacity-50"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50 md:flex-none"
                   >
                     <Check className="h-4 w-4" /> Approve
                   </button>
                   <button
                     onClick={() => handleOpenReject(req.id)}
                     disabled={isApproving || isRejecting}
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 md:flex-none"
                   >
                     <X className="h-4 w-4" /> Reject
                   </button>
@@ -264,72 +276,84 @@ export const ApprovalQueue: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                   Requisition Number
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                   Department / Requester
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                   Items Details
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                   Rejection Reason / Log Details
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
-              {historyReqs.slice().reverse().map((req) => (
-                <tr key={req.id} className="hover:bg-gray-50/30">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-gray-800">{req.requisitionNumber}</div>
-                    <div className="text-xs text-gray-400">
-                      {new Date(req.createdAt).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-semibold text-gray-800">{req.department}</div>
-                    <div className="text-xs text-gray-500">{req.requesterName}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <ul className="text-xs text-gray-700 list-disc list-inside space-y-0.5">
-                      {req.items.map((it, i) => (
-                        <li key={i}>
-                          {it.itemName} <span className="font-semibold">x{it.quantityRequested}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {getStatusBadge(req.status)}
-                  </td>
-                  <td className="px-6 py-4 text-xs text-gray-500">
-                    {req.status === 'REJECTED' && req.rejectionReason && (
-                      <div className="rounded bg-red-50 border border-red-100 p-2 text-red-800 max-w-xs">
-                        <p className="font-semibold text-red-500">Rejection Reason:</p>
-                        <p className="mt-0.5 font-medium">{req.rejectionReason}</p>
+              {historyReqs
+                .slice()
+                .reverse()
+                .map((req) => (
+                  <tr key={req.id} className="hover:bg-gray-50/30">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-gray-800">{req.requisitionNumber}</div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(req.createdAt).toLocaleDateString()}
                       </div>
-                    )}
-                    {req.status === 'APPROVED' && (
-                      <p>Authorized by {req.approvedBy} on {new Date(req.approvedAt!).toLocaleDateString()}</p>
-                    )}
-                    {req.status === 'ISSUED' && (
-                      <div className="space-y-0.5">
-                        <p>Authorized by {req.approvedBy}</p>
-                        <p className="font-semibold text-green-700">Issued SIV: {req.sivNumber}</p>
-                        <p>Issued by {req.issuedBy} on {new Date(req.issuedAt!).toLocaleDateString()}</p>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-semibold text-gray-800">{req.department}</div>
+                      <div className="text-xs text-gray-500">{req.requesterName}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <ul className="list-inside list-disc space-y-0.5 text-xs text-gray-700">
+                        {req.items.map((it, i) => (
+                          <li key={i}>
+                            {it.itemName}{' '}
+                            <span className="font-semibold">x{it.quantityRequested}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                    <td className="px-6 py-4 text-sm whitespace-nowrap">
+                      {getStatusBadge(req.status)}
+                    </td>
+                    <td className="px-6 py-4 text-xs text-gray-500">
+                      {req.status === 'REJECTED' && req.rejectionReason && (
+                        <div className="max-w-xs rounded border border-red-100 bg-red-50 p-2 text-red-800">
+                          <p className="font-semibold text-red-500">Rejection Reason:</p>
+                          <p className="mt-0.5 font-medium">{req.rejectionReason}</p>
+                        </div>
+                      )}
+                      {req.status === 'APPROVED' && (
+                        <p>
+                          Authorized by {req.approvedBy} on{' '}
+                          {new Date(req.approvedAt!).toLocaleDateString()}
+                        </p>
+                      )}
+                      {req.status === 'ISSUED' && (
+                        <div className="space-y-0.5">
+                          <p>Authorized by {req.approvedBy}</p>
+                          <p className="font-semibold text-green-700">
+                            Issued SIV: {req.sivNumber}
+                          </p>
+                          <p>
+                            Issued by {req.issuedBy} on{' '}
+                            {new Date(req.issuedAt!).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
               {historyReqs.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">

@@ -54,25 +54,15 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-
         {/* =========================
             PUBLIC AUTH ROUTES
             ========================= */}
 
-        <Route
-          path="/login"
-          element={<LoginPage />}
-        />
+        <Route path="/login" element={<LoginPage />} />
 
-        <Route
-          path="/forgot-password"
-          element={<ForgotPasswordPage />}
-        />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-        <Route
-          path="/"
-          element={<Home />}
-        />
+        <Route path="/" element={<Home />} />
 
         {/* =========================
             TEMPORARY PUBLIC ROUTES
@@ -80,16 +70,10 @@ export default function App() {
             ========================= */}
 
         {/* Dashboard */}
-        <Route
-          path="/dashboard"
-          element={<DashboardPage />}
-        />
+        <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Reports & Analytics */}
-        <Route
-          path="/reports"
-          element={<ReportsPage />}
-        />
+        <Route path="/reports" element={<ReportsPage />} />
 
         {/* =========================
             PROTECTED APPLICATION ROUTES
@@ -97,85 +81,36 @@ export default function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-
             {/* Dashboard - temporarily disabled */}
-            {
-            <Route
-              path="/dashboard"
-              element={<DashboardPage />}
-            />
-            }
+            {<Route path="/dashboard" element={<DashboardPage />} />}
 
             {/* Reports - temporarily disabled */}
-            {
-            <Route
-              path="/reports"
-              element={<ReportsPage />}
-            />
-            }
+            {<Route path="/reports" element={<ReportsPage />} />}
 
-            <Route
-              path="/users"
-              element={<UsersPage />}
-            />
+            <Route path="/users" element={<UsersPage />} />
 
-            <Route
-              path="/roles"
-              element={
-                <PlaceholderPage title="Roles & Permissions" />
-              }
-            />
+            <Route path="/roles" element={<PlaceholderPage title="Roles & Permissions" />} />
 
-            <Route
-              path="/stock-taking"
-              element={<StockTakingPage />}
-            />
+            <Route path="/stock-taking" element={<StockTakingPage />} />
 
-            <Route
-              path="/audit-log"
-              element={<AuditLogPage />}
-            />
+            <Route path="/audit-log" element={<AuditLogPage />} />
 
-            <Route
-              path="/settings"
-              element={
-                <PlaceholderPage title="Settings" />
-              }
-            />
+            <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
 
-            <Route
-              path="/suppliers"
-              element={<SuppliersPage />}
-            />
+            <Route path="/suppliers" element={<SuppliersPage />} />
 
             {/* Stock Issuing & Requisitions */}
-            <Route
-              path="/stock-issuing"
-              element={<IssuingView />}
-            />
+            <Route path="/stock-issuing" element={<IssuingView />} />
 
             {/* Inventory */}
-            <Route
-              path="/inventory"
-              element={<InventoryTable />}
-            />
+            <Route path="/inventory" element={<InventoryTable />} />
 
-            <Route
-              path="/inventory/:id"
-              element={<ItemDetailView />}
-            />
+            <Route path="/inventory/:id" element={<ItemDetailView />} />
 
             {/* 404 */}
-            <Route
-              path="*"
-              element={
-                <PlaceholderPage title="Page Not Found" />
-              }
-            />
-
+            <Route path="*" element={<PlaceholderPage title="Page Not Found" />} />
           </Route>
         </Route>
-
       </Routes>
     </AuthProvider>
   );

@@ -567,23 +567,15 @@ export async function fetchValuationReport(
   } catch {
     const items = mockValuationData.items
       .map((item) => {
-        const lots = item.lots.filter((lot) =>
-          isWithinDateRange(lot.receivedDate, filters)
-        );
+        const lots = item.lots.filter((lot) => isWithinDateRange(lot.receivedDate, filters));
 
         if (lots.length === 0) {
           return null;
         }
 
-        const totalQuantityOnHand = lots.reduce(
-          (sum, lot) => sum + lot.quantityRemaining,
-          0
-        );
+        const totalQuantityOnHand = lots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
 
-        const totalFifoValue = lots.reduce(
-          (sum, lot) => sum + lot.totalLotValue,
-          0
-        );
+        const totalFifoValue = lots.reduce((sum, lot) => sum + lot.totalLotValue, 0);
 
         return {
           ...item,
@@ -600,14 +592,8 @@ export async function fetchValuationReport(
       summary: {
         ...mockValuationData.summary,
         totalItems: items.length,
-        totalQuantityOnHand: items.reduce(
-          (sum, item) => sum + item.totalQuantityOnHand,
-          0
-        ),
-        totalFifoValuation: items.reduce(
-          (sum, item) => sum + item.totalFifoValue,
-          0
-        ),
+        totalQuantityOnHand: items.reduce((sum, item) => sum + item.totalQuantityOnHand, 0),
+        totalFifoValuation: items.reduce((sum, item) => sum + item.totalFifoValue, 0),
         activeLotsCount: items.reduce((sum, item) => sum + item.lots.length, 0),
       },
     };
@@ -637,10 +623,7 @@ export async function fetchSupplierReport(
       summary: {
         ...mockSupplierData.summary,
         totalSuppliers: suppliers.length,
-        totalDeliveries: suppliers.reduce(
-          (sum, supplier) => sum + supplier.totalDeliveries,
-          0
-        ),
+        totalDeliveries: suppliers.reduce((sum, supplier) => sum + supplier.totalDeliveries, 0),
         totalValueSupplied: suppliers.reduce(
           (sum, supplier) => sum + supplier.totalSuppliedValue,
           0
@@ -669,9 +652,7 @@ export async function fetchStockStatusReport(
 
 export async function fetchReportHistory(): Promise<SavedReportItem[]> {
   try {
-    const res = await axios.get<{ status: string; data: SavedReportItem[] }>(
-      `${API_BASE}/history`
-    );
+    const res = await axios.get<{ status: string; data: SavedReportItem[] }>(`${API_BASE}/history`);
     return res.data.data;
   } catch {
     return mockSavedReports;
@@ -684,10 +665,7 @@ export async function createReport(data: {
   parameters?: Record<string, unknown>;
 }): Promise<SavedReportItem> {
   try {
-    const res = await axios.post<{ status: string; data: SavedReportItem }>(
-      API_BASE,
-      data
-    );
+    const res = await axios.post<{ status: string; data: SavedReportItem }>(API_BASE, data);
     return res.data.data;
   } catch {
     const newReport: SavedReportItem = {
@@ -740,8 +718,8 @@ export async function downloadReportCsv(
     let csvContent = 'Report,Data\n';
 
     if (reportType === 'stock-movement') {
-      const transactions = mockStockMovements.transactions.filter(
-        (transaction) => isWithinDateRange(transaction.createdAt, filters)
+      const transactions = mockStockMovements.transactions.filter((transaction) =>
+        isWithinDateRange(transaction.createdAt, filters)
       );
 
       csvContent =
@@ -753,8 +731,8 @@ export async function downloadReportCsv(
           )
           .join('\n');
     } else if (reportType === 'receiving') {
-      const transactions = mockReceivingData.transactions.filter(
-        (transaction) => isWithinDateRange(transaction.createdAt, filters)
+      const transactions = mockReceivingData.transactions.filter((transaction) =>
+        isWithinDateRange(transaction.createdAt, filters)
       );
 
       csvContent =
@@ -766,8 +744,8 @@ export async function downloadReportCsv(
           )
           .join('\n');
     } else if (reportType === 'issuing') {
-      const transactions = mockIssuingData.transactions.filter(
-        (transaction) => isWithinDateRange(transaction.createdAt, filters)
+      const transactions = mockIssuingData.transactions.filter((transaction) =>
+        isWithinDateRange(transaction.createdAt, filters)
       );
 
       csvContent =
@@ -782,9 +760,7 @@ export async function downloadReportCsv(
       const items = mockValuationData.items
         .map((item) => ({
           ...item,
-          lots: item.lots.filter((lot) =>
-            isWithinDateRange(lot.receivedDate, filters)
-          ),
+          lots: item.lots.filter((lot) => isWithinDateRange(lot.receivedDate, filters)),
         }))
         .filter((item) => item.lots.length > 0);
 
@@ -792,15 +768,9 @@ export async function downloadReportCsv(
         'Item Code,Item Name,Category,Warehouse,Quantity on Hand,Avg Cost,Total FIFO Value\n' +
         items
           .map((i) => {
-            const quantityOnHand = i.lots.reduce(
-              (sum, lot) => sum + lot.quantityRemaining,
-              0
-            );
+            const quantityOnHand = i.lots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
 
-            const fifoValue = i.lots.reduce(
-              (sum, lot) => sum + lot.totalLotValue,
-              0
-            );
+            const fifoValue = i.lots.reduce((sum, lot) => sum + lot.totalLotValue, 0);
 
             return `"${i.itemCode}","${i.itemName}","${i.categoryName}","${i.warehouseName}",${quantityOnHand},${i.averageUnitCost},${fifoValue}`;
           })
@@ -828,9 +798,7 @@ export async function downloadReportCsv(
           )
           .join('\n');
     } else {
-      csvContent =
-        'Report Type,Export Date\n' +
-        `${reportType},${new Date().toISOString()}\n`;
+      csvContent = 'Report Type,Export Date\n' + `${reportType},${new Date().toISOString()}\n`;
     }
 
     const blob = new Blob([csvContent], {
