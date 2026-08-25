@@ -16,7 +16,7 @@ export interface User {
   lastName: string;
   role: Role;
   department?: string | null;
-  status: UserStatus;
+  status?: UserStatus;
   createdAt: string;
   updatedAt?: string;
 }
@@ -26,9 +26,9 @@ export interface CreateUserDto {
   firstName: string;
   lastName: string;
   role: Role;
-  department?: string;
+  department?: string | null;
   password?: string;
-  status: UserStatus;
+  status?: UserStatus;
 }
 
 export interface UpdateUserDto {
@@ -36,7 +36,7 @@ export interface UpdateUserDto {
   firstName?: string;
   lastName?: string;
   role?: Role;
-  department?: string;
+  department?: string | null;
   password?: string;
   status?: UserStatus;
 }
