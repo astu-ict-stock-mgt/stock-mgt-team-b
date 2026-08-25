@@ -168,10 +168,11 @@ export function LowStockTable() {
                 aria-label="Filter by category"
               >
                 <option value="ALL">All Categories</option>
-                <option value="IT Equipment">IT Equipment</option>
-                <option value="Networking">Networking</option>
-                <option value="Hardware & Components">Hardware & Components</option>
-                <option value="Office Supplies">Office Supplies</option>
+                {Array.from(new Set(rawItems.map((i) => i.category).filter(Boolean))).map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -186,9 +187,11 @@ export function LowStockTable() {
               aria-label="Filter by warehouse"
             >
               <option value="ALL">All Warehouses</option>
-              <option value="Central ICT Warehouse">Central ICT Warehouse</option>
-              <option value="Main Store Building B">Main Store Building B</option>
-              <option value="Server Room Vault">Server Room Vault</option>
+              {Array.from(new Set(rawItems.map((i) => i.warehouse).filter(Boolean))).map((wh) => (
+                <option key={wh} value={wh}>
+                  {wh}
+                </option>
+              ))}
             </select>
 
             {/* Export CSV Button */}
