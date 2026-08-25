@@ -7,10 +7,12 @@ const router = Router();
 router.use('/reports', reportsRoutes);
 import authRoutes from '../modules/auth/routes.ts';
 import usersRoutes from '../modules/users/routes.ts';
+import auditLogRoutes from '../modules/audit-log/routes.ts';
 
 // const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
+router.use('/audit-log', auditLogRoutes);
 
 export default router;
