@@ -112,9 +112,7 @@ const DEFAULT_REQUISITIONS: Requisition[] = [
     requesterId: 'dept-head-1',
     requesterName: 'Feven Korso',
     department: 'IT Department',
-    items: [
-      { itemId: 'INV-1004', itemName: 'Desktop Computers', quantityRequested: 3 },
-    ],
+    items: [{ itemId: 'INV-1004', itemName: 'Desktop Computers', quantityRequested: 3 }],
     justification: 'New workstation setup for developers.',
     status: 'APPROVED',
     createdAt: '2026-08-20T14:20:00.000Z',
@@ -128,9 +126,7 @@ const DEFAULT_REQUISITIONS: Requisition[] = [
     requesterId: 'dept-head-2',
     requesterName: 'Alex Mercer',
     department: 'Finance Upgrade Office',
-    items: [
-      { itemId: 'INV-1002', itemName: 'Office Chairs (Ergonomic)', quantityRequested: 20 },
-    ],
+    items: [{ itemId: 'INV-1002', itemName: 'Office Chairs (Ergonomic)', quantityRequested: 20 }],
     justification: 'Replacement seats for accountant desks.',
     status: 'PENDING',
     createdAt: '2026-08-22T10:00:00.000Z',
@@ -298,14 +294,14 @@ export const stockIssuingApi = {
       if (invIndex === -1) {
         throw new Error(`Inventory item ${item.itemName} not found`);
       }
-      
+
       const invItem = updatedInventory[invIndex];
       if (invItem.quantity < item.quantityRequested) {
         throw new Error(
           `Insufficient stock for ${item.itemName}. Available: ${invItem.quantity}, Requested: ${item.quantityRequested}`
         );
       }
-      
+
       // Deduct quantity
       updatedInventory[invIndex] = {
         ...invItem,
