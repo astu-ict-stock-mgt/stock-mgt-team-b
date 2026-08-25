@@ -1,6 +1,5 @@
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
-import type { InputStockLot } from './fifo.ts';
 import 'dotenv/config';
 
 // 1. Fetch your database environment variable

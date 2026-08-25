@@ -94,7 +94,7 @@ export function UserFormModal({ isOpen, onClose, userToEdit }: UserFormModalProp
         role: userToEdit.role,
         department: userToEdit.department || '',
         password: '',
-        status: userToEdit.status,
+        status: userToEdit.status ?? 'ACTIVE',
       });
     } else {
       setFormData({

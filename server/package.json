@@ -13,6 +13,7 @@
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "admin:create": "tsx scripts/create-admin.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx dotenv-cli -e .env -- jest"
@@ -43,6 +44,7 @@
     "@types/pg": "^8.21.0",
     "@types/supertest": "^7.2.1",
     "cross-env": "^10.1.0",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^10.8.1",
     "jest": "^30.4.2",
     "nodemon": "^3.1.14",

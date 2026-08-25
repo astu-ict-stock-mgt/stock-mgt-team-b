@@ -2,8 +2,11 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 
 export interface AuthUser {
   id: string;
-  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
   role: string;
+  department?: string | null;
 }
 
 interface AuthContextValue {
@@ -21,17 +24,28 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('auth_token'));
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('auth_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const login = (newToken: string, newUser: AuthUser) => {
     setToken(newToken);
     setUser(newUser);
+    localStorage.setItem('auth_token', newToken);
+    localStorage.setItem('auth_user', JSON.stringify(newUser));
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
   };
 
   const value = useMemo<AuthContextValue>(

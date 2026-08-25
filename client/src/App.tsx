@@ -1,27 +1,50 @@
 import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import LoginPage from './features/auth/pages/LoginPage';
-import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage';
+
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './features/auth/components/ProtectedRoute';
+
+import LoginPage from './features/auth/pages/LoginPage';
+import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage';
+
 import SuppliersPage from './features/suppliers/pages/SuppliersPage';
 import UsersPage from './features/users/pages/UsersPage';
+
+import { DashboardPage } from './features/stock-monitoring/pages/DashboardPage';
+import AuditLogPage from './features/audit-log/pages/AuditLogPage';
+import { StockTakingPage } from './features/stock-taking/pages/StockTakingPage';
+
 import { Layout } from './components/Layout';
 import { PlaceholderPage } from './components/PlaceholderPage';
+
 import { TransferForm } from './features/stock-transfer/components/TransferForm';
 import { TransferHistory } from './features/stock-transfer/components/TransferHistory';
+
+import ReportsPage from './features/reports/pages/ReportsPage';
+
+import { InventoryTable } from './features/inventory/components/InventoryTable';
+import { ItemDetailView } from './features/inventory/components/ItemDetailView';
+
+import { IssuingView } from './features/stock-issuing/components/IssuingView';
 
 const TOAST_STYLES = `
   @keyframes toastIn {
     from { opacity: 0; transform: translateY(-12px) scale(0.96); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
+
   @keyframes progressBar {
     from { width: 100%; }
-    to   { width: 0%; }
+    to { width: 0%; }
   }
-  .toast-in { animation: toastIn 0.3s cubic-bezier(.175,.885,.32,1.2) both; }
-  .toast-progress { animation: progressBar 4.5s linear forwards; }
+
+  .toast-in {
+    animation: toastIn 0.3s cubic-bezier(.175,.885,.32,1.2) both;
+  }
+
+  .toast-progress {
+    animation: progressBar 4.5s linear forwards;
+  }
 `;
 
 interface ToastProps {
@@ -139,13 +162,29 @@ function StockTransferView() {
   );
 }
 
+function Home() {
+  return (
+    <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+      <h1 className="text-3xl font-bold text-gray-900">
+        Stock Management System
+      </h1>
+
+      <p className="mt-4 text-gray-600">
+        Enterprise Inventory Lifecycle & Stock Control System.
+      </p>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        {/* Public authentication routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
+        {/* Protected application routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route
@@ -153,10 +192,7 @@ export default function App() {
               element={<Navigate to="/dashboard" replace />}
             />
 
-            <Route
-              path="/dashboard"
-              element={<PlaceholderPage title="Dashboard" />}
-            />
+            <Route path="/dashboard" element={<DashboardPage />} />
 
             <Route path="/users" element={<UsersPage />} />
 
@@ -165,29 +201,26 @@ export default function App() {
               element={<PlaceholderPage title="Roles & Permissions" />}
             />
 
-            <Route
-              path="/inventory"
-              element={<PlaceholderPage title="Inventory Management" />}
-            />
+            <Route path="/inventory" element={<InventoryTable />} />
 
-            <Route
-              path="/reports"
-              element={<PlaceholderPage title="Reports" />}
-            />
+            <Route path="/inventory/:id" element={<ItemDetailView />} />
 
-            <Route
-              path="/audit-log"
-              element={<PlaceholderPage title="Audit Logs" />}
-            />
+            <Route path="/reports" element={<ReportsPage />} />
 
-            <Route
-              path="/settings"
-              element={<PlaceholderPage title="Settings" />}
-            />
+            <Route path="/audit-log" element={<AuditLogPage />} />
+
+            <Route path="/stock-taking" element={<StockTakingPage />} />
+
+            <Route path="/stock-issuing" element={<IssuingView />} />
+
+            <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
 
             <Route path="/suppliers" element={<SuppliersPage />} />
 
-            <Route path="/stock-transfer" element={<StockTransferView />} />
+            <Route
+              path="/stock-transfer"
+              element={<StockTransferView />}
+            />
 
             <Route
               path="*"
@@ -195,6 +228,9 @@ export default function App() {
             />
           </Route>
         </Route>
+
+        {/* Keep Home available if needed */}
+        <Route path="/home" element={<Home />} />
       </Routes>
     </AuthProvider>
   );
