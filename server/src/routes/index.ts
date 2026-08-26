@@ -1,16 +1,18 @@
 import { Router } from 'express';
+import stockMonitoringRoutes from '../modules/stock-monitoring/stock-monitoring.routes';
 import reportsRoutes from '../modules/reports/routes.ts';
+import authRoutes from '../modules/auth/routes.ts';
+import usersRoutes from '../modules/users/routes.ts';
+import stockReceivingRoutes from '../modules/stock-receiving/routes.ts';
+import supplierRoutes from '../modules/suppliers/routes.ts';
 
 const router = Router();
 
-// Mount reports module router under /reports (SRS Section 3.1 & 4.4.8)
+router.use('/stock-monitoring', stockMonitoringRoutes);
 router.use('/reports', reportsRoutes);
-import authRoutes from '../modules/auth/routes.ts';
-import usersRoutes from '../modules/users/routes.ts';
-
-// const router = Router();
-
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
+router.use('/stock-receiving', stockReceivingRoutes);
+router.use('/suppliers', supplierRoutes);
 
 export default router;
