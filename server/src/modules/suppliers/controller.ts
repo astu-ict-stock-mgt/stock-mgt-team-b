@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { SupplierService } from './supplier.service.ts';
+import { SupplierService } from './service.ts';
 
 const supplierService = new SupplierService();
 

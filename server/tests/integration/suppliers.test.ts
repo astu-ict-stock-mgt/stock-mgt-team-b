@@ -1,4 +1,4 @@
-import { SupplierService } from '../../src/modules/suppliers/supplier.service';
+import { SupplierService } from '../../src/modules/suppliers/service';
 
 describe('Supplier Directory Integration Test Suite', () => {
   let supplierService: SupplierService;

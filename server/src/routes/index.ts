@@ -4,7 +4,7 @@ import reportsRoutes from '../modules/reports/routes.ts';
 import authRoutes from '../modules/auth/routes.ts';
 import usersRoutes from '../modules/users/routes.ts';
 import stockReceivingRoutes from '../modules/stock-receiving/routes.ts';
-import supplierRoutes from '../modules/suppliers/supplier.routes.ts';
+import supplierRoutes from '../modules/suppliers/routes.ts';
 
 const router = Router();
 
