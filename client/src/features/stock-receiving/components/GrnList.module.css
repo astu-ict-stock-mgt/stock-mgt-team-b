@@ -1,0 +1,209 @@
+.card {
+  max-width: 72rem;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 1px 3px rgba(16, 24, 40, 0.06);
+  padding: 1.75rem 2rem 2rem;
+  font-family: Inter, 'Helvetica Neue', Arial, sans-serif;
+  color: #101828;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.cardHeader h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.cardHeader p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #667085;
+}
+
+.newButton {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+}
+
+.newButton:hover {
+  background: #1d4ed8;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchBox input {
+  width: 18rem;
+  max-width: 100%;
+  padding: 0.55rem 0.75rem 0.55rem 2.15rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  background: #f9fafb;
+}
+
+.searchBox input:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+  background: #fff;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.65rem;
+  color: #98a2b3;
+  pointer-events: none;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.filterChip {
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #d0d5dd;
+  background: #ffffff;
+  color: #475467;
+  cursor: pointer;
+}
+
+.filterChipActive {
+  background: #eff4ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.state {
+  color: #667085;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.emptyState {
+  border: 1px dashed #d0d5dd;
+  border-radius: 8px;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #667085;
+}
+
+.emptyState a {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #667085;
+  border-bottom: 1px solid #e2e5ec;
+  padding: 0.6rem 0.5rem;
+}
+
+.table td {
+  padding: 0.8rem 0.5rem;
+  border-bottom: 1px solid #eef0f3;
+  font-size: 0.88rem;
+}
+
+.grnNumber {
+  font-weight: 700;
+}
+
+.statusBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.accepted {
+  background: #ecfdf3;
+  color: #15803d;
+}
+
+.rejected {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.partial {
+  background: #fffaeb;
+  color: #b54708;
+}
+
+.viewLink {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.viewLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .table thead {
+    display: none;
+  }
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+  .table tr {
+    border-bottom: 1px solid #e2e5ec;
+    padding: 0.75rem 0;
+  }
+  .table td {
+    border: none;
+    padding: 0.15rem 0;
+  }
+}
