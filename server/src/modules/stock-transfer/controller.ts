@@ -19,7 +19,8 @@ export async function createTransfer(
       !itemId ||
       !fromWarehouseId ||
       !toWarehouseId ||
-      !quantity ||
+      quantity === undefined ||
+      quantity === null ||
       !userId
     ) {
       res.status(400).json({
