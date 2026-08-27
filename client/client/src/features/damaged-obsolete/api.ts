@@ -1,4 +1,3 @@
-// client/src/features/damaged-obsolete/api.ts
 import axios from 'axios';
 
 // Types

@@ -37,7 +37,6 @@ export function useReportsData() {
   const [filters, setFilters] = useState<ReportFiltersState>(defaultFilters);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
   const [summary, setSummary] = useState<ReportsSummaryData | null>(null);
   const [stockMovement, setStockMovement] = useState<StockMovementReportData | null>(null);
   const [receiving, setReceiving] = useState<ReceivingReportData | null>(null);
@@ -70,7 +69,6 @@ export function useReportsData() {
         fetchStockStatusReport(filters),
         fetchReportHistory(),
       ]);
-
       setSummary(summaryRes);
       setStockMovement(movementRes);
       setReceiving(receivingRes);
@@ -87,8 +85,10 @@ export function useReportsData() {
   }, [filters]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadData();
+    const fetchData = async () => {
+      await loadData();
+    };
+    fetchData();
   }, [loadData]);
 
   const updateFilter = (key: keyof ReportFiltersState, value: string) => {
