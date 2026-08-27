@@ -8,7 +8,7 @@ Reference for the **currently implemented** backend endpoints of the Stock Manag
 > [Models without endpoints](#models-without-endpoints) — do not assume routes for them exist.
 
 - **Base URL:** `http://localhost:5000/api` (port from `PORT`, default `5000`)
-- **Implemented modules:** `auth`, `users`, `stock-receiving`, `reports`
+- **Implemented modules:** `auth`, `users`, `suppliers`, `stock-receiving`, `reports`
 - **Source of truth:** `server/src/routes/index.ts` (route aggregation), `server/src/app.ts`
 
 ---
@@ -304,3 +304,206 @@ Partial update — send only the fields you want changed. A **role change** writ
 }
 ```
 **Errors:** `404 User not found`.
+
+---
+
+## Suppliers
+
+Module: `server/src/modules/suppliers/`
+
+Allowed roles for management (`POST`, `PUT`, `DELETE`): `ADMINISTRATOR`, `PAO`.  
+Allowed roles for viewing (`GET`): All 7 authenticated roles (`ADMINISTRATOR`, `PAO`, `STOREKEEPER`, `STOCK_CLERK`, `ACCOUNTANT`, `DEPARTMENT_HEAD`, `SECURITY_OFFICER`).
+
+### `GET /api/suppliers`
+
+Lists or searches suppliers sorted by name ascending (`name asc`).
+
+**Query parameters** (all optional)
+
+| Param | Type | Notes |
+| --- | --- | --- |
+| `search` | string | Case-insensitive partial match on `name` or `contactName` |
+| `isActive` | boolean | `true` or `false` to filter by active status |
+
+**`200 OK`**
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "40000000-0000-4000-8000-000000000004",
+      "name": "Acme Supplies",
+      "contactName": "Amina Ali",
+      "phone": "+254700000000",
+      "email": "amina@acme.example",
+      "address": "Nairobi",
+      "isActive": true,
+      "createdAt": "2026-08-26T00:00:00.000Z",
+      "updatedAt": "2026-08-26T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Errors:** `400 isActive filter must be boolean`.
+
+### `POST /api/suppliers`
+
+Creates a new supplier record. Requires `ADMINISTRATOR` or `PAO`.
+
+**Request**
+
+```json
+{
+  "name": "Acme Supplies",
+  "contactName": "Amina Ali",
+  "phone": "+254700000000",
+  "email": "amina@acme.example",
+  "address": "Nairobi"
+}
+```
+
+| Field | Type | Rules |
+| --- | --- | --- |
+| `name` | string | Required, non-empty |
+| `contactName` | string \| null | Optional |
+| `phone` | string \| null | Optional |
+| `email` | string \| null | Optional, valid email format |
+| `address` | string \| null | Optional |
+
+**`201 Created`**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "40000000-0000-4000-8000-000000000004",
+    "name": "Acme Supplies",
+    "contactName": "Amina Ali",
+    "phone": "+254700000000",
+    "email": "amina@acme.example",
+    "address": "Nairobi",
+    "isActive": true,
+    "createdAt": "2026-08-26T00:00:00.000Z",
+    "updatedAt": "2026-08-26T00:00:00.000Z"
+  }
+}
+```
+
+**Errors:** `400 Supplier name is required`, `400 A valid email is required`.
+
+### `GET /api/suppliers/:id`
+
+Retrieves details of a specific supplier by ID. `:id` must be a valid UUID.
+
+**`200 OK`**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "40000000-0000-4000-8000-000000000004",
+    "name": "Acme Supplies",
+    "contactName": "Amina Ali",
+    "phone": "+254700000000",
+    "email": "amina@acme.example",
+    "address": "Nairobi",
+    "isActive": true,
+    "createdAt": "2026-08-26T00:00:00.000Z",
+    "updatedAt": "2026-08-26T00:00:00.000Z"
+  }
+}
+```
+
+**Errors:** `400 Invalid supplier ID format`, `404 Supplier not found`.
+
+### `PUT /api/suppliers/:id`
+
+Partial update of supplier details. Requires `ADMINISTRATOR` or `PAO`.
+
+**Request** (all fields optional)
+
+```json
+{
+  "phone": "+254711111111"
+}
+```
+
+| Field | Rules |
+| --- | --- |
+| `name` | Must not be empty string if provided |
+| `contactName` | String or `null` |
+| `phone` | String or `null` |
+| `email` | Valid email format or `null` |
+| `address` | String or `null` |
+
+**`200 OK`**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "40000000-0000-4000-8000-000000000004",
+    "name": "Acme Supplies",
+    "contactName": "Amina Ali",
+    "phone": "+254711111111",
+    "email": "amina@acme.example",
+    "address": "Nairobi",
+    "isActive": true,
+    "createdAt": "2026-08-26T00:00:00.000Z",
+    "updatedAt": "2026-08-26T00:00:00.000Z"
+  }
+}
+```
+
+**Errors:** `400 Invalid supplier ID format`, `400 Supplier name cannot be empty`, `400 A valid email is required`, `404 Supplier not found`.
+
+### `DELETE /api/suppliers/:id`
+
+Deletes or deactivates a supplier record. Requires `ADMINISTRATOR` or `PAO`.
+
+- If the supplier is linked to existing stock transactions or Goods Receiving Notes, it is soft-deactivated (`isActive: false`).
+- If no stock history is linked, it is hard-deleted from the database.
+
+**`200 OK` (Hard delete)**
+
+```json
+{
+  "status": "success",
+  "message": "Supplier deleted successfully",
+  "data": {
+    "id": "40000000-0000-4000-8000-000000000004",
+    "name": "Acme Supplies",
+    "contactName": "Amina Ali",
+    "phone": "+254700000000",
+    "email": "amina@acme.example",
+    "address": "Nairobi",
+    "isActive": true,
+    "createdAt": "2026-08-26T00:00:00.000Z",
+    "updatedAt": "2026-08-26T00:00:00.000Z"
+  }
+}
+```
+
+**`200 OK` (Soft deactivation due to stock history)**
+
+```json
+{
+  "status": "success",
+  "message": "Supplier deactivated because it has stock history",
+  "data": {
+    "id": "40000000-0000-4000-8000-000000000004",
+    "name": "Acme Supplies",
+    "contactName": "Amina Ali",
+    "phone": "+254700000000",
+    "email": "amina@acme.example",
+    "address": "Nairobi",
+    "isActive": false,
+    "createdAt": "2026-08-26T00:00:00.000Z",
+    "updatedAt": "2026-08-26T00:00:00.000Z"
+  }
+}
+```
+
+**Errors:** `400 Invalid supplier ID format`, `404 Supplier not found`.

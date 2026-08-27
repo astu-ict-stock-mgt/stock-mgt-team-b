@@ -44,6 +44,7 @@ const sanitizeUser = (user: {
   lastName: string;
   role: string;
   department: string | null;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }) => ({
@@ -53,6 +54,7 @@ const sanitizeUser = (user: {
   lastName: user.lastName,
   role: user.role,
   department: user.department,
+  isActive: user.isActive,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
@@ -189,7 +191,6 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
   return sanitizeUser(updatedUser);
 };
 
-// Kept export name intact for controller compatibility, handles a clean database hard delete
 export const deactivateUser = async (id: string, adminId: string) => {
   const prisma = getPrisma();
   const existingUser = await prisma.user.findUnique({ where: { id } });
@@ -198,9 +199,9 @@ export const deactivateUser = async (id: string, adminId: string) => {
     throw new AppError('User not found', 404);
   }
 
-  // Performed database removal since schema does not contain an isActive field
-  await prisma.user.delete({
+  const updatedUser = await prisma.user.update({
     where: { id },
+    data: { isActive: false },
   });
 
   if (adminId) {
@@ -219,15 +220,5 @@ export const deactivateUser = async (id: string, adminId: string) => {
     }
   }
 
-  // Returns a verified completion footprint matching your backend schemas
-  return {
-    id,
-    email: existingUser.email,
-    firstName: existingUser.firstName,
-    lastName: existingUser.lastName,
-    role: existingUser.role,
-    department: existingUser.department,
-    createdAt: existingUser.createdAt,
-    updatedAt: new Date(),
-  };
+  return sanitizeUser(updatedUser);
 };

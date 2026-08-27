@@ -6,6 +6,7 @@ import stockTakingRoutes from '../modules/stock-taking/routes.ts';
 import authRoutes from '../modules/auth/routes.ts';
 import inventoryRoutes from '../modules/inventory/routes.ts';
 import usersRoutes from '../modules/users/routes.ts';
+import suppliersRoutes from '../modules/suppliers/routes.ts';
 import auditLogRoutes from '../modules/audit-log/routes.ts';
 
 const router = Router();
@@ -18,6 +19,7 @@ router.use('/stock-taking', stockTakingRoutes);
 router.use('/auth', authRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/users', usersRoutes);
+router.use('/suppliers', suppliersRoutes);
 router.use('/audit-log', auditLogRoutes);
 
 export default router;
