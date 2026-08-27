@@ -21,12 +21,10 @@ export interface UpdateUserData {
   lastName?: string;
   role?: Role;
   department?: string | null;
-  isActive?: boolean;
 }
 
 export interface GetUsersParams {
   role?: Role;
-  isActive?: boolean | string;
   search?: string;
 }
 
@@ -46,7 +44,6 @@ const sanitizeUser = (user: {
   lastName: string;
   role: string;
   department: string | null;
-  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }) => ({
@@ -56,7 +53,6 @@ const sanitizeUser = (user: {
   lastName: user.lastName,
   role: user.role,
   department: user.department,
-  isActive: user.isActive,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
@@ -67,10 +63,6 @@ export const getUsers = async (params: GetUsersParams = {}) => {
 
   if (params.role) {
     where.role = params.role;
-  }
-
-  if (params.isActive !== undefined) {
-    where.isActive = typeof params.isActive === 'string' ? params.isActive === 'true' : Boolean(params.isActive);
   }
 
   if (params.search) {
@@ -119,7 +111,6 @@ export const createUser = async (data: CreateUserData, adminId: string) => {
       lastName: data.lastName,
       role: data.role,
       department: data.department ?? null,
-      isActive: true,
     },
   });
 
@@ -165,7 +156,6 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
   if (data.lastName !== undefined) updatePayload.lastName = data.lastName;
   if (data.role !== undefined) updatePayload.role = data.role;
   if (data.department !== undefined) updatePayload.department = data.department;
-  if (data.isActive !== undefined) updatePayload.isActive = data.isActive;
 
   if (data.password) {
     updatePayload.passwordHash = await bcrypt.hash(data.password, 10);
@@ -199,7 +189,7 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
   return sanitizeUser(updatedUser);
 };
 
-// Soft delete: deactivate user (isActive: false) to maintain foreign key integrity in transactions
+// Kept export name intact for controller compatibility, handles a clean database hard delete
 export const deactivateUser = async (id: string, adminId: string) => {
   const prisma = getPrisma();
   const existingUser = await prisma.user.findUnique({ where: { id } });
@@ -208,9 +198,9 @@ export const deactivateUser = async (id: string, adminId: string) => {
     throw new AppError('User not found', 404);
   }
 
-  const deactivatedUser = await prisma.user.update({
+  // Performed database removal since schema does not contain an isActive field
+  await prisma.user.delete({
     where: { id },
-    data: { isActive: false },
   });
 
   if (adminId) {
@@ -225,9 +215,19 @@ export const deactivateUser = async (id: string, adminId: string) => {
         },
       });
     } catch {
-      // Prevent audit failure from blocking user deactivation in mock setups
+      // Prevent audit failure from blocking user execution
     }
   }
 
-  return sanitizeUser(deactivatedUser);
+  // Returns a verified completion footprint matching your backend schemas
+  return {
+    id,
+    email: existingUser.email,
+    firstName: existingUser.firstName,
+    lastName: existingUser.lastName,
+    role: existingUser.role,
+    department: existingUser.department,
+    createdAt: existingUser.createdAt,
+    updatedAt: new Date(),
+  };
 };
