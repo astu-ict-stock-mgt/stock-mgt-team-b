@@ -26,6 +26,7 @@ import { InventoryTable } from './features/inventory/components/InventoryTable';
 import { ItemDetailView } from './features/inventory/components/ItemDetailView';
 
 import { IssuingView } from './features/stock-issuing/components/IssuingView';
+import { StockTransferPage } from './features/stock-transfer/pages/StockTransferPage';
 
 function Home() {
   return (
@@ -101,6 +102,8 @@ export default function App() {
 
             {/* Stock Issuing & Requisitions */}
             <Route path="/stock-issuing" element={<IssuingView />} />
+
+            <Route path="/stock-transfer" element={<StockTransferPage />} />
 
             {/* Inventory */}
             <Route path="/inventory" element={<InventoryTable />} />
