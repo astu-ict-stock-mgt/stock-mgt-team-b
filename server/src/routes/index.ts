@@ -5,6 +5,7 @@ import stockIssuingRoutes from '../modules/stock-issuing/routes.ts';
 import stockTakingRoutes from '../modules/stock-taking/routes.ts';
 import authRoutes from '../modules/auth/routes.ts';
 import usersRoutes from '../modules/users/routes.ts';
+import auditLogRoutes from '../modules/audit-log/routes.ts';
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use('/stock-issuing', stockIssuingRoutes);
 router.use('/stock-taking', stockTakingRoutes);
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
+router.use('/audit-log', auditLogRoutes);
 
 export default router;
