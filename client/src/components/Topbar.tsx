@@ -13,7 +13,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const getPageMeta = (pathname: string) => {
     switch (pathname) {
       case '/users':
-        return { section: 'Administration', title: 'User Management & Access Control' };
+        return { section: 'Administration', title: 'Administration' };
       case '/suppliers':
         return { section: 'Directory', title: 'System Supplier Directory' };
       case '/dashboard':
@@ -52,17 +52,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         </button>
 
         <div>
-          <nav className="flex text-sm text-gray-400" aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-2">
-              <li>
-                <span>Home</span>
-              </li>
-              <li className="flex items-center">
-                <span className="mx-2">/</span>
-                <span>{section}</span>
-              </li>
-            </ol>
-          </nav>
           <h1 className="mt-0.5 text-lg font-bold text-gray-900 sm:text-2xl">{title}</h1>
         </div>
       </div>
