@@ -28,10 +28,15 @@ const router = Router();
 router.use(requireAuth);
 
 // Item Management Operations
+router.get('/', getInventoryItems);
 router.get('/items', getInventoryItems);
+router.get('/:itemId', validateItemParams, getInventoryItemById);
 router.get('/items/:itemId', validateItemParams, getInventoryItemById);
+router.post('/', validateCreateItem, createInventoryItemController);
 router.post('/items', validateCreateItem, createInventoryItemController);
+router.put('/:itemId', validateUpdateItem, updateInventoryItemController);
 router.put('/items/:itemId', validateUpdateItem, updateInventoryItemController);
+router.delete('/:itemId', validateItemParams, deleteInventoryItemController);
 router.delete('/items/:itemId', validateItemParams, deleteInventoryItemController);
 
 // Stock Lot Management Operations

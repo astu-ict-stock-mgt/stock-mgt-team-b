@@ -21,6 +21,7 @@ process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 
 jest.unstable_mockModule('../../src/generated/prisma/client.js', () => ({
   PrismaClient: jest.fn(() => ({ user: { findUnique } })),
+  Prisma: {},
 }));
 
 const { default: app } = await import('../../src/app.ts');

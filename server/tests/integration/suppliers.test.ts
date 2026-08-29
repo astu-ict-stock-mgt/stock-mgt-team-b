@@ -31,6 +31,7 @@ jest.unstable_mockModule('../../src/generated/prisma/client.js', () => ({
     },
     $disconnect: disconnect,
   })),
+  Prisma: {},
 }));
 
 const { default: app } = await import('../../src/app.ts');

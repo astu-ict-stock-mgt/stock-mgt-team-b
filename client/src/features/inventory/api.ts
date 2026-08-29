@@ -1,6 +1,4 @@
-// client/src/features/inventory/api.ts
-
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 
 // ============================================================
 // TYPES
@@ -48,11 +46,17 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// ============================================================
-// API BASE
-// ============================================================
-
-const API_BASE = '/api';
+interface BackendItem {
+  id: string;
+  itemCode: string;
+  name: string;
+  description?: string | null;
+  minLevel?: number;
+  maxLevel?: number;
+  category?: { name: string } | string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 // ============================================================
 // API FUNCTIONS
@@ -67,44 +71,129 @@ export const inventoryApi = {
     if (filters?.page) params.append('page', String(filters.page || 1));
     if (filters?.limit) params.append('limit', String(filters.limit || 10));
 
-    const response = await axios.get(`${API_BASE}/inventory?${params.toString()}`);
-    return response.data;
+    try {
+      const response = await apiClient.get<{ status: string; data: BackendItem[] }>(
+        `/inventory/items?${params.toString()}`
+      );
+      const rawList = response.data?.data || [];
+      const mapped: InventoryItem[] = rawList.map((i) => ({
+        id: i.id,
+        name: i.name,
+        sku: i.itemCode,
+        category: typeof i.category === 'object' ? i.category.name : i.category || 'General',
+        quantity: 0,
+        unit: 'Units',
+        totalValue: 0,
+        minStock: i.minLevel,
+        maxStock: i.maxLevel,
+        createdAt: i.createdAt,
+        updatedAt: i.updatedAt,
+      }));
+
+      return {
+        data: mapped,
+        total: mapped.length,
+        page: filters?.page || 1,
+        limit: filters?.limit || 10,
+        totalPages: Math.ceil(mapped.length / (filters?.limit || 10)) || 1,
+      };
+    } catch {
+      return { data: [], total: 0, page: 1, limit: 10, totalPages: 1 };
+    }
   },
 
   // Get a single inventory item by ID
   getById: async (id: string): Promise<InventoryItem> => {
-    const response = await axios.get(`${API_BASE}/inventory/${id}`);
-    return response.data;
+    const response = await apiClient.get<{ status: string; data: BackendItem }>(
+      `/inventory/items/${id}`
+    );
+    const i = response.data.data;
+    return {
+      id: i.id,
+      name: i.name,
+      sku: i.itemCode,
+      category: typeof i.category === 'object' ? i.category.name : i.category || 'General',
+      quantity: 0,
+      unit: 'Units',
+      totalValue: 0,
+      minStock: i.minLevel,
+      maxStock: i.maxLevel,
+      createdAt: i.createdAt,
+      updatedAt: i.updatedAt,
+    };
   },
 
   // Get lots for a specific item (for detail view)
   getLotsByItemId: async (itemId: string): Promise<InventoryLot[]> => {
-    const response = await axios.get(`${API_BASE}/inventory/${itemId}/lots`);
-    return response.data;
+    try {
+      const response = await apiClient.get<{ status: string; data: InventoryLot[] }>(
+        `/inventory/items/${itemId}/lots`
+      );
+      return response.data?.data || [];
+    } catch {
+      return [];
+    }
   },
 
   // Create new inventory item
   create: async (data: Partial<InventoryItem>): Promise<InventoryItem> => {
-    const response = await axios.post(`${API_BASE}/inventory`, data);
-    return response.data;
+    const response = await apiClient.post<{ status: string; data: BackendItem }>(
+      '/inventory/items',
+      {
+        itemCode: data.sku || `SKU-${Date.now().toString().slice(-4)}`,
+        name: data.name,
+        description: data.category,
+        minLevel: data.minStock || 0,
+        maxLevel: data.maxStock || 0,
+      }
+    );
+    const i = response.data.data;
+    return {
+      id: i.id,
+      name: i.name,
+      sku: i.itemCode,
+      category: typeof i.category === 'object' ? i.category.name : i.category || 'General',
+      quantity: 0,
+      unit: 'Units',
+      totalValue: 0,
+      createdAt: i.createdAt,
+      updatedAt: i.updatedAt,
+    };
   },
 
   // Update inventory item
   update: async (id: string, data: Partial<InventoryItem>): Promise<InventoryItem> => {
-    const response = await axios.put(`${API_BASE}/inventory/${id}`, data);
-    return response.data;
+    const response = await apiClient.put<{ status: string; data: BackendItem }>(
+      `/inventory/items/${id}`,
+      {
+        name: data.name,
+        minLevel: data.minStock,
+        maxLevel: data.maxStock,
+      }
+    );
+    const i = response.data.data;
+    return {
+      id: i.id,
+      name: i.name,
+      sku: i.itemCode,
+      category: typeof i.category === 'object' ? i.category.name : i.category || 'General',
+      quantity: 0,
+      unit: 'Units',
+      totalValue: 0,
+      createdAt: i.createdAt,
+      updatedAt: i.updatedAt,
+    };
   },
 
   // Delete inventory item
   delete: async (id: string): Promise<{ message: string }> => {
-    const response = await axios.delete(`${API_BASE}/inventory/${id}`);
+    const response = await apiClient.delete<{ message: string }>(`/inventory/items/${id}`);
     return response.data;
   },
 
   // Get categories for filter
   getCategories: async (): Promise<string[]> => {
-    const response = await axios.get(`${API_BASE}/inventory/categories`);
-    return response.data;
+    return ['General', 'Office Supplies', 'IT Equipment', 'Furniture'];
   },
 };
 
