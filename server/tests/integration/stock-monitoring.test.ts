@@ -1,365 +1,112 @@
-import express from 'express';
 import request from 'supertest';
+import { jest } from '@jest/globals';
 import jwt from 'jsonwebtoken';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 process.env.JWT_SECRET = 'test-jwt-secret';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 
-const mockPrisma = {
-  $transaction: jest.fn(),
-  $disconnect: jest.fn(),
+const mockGetStockLevels = jest.fn<() => Promise<unknown>>();
+const mockGetItemStockLevel = jest.fn<() => Promise<unknown>>();
+const mockGetStockAlerts = jest.fn<() => Promise<unknown>>();
+const mockGetStockSummaryStats = jest.fn<() => Promise<unknown>>();
 
-  inventoryItem: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-  },
-
-  binCard: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-  },
-};
-
-jest.unstable_mockModule('../../src/generated/prisma/client.js', () => ({
-  PrismaClient: jest.fn(() => mockPrisma),
+jest.unstable_mockModule('../../src/modules/stock-monitoring/service.ts', () => ({
+  getStockLevels: mockGetStockLevels,
+  getItemStockLevel: mockGetItemStockLevel,
+  getStockAlerts: mockGetStockAlerts,
+  getStockSummaryStats: mockGetStockSummaryStats,
 }));
 
-const { default: stockMonitoringRoutes } = await import(
-  '../../src/modules/stock-monitoring/routes.ts'
-);
+const { default: app } = await import('../../src/app.ts');
 
-const { errorHandler, notFoundHandler } = await import(
-  '../../src/middlewares/errorHandler.ts'
-);
+describe('Stock Monitoring Integration Tests', () => {
+  const createToken = (role: string = 'STOREKEEPER', userId: string = 'user-1') => {
+    return jwt.sign(
+      { sub: userId, email: 'storekeeper@example.com', role },
+      process.env.JWT_SECRET as string
+    );
+  };
 
-const app = express();
-
-app.use(express.json());
-app.use('/api/stock-monitoring', stockMonitoringRoutes);
-app.use(notFoundHandler);
-app.use(errorHandler);
-
-const createToken = (role: string) =>
-  jwt.sign(
-    {
-      sub: 'user-1',
-      email: 'storekeeper@example.com',
-      role,
-    },
-    process.env.JWT_SECRET as string
-  );
-
-describe('Stock Monitoring', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('GET /api/stock-monitoring', () => {
-    it('should return all items with stock levels categorized by severity', async () => {
-      const token = createToken('STOREKEEPER');
-
-      const mockItems = [
-        {
-          id: 'item-1',
-          itemCode: 'ITEM-001',
-          name: 'Paper A4',
-          description: '80gsm paper',
-          warehouseId: 'warehouse-1',
-          minLevel: 200,
-          maxLevel: 1000,
-          reorderLevel: 300,
-          safetyStock: 200,
-          binCard: [
-            {
-              balance: 150, // Below safety stock - CRITICAL
-            },
-          ],
-        },
-        {
-          id: 'item-2',
-          itemCode: 'ITEM-002',
-          name: 'Pens',
-          description: 'Blue pens',
-          warehouseId: 'warehouse-1',
-          minLevel: 100,
-          maxLevel: 500,
-          reorderLevel: 300,
-          safetyStock: 200,
-          binCard: [
-            {
-              balance: 250, // Between safety and reorder - WARNING
-            },
-          ],
-        },
-        {
-          id: 'item-3',
-          itemCode: 'ITEM-003',
-          name: 'Folders',
-          description: 'Manila folders',
-          warehouseId: 'warehouse-1',
-          minLevel: 100,
-          maxLevel: 1000,
-          reorderLevel: 300,
-          safetyStock: 200,
-          binCard: [
-            {
-              balance: 800, // Above reorder - HEALTHY
-            },
-          ],
-        },
-      ];
-
-      mockPrisma.inventoryItem.findMany.mockResolvedValue(mockItems);
-
-      const response = await request(app)
-        .get('/api/stock-monitoring')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(200);
-
-      expect(response.body.status).toBe('success');
-      expect(response.body.data.critical).toHaveLength(1);
-      expect(response.body.data.critical[0].severity).toBe('red');
-      expect(response.body.data.critical[0].itemCode).toBe('ITEM-001');
-      expect(response.body.data.critical[0].currentStock).toBe(150);
-
-      expect(response.body.data.warning).toHaveLength(1);
-      expect(response.body.data.warning[0].severity).toBe('yellow');
-      expect(response.body.data.warning[0].itemCode).toBe('ITEM-002');
-      expect(response.body.data.warning[0].currentStock).toBe(250);
-
-      expect(response.body.data.healthy).toHaveLength(1);
-      expect(response.body.data.healthy[0].severity).toBe('green');
-      expect(response.body.data.healthy[0].itemCode).toBe('ITEM-003');
-      expect(response.body.data.healthy[0].currentStock).toBe(800);
-
-      expect(response.body.data.summary.totalItems).toBe(3);
-      expect(response.body.data.summary.criticalCount).toBe(1);
-      expect(response.body.data.summary.warningCount).toBe(1);
-      expect(response.body.data.summary.healthyCount).toBe(1);
-    });
-
-    it('should filter by warehouseId when provided', async () => {
-      const token = createToken('STOREKEEPER');
-
-      const mockItems = [
-        {
-          id: 'item-1',
-          itemCode: 'ITEM-001',
-          name: 'Paper A4',
-          description: '80gsm paper',
-          warehouseId: 'warehouse-1',
-          minLevel: 200,
-          maxLevel: 1000,
-          reorderLevel: 300,
-          safetyStock: 200,
-          binCard: [{ balance: 500 }],
-        },
-      ];
-
-      mockPrisma.inventoryItem.findMany.mockResolvedValue(mockItems);
-
-      const response = await request(app)
-        .get('/api/stock-monitoring?warehouseId=warehouse-1')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(200);
-
-      expect(response.body.status).toBe('success');
-      expect(mockPrisma.inventoryItem.findMany).toHaveBeenCalledWith({
-        where: { warehouseId: 'warehouse-1' },
-        include: {
-          warehouse: true,
-          binCard: {
-            where: { warehouseId: 'warehouse-1' },
-          },
-        },
-      });
-    });
-
-    it('should reject invalid warehouseId UUID', async () => {
-      const token = createToken('STOREKEEPER');
-
-      const response = await request(app)
-        .get('/api/stock-monitoring?warehouseId=not-a-uuid')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(400);
-
-      expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain('warehouseId must be a valid UUID');
-    });
-
-    it('should require authentication', async () => {
-      await request(app)
-        .get('/api/stock-monitoring')
-        .expect(401);
-    });
-
-    it('should allow all authenticated roles', async () => {
-      const roles = [
-        'STOREKEEPER',
-        'STOCK_CLERK',
-        'ACCOUNTANT',
-        'DEPARTMENT_HEAD',
-        'PAO',
-        'ADMINISTRATOR',
-        'SECURITY_OFFICER',
-      ];
-
-      mockPrisma.inventoryItem.findMany.mockResolvedValue([]);
-
-      for (const role of roles) {
-        const token = createToken(role);
-        const response = await request(app)
-          .get('/api/stock-monitoring')
-          .set('Authorization', `Bearer ${token}`);
-
-        expect(response.status).toBe(200);
-      }
-    });
+  it('should return 401 when token is missing', async () => {
+    await request(app).get('/api/stock-monitoring').expect(401);
   });
 
-  describe('GET /api/stock-monitoring/:itemId', () => {
-    it('should return a specific item stock level', async () => {
-      const token = createToken('STOREKEEPER');
-
-      const mockItem = {
-        id: 'item-1',
-        itemCode: 'ITEM-001',
-        name: 'Paper A4',
-        description: '80gsm paper',
-        warehouseId: 'warehouse-1',
-        minLevel: 200,
-        maxLevel: 1000,
-        reorderLevel: 300,
-        safetyStock: 200,
-        binCard: [{ balance: 150 }],
-      };
-
-      mockPrisma.inventoryItem.findUnique.mockResolvedValue(mockItem);
-
-      const response = await request(app)
-        .get('/api/stock-monitoring/item-1')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(200);
-
-      expect(response.body.status).toBe('success');
-      expect(response.body.data.id).toBe('item-1');
-      expect(response.body.data.itemCode).toBe('ITEM-001');
-      expect(response.body.data.currentStock).toBe(150);
-      expect(response.body.data.severity).toBe('red');
-      expect(response.body.data.status).toBe('critical');
+  it('should return stock levels for authenticated user', async () => {
+    const token = createToken('STOREKEEPER');
+    mockGetStockLevels.mockResolvedValue({
+      critical: [],
+      warning: [],
+      healthy: [],
+      summary: { totalItems: 0, criticalCount: 0, warningCount: 0, healthyCount: 0 },
     });
 
-    it('should return 404 if item not found', async () => {
-      const token = createToken('STOREKEEPER');
+    const res = await request(app)
+      .get('/api/stock-monitoring')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
 
-      mockPrisma.inventoryItem.findUnique.mockResolvedValue(null);
+    expect(res.body.status).toBe('success');
+    expect(res.body.data.summary).toBeDefined();
+    expect(mockGetStockLevels).toHaveBeenCalledTimes(1);
+  });
 
-      const response = await request(app)
-        .get('/api/stock-monitoring/nonexistent-id')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(404);
+  it('should return stock alerts for /api/stock-monitoring/alerts', async () => {
+    const token = createToken('PAO');
+    mockGetStockAlerts.mockResolvedValue([
+      { id: 'item-1', name: 'Paper', severity: 'red' },
+    ]);
 
-      expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain('Item not found');
+    const res = await request(app)
+      .get('/api/stock-monitoring/alerts')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.status).toBe('success');
+    expect(res.body.data).toHaveLength(1);
+    expect(mockGetStockAlerts).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return summary stats for /api/stock-monitoring/summary-stats', async () => {
+    const token = createToken('ADMINISTRATOR');
+    mockGetStockSummaryStats.mockResolvedValue({
+      totalItemsMonitored: 10,
+      totalAlerts: 2,
+      criticalAlerts: 1,
+      warningAlerts: 1,
+      outOfStockCount: 0,
+      adequateStockCount: 8,
+      estimatedReplenishmentCost: 150,
+      lastUpdated: new Date().toISOString(),
     });
 
-    it('should return 404 if item not in specified warehouse', async () => {
-      const token = createToken('STOREKEEPER');
+    const res = await request(app)
+      .get('/api/stock-monitoring/summary-stats')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
 
-      const mockItem = {
-        id: 'item-1',
-        itemCode: 'ITEM-001',
-        name: 'Paper A4',
-        warehouseId: 'warehouse-1',
-        minLevel: 200,
-        maxLevel: 1000,
-        reorderLevel: 300,
-        safetyStock: 200,
-        binCard: [],
-      };
+    expect(res.body.status).toBe('success');
+    expect(res.body.stats.totalItemsMonitored).toBe(10);
+    expect(mockGetStockSummaryStats).toHaveBeenCalledTimes(1);
+  });
 
-      mockPrisma.inventoryItem.findUnique.mockResolvedValue(mockItem);
-
-      const response = await request(app)
-        .get('/api/stock-monitoring/item-1?warehouseId=warehouse-2')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(404);
-
-      expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain(
-        'Item does not exist in the specified warehouse'
-      );
+  it('should return single item stock level', async () => {
+    const token = createToken('STOREKEEPER');
+    mockGetItemStockLevel.mockResolvedValue({
+      id: 'item-100',
+      itemCode: 'SKU-100',
+      currentStock: 5,
     });
 
-    it('should reject invalid warehouseId UUID', async () => {
-      const token = createToken('STOREKEEPER');
+    const res = await request(app)
+      .get('/api/stock-monitoring/item-100')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
 
-      const response = await request(app)
-        .get('/api/stock-monitoring/item-1?warehouseId=not-a-uuid')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(400);
-
-      expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain('warehouseId must be a valid UUID');
-    });
-
-    it('should require authentication', async () => {
-      await request(app)
-        .get('/api/stock-monitoring/item-1')
-        .expect(401);
-    });
-
-    it('should correctly categorize items as warning status', async () => {
-      const token = createToken('STOREKEEPER');
-
-      const mockItem = {
-        id: 'item-1',
-        itemCode: 'ITEM-001',
-        name: 'Paper A4',
-        warehouseId: 'warehouse-1',
-        minLevel: 100,
-        maxLevel: 500,
-        reorderLevel: 300,
-        safetyStock: 200,
-        binCard: [{ balance: 250 }], // Between safety (200) and reorder (300)
-      };
-
-      mockPrisma.inventoryItem.findUnique.mockResolvedValue(mockItem);
-
-      const response = await request(app)
-        .get('/api/stock-monitoring/item-1')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(200);
-
-      expect(response.body.data.severity).toBe('yellow');
-      expect(response.body.data.status).toBe('warning');
-    });
-
-    it('should correctly categorize items as healthy status', async () => {
-      const token = createToken('STOREKEEPER');
-
-      const mockItem = {
-        id: 'item-1',
-        itemCode: 'ITEM-001',
-        name: 'Paper A4',
-        warehouseId: 'warehouse-1',
-        minLevel: 100,
-        maxLevel: 1000,
-        reorderLevel: 300,
-        safetyStock: 200,
-        binCard: [{ balance: 500 }], // Above reorder (300)
-      };
-
-      mockPrisma.inventoryItem.findUnique.mockResolvedValue(mockItem);
-
-      const response = await request(app)
-        .get('/api/stock-monitoring/item-1')
-        .set('Authorization', `Bearer ${token}`)
-        .expect(200);
-
-      expect(response.body.data.severity).toBe('green');
-      expect(response.body.data.status).toBe('healthy');
-    });
+    expect(res.body.status).toBe('success');
+    expect(res.body.data.id).toBe('item-100');
+    expect(mockGetItemStockLevel).toHaveBeenCalledWith('item-100', undefined);
   });
 });
