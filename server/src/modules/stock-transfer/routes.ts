@@ -1,10 +1,16 @@
 import { Router } from 'express';
-import {
-  createTransfer,
-} from './controller.ts';
+import { requireAuth, requireRole } from '../../middlewares/rbac.ts';
+import { createTransfer } from './controller.ts';
+import { validateStockTransfer } from './validation.ts';
 
 const router = Router();
 
-router.post('/', createTransfer);
+router.post(
+  '/',
+  requireAuth,
+  requireRole('STOREKEEPER', 'ADMINISTRATOR'),
+  validateStockTransfer,
+  createTransfer,
+);
 
 export default router;

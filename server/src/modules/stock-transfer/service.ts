@@ -1,11 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client.js';
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-const prisma = new PrismaClient({ adapter });
+import { AppError } from '../../middlewares/errorHandler.ts';
 
 export interface CreateTransferInput {
   itemId: string;
@@ -16,123 +11,176 @@ export interface CreateTransferInput {
   referenceNumber?: string;
 }
 
-export async function createStockTransfer(input: CreateTransferInput) {
-  if (input.quantity <= 0) {
-    throw new Error('Transfer quantity must be greater than zero');
+const getDatabaseUrl = (): string => {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new AppError('DATABASE_URL must be configured', 500);
   }
 
-  if (input.fromWarehouseId === input.toWarehouseId) {
-    throw new Error('Source and destination warehouses must be different');
-  }
+  return databaseUrl;
+};
 
-  return prisma.$transaction(async (tx) => {
-    const item = await tx.inventoryItem.findUnique({
-      where: {
-        id: input.itemId,
-      },
-    });
+const createPrismaClient = (): PrismaClient => {
+  return new PrismaClient({
+    adapter: new PrismaPg({
+      connectionString: getDatabaseUrl(),
+    }),
+  });
+};
 
-    if (!item) {
-      throw new Error('Inventory item not found');
-    }
+export const createStockTransfer = async (
+  input: CreateTransferInput,
+) => {
+  const prisma = createPrismaClient();
 
-    const sourceTransaction = await tx.stockTransaction.findFirst({
-      where: {
-        inventoryItemId: input.itemId,
-        warehouseId: input.fromWarehouseId,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    const sourceBinCard = await tx.binCard.findUnique({
-      where: {
-        inventoryItemId_warehouseId: {
-          inventoryItemId: input.itemId,
-          warehouseId: input.fromWarehouseId,
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const item = await tx.inventoryItem.findUnique({
+        where: {
+          id: input.itemId,
         },
-      },
-    });
+      });
 
-    const currentSourceBalance = sourceBinCard?.balance ?? 0;
+      if (!item) {
+        throw new AppError('Inventory item not found', 404);
+      }
 
-    if (currentSourceBalance < input.quantity) {
-      throw new Error(
-        `Insufficient stock. Available stock: ${currentSourceBalance}`,
-      );
-    }
-
-    const destinationBinCard = await tx.binCard.findUnique({
-      where: {
-        inventoryItemId_warehouseId: {
-          inventoryItemId: input.itemId,
-          warehouseId: input.toWarehouseId,
+      const sourceWarehouse = await tx.warehouse.findUnique({
+        where: {
+          id: input.fromWarehouseId,
         },
-      },
-    });
+      });
 
-    const newSourceBalance = currentSourceBalance - input.quantity;
-    const newDestinationBalance =
-      (destinationBinCard?.balance ?? 0) + input.quantity;
+      if (!sourceWarehouse) {
+        throw new AppError('Source warehouse not found', 404);
+      }
 
-    if (sourceBinCard) {
-      await tx.binCard.update({
+      const destinationWarehouse = await tx.warehouse.findUnique({
+        where: {
+          id: input.toWarehouseId,
+        },
+      });
+
+      if (!destinationWarehouse) {
+        throw new AppError('Destination warehouse not found', 404);
+      }
+
+      const sourceBinCard = await tx.binCard.findUnique({
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: input.itemId,
+            warehouseId: input.fromWarehouseId,
+          },
+        },
+      });
+
+      if (!sourceBinCard) {
+        throw new AppError('Source stock record not found', 404);
+      }
+
+      if (sourceBinCard.balance < input.quantity) {
+        throw new AppError(
+          `Insufficient stock. Available stock: ${sourceBinCard.balance}`,
+          400,
+        );
+      }
+
+      /*
+       * Atomically deduct the source quantity.
+       *
+       * The balance >= quantity condition protects against a concurrent
+       * transfer making the source balance insufficient between the read
+       * above and this update.
+       */
+      const sourceUpdate = await tx.binCard.updateMany({
         where: {
           id: sourceBinCard.id,
+          balance: {
+            gte: input.quantity,
+          },
         },
         data: {
-          balance: newSourceBalance,
+          balance: {
+            decrement: input.quantity,
+          },
           lastUpdated: new Date(),
         },
       });
-    } else {
-      await tx.binCard.create({
-        data: {
-          inventoryItemId: input.itemId,
-          warehouseId: input.fromWarehouseId,
-          balance: newSourceBalance,
-          lastUpdated: new Date(),
-        },
-      });
-    }
 
-    if (destinationBinCard) {
-      await tx.binCard.update({
+      if (sourceUpdate.count !== 1) {
+        throw new AppError(
+          'Insufficient stock. Source stock changed before transfer could be completed',
+          400,
+        );
+      }
+
+      const destinationBinCard = await tx.binCard.upsert({
         where: {
-          id: destinationBinCard.id,
+          inventoryItemId_warehouseId: {
+            inventoryItemId: input.itemId,
+            warehouseId: input.toWarehouseId,
+          },
         },
-        data: {
-          balance: newDestinationBalance,
+        update: {
+          balance: {
+            increment: input.quantity,
+          },
           lastUpdated: new Date(),
         },
-      });
-    } else {
-      await tx.binCard.create({
-        data: {
+        create: {
           inventoryItemId: input.itemId,
           warehouseId: input.toWarehouseId,
-          balance: newDestinationBalance,
+          balance: input.quantity,
           lastUpdated: new Date(),
         },
       });
-    }
 
-    const transaction = await tx.stockTransaction.create({
-      data: {
-        type: 'TRANSFER',
-        inventoryItemId: input.itemId,
-        warehouseId: input.fromWarehouseId,
+      /*
+       * The current StockTransaction schema stores one warehouseId.
+       * For a transfer, this is the source warehouse.
+       *
+       * The destination warehouse is preserved in the authenticated
+       * request/audit trail through the existing auditLogger middleware.
+       */
+      const sourceTransaction = await tx.stockTransaction.findFirst({
+        where: {
+          inventoryItemId: input.itemId,
+          warehouseId: input.fromWarehouseId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      const unitCost = sourceTransaction?.unitCost ?? null;
+
+      const transaction = await tx.stockTransaction.create({
+        data: {
+          type: 'TRANSFER',
+          inventoryItemId: input.itemId,
+          warehouseId: input.fromWarehouseId,
+          quantity: input.quantity,
+          unitCost,
+          totalValue:
+            unitCost !== null
+              ? input.quantity * unitCost
+              : null,
+          referenceNumber: input.referenceNumber ?? null,
+          userId: input.userId,
+        },
+      });
+
+      return {
+        transaction,
+        sourceWarehouseId: input.fromWarehouseId,
+        destinationWarehouseId: input.toWarehouseId,
         quantity: input.quantity,
-        unitCost: sourceTransaction?.unitCost ?? null,
-        totalValue: sourceTransaction?.unitCost
-          ? sourceTransaction.unitCost * input.quantity
-          : null,
-        referenceNumber: input.referenceNumber ?? null,
-        userId: input.userId,
-      },
+        sourceBalance: sourceBinCard.balance - input.quantity,
+        destinationBalance: destinationBinCard.balance,
+      };
     });
-
-    return transaction;
-  });
-}
+  } finally {
+    await prisma.$disconnect();
+  }
+};
