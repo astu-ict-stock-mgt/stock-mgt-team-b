@@ -1,102 +1,48 @@
+import apiClient from '../../api/apiClient';
 import type { InventoryItem, CreateStockTakeDto, StockTakeStatus } from './types';
 
-// Mocked inventory data (since we don't have a real DB yet)
-const mockInventoryItems: InventoryItem[] = [
-  {
-    id: 'INV-1001',
-    itemCode: 'ITM-001',
-    itemName: 'A4 Paper Reams (Box of 5)',
-    systemQuantity: 120,
-    actualQuantity: null,
-    unitPrice: 12.5,
-    category: 'Office Supplies',
-  },
-  {
-    id: 'INV-1002',
-    itemCode: 'ITM-002',
-    itemName: 'Office Chairs (Ergonomic)',
-    systemQuantity: 15,
-    actualQuantity: null,
-    unitPrice: 350.0,
-    category: 'Furniture',
-  },
-  {
-    id: 'INV-1003',
-    itemCode: 'ITM-003',
-    itemName: 'Black Ballpoint Pens (Box of 50)',
-    systemQuantity: 200,
-    actualQuantity: null,
-    unitPrice: 2.0,
-    category: 'Office Supplies',
-  },
-  {
-    id: 'INV-1004',
-    itemCode: 'ITM-004',
-    itemName: 'Desktop Computers',
-    systemQuantity: 8,
-    actualQuantity: null,
-    unitPrice: 1500.0,
-    category: 'IT Equipment',
-  },
-  {
-    id: 'INV-1005',
-    itemCode: 'ITM-005',
-    itemName: 'Fire Extinguishers',
-    systemQuantity: 4,
-    actualQuantity: null,
-    unitPrice: 75.0,
-    category: 'Safety Equipment',
-  },
-];
+interface BackendItem {
+  id: string;
+  itemCode: string;
+  name: string;
+  category?: { name: string } | string;
+}
 
 export async function fetchStockTakeItems(
   statusFilter?: StockTakeStatus,
   page: number = 1,
   pageSize: number = 10
 ): Promise<{ data: InventoryItem[]; totalCount: number }> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  try {
+    const res = await apiClient.get<{ status: string; data: BackendItem[] }>('/inventory/items');
+    const items = res.data?.data || [];
 
-  let result = mockInventoryItems;
+    const mapped: InventoryItem[] = items.map((item) => ({
+      id: item.id,
+      itemCode: item.itemCode,
+      itemName: item.name,
+      systemQuantity: 0,
+      actualQuantity: null,
+      unitPrice: 0,
+      category: typeof item.category === 'object' ? item.category.name : item.category || 'General',
+    }));
 
-  if (statusFilter) {
-    if (statusFilter === 'pending') {
-      result = result.filter(
-        (item) =>
-          item.actualQuantity !== null && item.submittedReason && !item.approved && !item.rejected
-      );
-    } else if (statusFilter === 'approved') {
-      result = result.filter((item) => item.approved);
-    } else if (statusFilter === 'rejected') {
-      result = result.filter((item) => item.rejected);
-    } else {
-      result = result.filter((item) => item.actualQuantity === null);
-    }
+    const totalCount = mapped.length;
+    const start = (page - 1) * pageSize;
+    const paginatedData = mapped.slice(start, start + pageSize);
+
+    return { data: paginatedData, totalCount };
+  } catch {
+    return { data: [], totalCount: 0 };
   }
-
-  const totalCount = result.length;
-  const start = (page - 1) * pageSize;
-  const paginatedData = result.slice(start, start + pageSize);
-
-  return { data: paginatedData, totalCount };
 }
 
 export async function submitStockTake(data: CreateStockTakeDto): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  // Update the actual quantities
-  const itemIndex = mockInventoryItems.findIndex((i) => i.id === data.itemId);
-  if (itemIndex === -1) throw new Error('Item not found');
-
-  const item = mockInventoryItems[itemIndex];
-  mockInventoryItems[itemIndex] = {
-    ...item,
-    actualQuantity: data.actualQuantity,
-    discrepancy: item.systemQuantity - data.actualQuantity,
-    submittedReason: data.reason,
-    submittedAt: new Date().toISOString(),
-    submittedBy: 'Storekeeper', // Mocked user
-    approved: false,
-    rejected: false,
-  };
+  await apiClient.post('/stock-taking', {
+    inventoryItemId: data.itemId,
+    physicalQuantity: data.actualQuantity,
+    reason: data.reason,
+  });
 }
 
 export async function processStockTake(
@@ -104,23 +50,9 @@ export async function processStockTake(
   action: 'approve' | 'reject',
   notes?: string
 ): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const index = mockInventoryItems.findIndex((i) => i.id === id);
-  if (index === -1) throw new Error('Item not found');
-
   if (action === 'approve') {
-    mockInventoryItems[index] = {
-      ...mockInventoryItems[index],
-      approved: true,
-      approvedAt: new Date().toISOString(),
-      approverNotes: notes,
-    };
+    await apiClient.post(`/stock-taking/reconciliations/${id}/approve`, { notes });
   } else {
-    mockInventoryItems[index] = {
-      ...mockInventoryItems[index],
-      rejected: true,
-      rejectedAt: new Date().toISOString(),
-      rejectionNotes: notes,
-    };
+    await apiClient.post(`/stock-taking/reconciliations/${id}/reject`, { notes });
   }
 }

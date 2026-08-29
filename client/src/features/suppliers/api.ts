@@ -1,56 +1,29 @@
+import apiClient from '../../api/apiClient';
 import type { Supplier, CreateSupplierDto } from './types';
 
-// Mocked data since backend is not ready
-let mockSuppliers: Supplier[] = [
-  {
-    supplierId: 'SPL-1002',
-    companyName: 'Afritech Solutions Ltd',
-    contactPerson: 'Nuhu Bello',
-    businessPhone: '+234 803 1234',
-    contactEmail: 'procurement@afritech.com',
-    status: 'Active',
-  },
-  {
-    supplierId: 'SPL-1024',
-    companyName: 'Global Office Logistics',
-    contactPerson: 'Emily Vance',
-    businessPhone: '+1 415 982 1042',
-    contactEmail: 'orders@globalofficelog.com',
-    status: 'Active',
-  },
-  {
-    supplierId: 'SPL-1049',
-    companyName: 'Broadband Backbone Inc',
-    contactPerson: 'Abigail Stone',
-    businessPhone: '+1 212 555 0199',
-    contactEmail: 'networks@broadbandbackbone.net',
-    status: 'Active',
-  },
-  {
-    supplierId: 'SPL-1082',
-    companyName: 'Power Tech Distributors',
-    contactPerson: 'John Doe',
-    businessPhone: '+44 20 7946 0958',
-    contactEmail: 'supply@powertechdist.co.uk',
-    status: 'Inactive',
-  },
-  {
-    supplierId: 'SPL-1104',
-    companyName: 'Fibers & Cables Corp',
-    contactPerson: 'Aishat Yusuf',
-    businessPhone: '+234 815 9876',
-    contactEmail: 'accounts@fibersandcables.com',
-    status: 'Active',
-  },
-  {
-    supplierId: 'SPL-1140',
-    companyName: 'Smart Seating Systems',
-    contactPerson: 'Marcus Vance',
-    businessPhone: '+1 312 555 4242',
-    contactEmail: 'logistics@smartseatingsystems.com',
-    status: 'Active',
-  },
-];
+interface BackendSupplier {
+  id: string;
+  supplierCode?: string;
+  name: string;
+  contactPerson?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function mapBackendSupplier(s: BackendSupplier): Supplier {
+  return {
+    supplierId: s.id,
+    companyName: s.name,
+    contactPerson: s.contactPerson || '',
+    businessPhone: s.phone || '',
+    contactEmail: s.email || '',
+    status: s.isActive ? 'Active' : 'Inactive',
+  };
+}
 
 export interface PaginatedSuppliers {
   data: Supplier[];
@@ -62,51 +35,56 @@ export async function fetchSuppliers(
   page: number = 1,
   pageSize: number = 10
 ): Promise<PaginatedSuppliers> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  try {
+    const res = await apiClient.get<{ status: string; data: BackendSupplier[] }>('/suppliers', {
+      params: { search: searchQuery, page, limit: pageSize },
+    });
+    const raw = res.data?.data || [];
+    const mapped = raw.map(mapBackendSupplier);
 
-  let result = mockSuppliers;
+    // Apply client-side search filtering if backend doesn't filter
+    let result = mapped;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = mapped.filter(
+        (s) =>
+          s.companyName.toLowerCase().includes(q) ||
+          s.contactPerson.toLowerCase().includes(q) ||
+          s.contactEmail.toLowerCase().includes(q)
+      );
+    }
 
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    result = result.filter(
-      (s) =>
-        s.companyName.toLowerCase().includes(query) ||
-        s.contactPerson.toLowerCase().includes(query) ||
-        s.contactEmail.toLowerCase().includes(query)
-    );
+    const totalCount = result.length;
+    const start = (page - 1) * pageSize;
+    const paginatedData = result.slice(start, start + pageSize);
+    return { data: paginatedData, totalCount };
+  } catch {
+    return { data: [], totalCount: 0 };
   }
-
-  const totalCount = result.length;
-  const start = (page - 1) * pageSize;
-  const paginatedData = result.slice(start, start + pageSize);
-
-  return { data: paginatedData, totalCount };
 }
 
 export async function createSupplier(data: CreateSupplierDto): Promise<Supplier> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const newSupplier: Supplier = {
-    ...data,
-    supplierId: `SPL-${Math.floor(1000 + Math.random() * 9000)}`,
-  };
-  mockSuppliers = [newSupplier, ...mockSuppliers];
-  return newSupplier;
+  const res = await apiClient.post<{ status: string; data: BackendSupplier }>('/suppliers', {
+    name: data.companyName,
+    contactPerson: data.contactPerson,
+    phone: data.businessPhone,
+    email: data.contactEmail,
+    isActive: data.status === 'Active',
+  });
+  return mapBackendSupplier(res.data.data);
 }
 
-export async function updateSupplier(
-  id: string,
-  data: Partial<CreateSupplierDto>
-): Promise<Supplier> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const index = mockSuppliers.findIndex((s) => s.supplierId === id);
-  if (index === -1) throw new Error('Supplier not found');
-
-  mockSuppliers[index] = { ...mockSuppliers[index], ...data };
-  return mockSuppliers[index];
+export async function updateSupplier(id: string, data: Partial<CreateSupplierDto>): Promise<Supplier> {
+  const res = await apiClient.put<{ status: string; data: BackendSupplier }>(`/suppliers/${id}`, {
+    name: data.companyName,
+    contactPerson: data.contactPerson,
+    phone: data.businessPhone,
+    email: data.contactEmail,
+    isActive: data.status === 'Active',
+  });
+  return mapBackendSupplier(res.data.data);
 }
 
 export async function deleteSupplier(id: string): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  mockSuppliers = mockSuppliers.filter((s) => s.supplierId !== id);
+  await apiClient.delete(`/suppliers/${id}`);
 }

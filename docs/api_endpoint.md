@@ -8,7 +8,7 @@ Reference for the **currently implemented** backend endpoints of the Stock Manag
 > [Models without endpoints](#models-without-endpoints) — do not assume routes for them exist.
 
 - **Base URL:** `http://localhost:5000/api` (port from `PORT`, default `5000`)
-- **Implemented modules:** `auth`, `users`, `suppliers`, `stock-receiving`, `reports`
+- **Implemented modules:** `auth`, `users`, `suppliers`, `inventory`, `stock-receiving`, `stock-issuing`, `stock-transfer`, `stock-taking`, `stock-monitoring`, `damaged-obsolete`, `reports`, `audit-log`
 - **Source of truth:** `server/src/routes/index.ts` (route aggregation), `server/src/app.ts`
 
 ---
@@ -663,3 +663,131 @@ Retrieves the stock level details for a specific inventory item.
 | `401` | `Authentication required` | Missing or invalid bearer token |
 | `404` | `Item not found` | Item with the given `itemId` does not exist |
 | `404` | `Item does not exist in the specified warehouse` | Item exists but not in the provided warehouse |
+
+### `GET /api/stock-monitoring/alerts`
+
+Retrieves stock level alert items with optional filtering.
+
+**Query parameters** (all optional): `search`, `severity` (`CRITICAL`, `WARNING`, `HEALTHY`), `category`, `warehouse`.
+
+**`200 OK`**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "50000000-0000-4000-8000-000000000001",
+      "itemCode": "ITEM-001",
+      "name": "Printing Paper A4",
+      "categoryName": "Office Supplies",
+      "warehouseName": "Main Warehouse",
+      "currentStock": 5,
+      "reorderLevel": 20,
+      "safetyStock": 10,
+      "severity": "red",
+      "status": "critical"
+    }
+  ]
+}
+```
+
+### `GET /api/stock-monitoring/summary-stats`
+
+Retrieves aggregated stock health statistics.
+
+**`200 OK`**
+```json
+{
+  "status": "success",
+  "stats": {
+    "totalItemsMonitored": 50,
+    "totalAlerts": 5,
+    "criticalAlerts": 2,
+    "warningAlerts": 3,
+    "outOfStockCount": 1,
+    "adequateStockCount": 45,
+    "estimatedReplenishmentCost": 450,
+    "lastUpdated": "2026-08-30T00:00:00.000Z"
+  }
+}
+```
+
+---
+
+## Damaged & Obsolete Write-Offs
+
+Module: `server/src/modules/damaged-obsolete/`
+Routes: `/api/write-off` or `/api/damaged-obsolete`
+
+### `POST /api/write-off`
+Creates a new write-off request (`PENDING` state). Requires `ADMINISTRATOR`, `PAO`, `STOREKEEPER`, or `STOCK_CLERK`.
+
+**Request**
+```json
+{
+  "itemId": "50000000-0000-4000-8000-000000000001",
+  "quantity": 5,
+  "reasonCode": "DAMAGED",
+  "reasonDescription": "Water leakage in aisle 3",
+  "notes": "Storekeeper inspection noted soggy packaging"
+}
+```
+
+**`201 Created`**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "60000000-0000-4000-8000-000000000001",
+    "inventoryItemId": "50000000-0000-4000-8000-000000000001",
+    "quantity": 5,
+    "reasonCode": "DAMAGED",
+    "status": "PENDING",
+    "requestedBy": "user-uuid",
+    "createdAt": "2026-08-30T00:00:00.000Z"
+  }
+}
+```
+
+### `GET /api/write-off`
+Lists all write-off requests. Accepts optional `status` filter (`PENDING`, `APPROVED`, `REJECTED`, `DISPOSED`).
+
+### `GET /api/write-off/:id`
+Retrieves single write-off request details by UUID.
+
+### `PUT /api/write-off/:id/approve`
+Approves a write-off request. Requires `ADMINISTRATOR`, `PAO`, or `STOREKEEPER`.
+
+### `PUT /api/write-off/:id/reject`
+Rejects a write-off request. Requires `ADMINISTRATOR`, `PAO`, or `STOREKEEPER`. Body accepts optional `{ "reason": "Text" }`.
+
+### `PUT /api/write-off/:id/dispose`
+Disposes items: updates request state to `DISPOSED`, updates `InventoryItem` state, decrements `BinCard` balance, creates `StockTransaction` of type `ADJUSTMENT`, and generates audit log.
+
+---
+
+## Audit Logs
+
+Module: `server/src/modules/audit-log/`
+Route: `GET /api/audit-log`
+
+Requires `ADMINISTRATOR` role.
+
+**`200 OK`**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "log-1",
+      "userId": "user-uuid",
+      "action": "WRITE_OFF_DISPOSED",
+      "entity": "WriteOffRequest",
+      "entityId": "wo-uuid",
+      "details": { "quantityDisposed": 5 },
+      "createdAt": "2026-08-30T00:00:00.000Z"
+    }
+  ]
+}
+```
+
