@@ -219,3 +219,50 @@ export const createReceiving = async (
     await prisma.$disconnect();
   }
 };
+
+export const getReceivingNotes = async () => {
+  const prisma = createPrismaClient();
+  try {
+    const notes = await prisma.goodsReceivingNote.findMany({
+      include: {
+        supplier: true,
+        warehouse: true,
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        items: {
+          include: {
+            inventoryItem: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return notes;
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+export const getReceivingNoteById = async (id: string) => {
+  const prisma = createPrismaClient();
+  try {
+    const note = await prisma.goodsReceivingNote.findUnique({
+      where: { id },
+      include: {
+        supplier: true,
+        warehouse: true,
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        items: {
+          include: {
+            inventoryItem: true,
+          },
+        },
+      },
+    });
+    if (!note) {
+      throw new AppError('Goods Receiving Note not found', 404);
+    }
+    return note;
+  } finally {
+    await prisma.$disconnect();
+  }
+};
