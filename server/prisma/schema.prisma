@@ -56,6 +56,20 @@ enum ReconciliationStatus {
   APPLIED
 }
 
+enum WriteOffReason {
+  DAMAGED
+  OBSOLETE
+  EXPIRED
+  OTHER
+}
+
+enum WriteOffStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DISPOSED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -75,6 +89,10 @@ model User {
   stockTakeSessions       StockTake[]          @relation("StockTakeCreator")
   stockTakeCounts         StockTakeCount[]     @relation("StockTakeCounter")
   approvedReconciliations Reconciliation[]     @relation("ReconciliationApprover")
+  writeOffRequests        WriteOffRequest[]    @relation("WriteOffRequester")
+  approvedWriteOffs       WriteOffRequest[]    @relation("WriteOffApprover")
+  rejectedWriteOffs       WriteOffRequest[]    @relation("WriteOffRejector")
+  disposedWriteOffs       WriteOffRequest[]    @relation("WriteOffDisposer")
 }
 
 model Supplier {
@@ -115,6 +133,7 @@ model Warehouse {
   goodsReceivingNotes GoodsReceivingNote[]
   stockTakes          StockTake[]
   reconciliations     Reconciliation[]
+  writeOffRequests    WriteOffRequest[]
 }
 
 model GoodsReceivingNote {
@@ -176,6 +195,7 @@ model InventoryItem {
   goodsReceivingNoteItems GoodsReceivingNoteItem[]
   stockTakeCounts         StockTakeCount[]
   reconciliations         Reconciliation[]
+  writeOffRequests        WriteOffRequest[]
 }
 
 // Represents a batch/lot of received items for FIFO tracking
@@ -343,3 +363,38 @@ model Reconciliation {
   @@index([approvedBy])
   @@index([status])
 }
+
+model WriteOffRequest {
+  id                String         @id @default(uuid())
+  inventoryItemId   String
+  warehouseId       String
+  quantity          Int
+  reasonCode        WriteOffReason
+  reasonDescription String?
+  notes             String?
+  status            WriteOffStatus @default(PENDING)
+  requestedBy       String
+  requestedAt       DateTime       @default(now())
+  approvedBy        String?
+  approvedAt        DateTime?
+  rejectedBy        String?
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  disposedBy        String?
+  disposedAt        DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  warehouse     Warehouse     @relation(fields: [warehouseId], references: [id])
+  requester     User          @relation("WriteOffRequester", fields: [requestedBy], references: [id])
+  approver      User?         @relation("WriteOffApprover", fields: [approvedBy], references: [id])
+  rejector      User?         @relation("WriteOffRejector", fields: [rejectedBy], references: [id])
+  disposer      User?         @relation("WriteOffDisposer", fields: [disposedBy], references: [id])
+
+  @@index([inventoryItemId])
+  @@index([warehouseId])
+  @@index([requestedBy])
+  @@index([status])
+}
+
