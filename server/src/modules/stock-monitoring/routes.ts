@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/rbac.ts';
-import { getStockMonitoring, getItemMonitoring } from './controller.ts';
+import {
+  getStockMonitoring,
+  getItemMonitoring,
+  getStockAlertsController,
+  getSummaryStatsController,
+} from './controller.ts';
 import { validateGetStockLevels, validateGetItemStockLevel } from './validation.ts';
 
 const router = Router();
@@ -17,6 +22,26 @@ router.get(
 );
 
 /**
+ * GET /api/stock-monitoring/alerts
+ * Returns alert items with filter support
+ */
+router.get(
+  '/alerts',
+  requireAuth,
+  getStockAlertsController
+);
+
+/**
+ * GET /api/stock-monitoring/summary-stats
+ * Returns aggregated summary statistics
+ */
+router.get(
+  '/summary-stats',
+  requireAuth,
+  getSummaryStatsController
+);
+
+/**
  * GET /api/stock-monitoring/:itemId
  * Returns stock level for a specific item
  */
@@ -28,3 +53,4 @@ router.get(
 );
 
 export default router;
+
