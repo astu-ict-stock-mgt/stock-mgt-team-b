@@ -69,12 +69,6 @@ export function UsersPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">User Management</h1>
-            <span className="rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
-              Admin Only
-            </span>
-          </div>
           <p className="mt-1 text-sm text-gray-500">
             Create, manage, and configure system accounts and role-based permissions across the
             organization.
