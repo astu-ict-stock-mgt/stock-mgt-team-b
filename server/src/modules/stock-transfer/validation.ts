@@ -5,28 +5,28 @@ import { AppError } from '../../middlewares/errorHandler.ts';
 export const validateStockTransfer = [
   body('itemId')
     .trim()
-    .notEmpty()
-    .withMessage('itemId is required'),
+    .isLength({ min: 1 })
+    .withMessage('itemId is required and must be a non-empty string'),
 
   body('fromWarehouseId')
     .trim()
-    .notEmpty()
-    .withMessage('fromWarehouseId is required'),
+    .isLength({ min: 1 })
+    .withMessage('fromWarehouseId is required and must be a non-empty string'),
 
   body('toWarehouseId')
     .trim()
-    .notEmpty()
-    .withMessage('toWarehouseId is required'),
+    .isLength({ min: 1 })
+    .withMessage('toWarehouseId is required and must be a non-empty string')
+    .custom((toWarehouseId, { req }) => {
+      if (toWarehouseId === req.body.fromWarehouseId) {
+        throw new AppError(
+          'Source and destination warehouses must be different',
+          400,
+        );
+      }
 
-  body('toWarehouseId').custom((toWarehouseId, { req }) => {
-    if (toWarehouseId === req.body.fromWarehouseId) {
-      throw new Error(
-        'Source and destination warehouses must be different',
-      );
-    }
-
-    return true;
-  }),
+      return true;
+    }),
 
   body('quantity')
     .isInt({ min: 1 })
@@ -35,9 +35,9 @@ export const validateStockTransfer = [
 
   body('referenceNumber')
     .optional()
-    .isString()
-    .withMessage('referenceNumber must be a string')
-    .trim(),
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('referenceNumber must be a non-empty string if provided'),
 
   (req: Request, _res: Response, next: NextFunction): void => {
     const errors = validationResult(req);

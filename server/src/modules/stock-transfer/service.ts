@@ -21,6 +21,16 @@ const getDatabaseUrl = (): string => {
   return databaseUrl;
 };
 
+/**
+ * Creates a new Prisma client instance scoped to a single request.
+ *
+ * We instantiate per-request (not as a module singleton) to:
+ * - Enable proper mocking in unit tests
+ * - Ensure connection cleanup via $disconnect() in finally blocks
+ * - Prevent connection pool exhaustion in high-concurrency scenarios
+ *
+ * Trade-off: Slightly higher overhead per request vs. better testability & resource management.
+ */
 const createPrismaClient = (): PrismaClient => {
   return new PrismaClient({
     adapter: new PrismaPg({
@@ -43,7 +53,10 @@ export const createStockTransfer = async (
       });
 
       if (!item) {
-        throw new AppError('Inventory item not found', 404);
+        throw new AppError(
+          `Inventory item (id: ${input.itemId}) not found`,
+          404,
+        );
       }
 
       const sourceWarehouse = await tx.warehouse.findUnique({
@@ -53,7 +66,10 @@ export const createStockTransfer = async (
       });
 
       if (!sourceWarehouse) {
-        throw new AppError('Source warehouse not found', 404);
+        throw new AppError(
+          `Source warehouse (id: ${input.fromWarehouseId}) not found`,
+          404,
+        );
       }
 
       const destinationWarehouse = await tx.warehouse.findUnique({
@@ -63,7 +79,10 @@ export const createStockTransfer = async (
       });
 
       if (!destinationWarehouse) {
-        throw new AppError('Destination warehouse not found', 404);
+        throw new AppError(
+          `Destination warehouse (id: ${input.toWarehouseId}) not found`,
+          404,
+        );
       }
 
       const sourceBinCard = await tx.binCard.findUnique({
@@ -76,22 +95,32 @@ export const createStockTransfer = async (
       });
 
       if (!sourceBinCard) {
-        throw new AppError('Source stock record not found', 404);
+        throw new AppError(
+          `Source stock record not found for item (id: ${input.itemId}) in warehouse (id: ${input.fromWarehouseId})`,
+          404,
+        );
       }
 
       if (sourceBinCard.balance < input.quantity) {
         throw new AppError(
-          `Insufficient stock. Available stock: ${sourceBinCard.balance}`,
+          `Insufficient stock for item (id: ${input.itemId}) in warehouse (id: ${input.fromWarehouseId}). ` +
+          `Available: ${sourceBinCard.balance}, Required: ${input.quantity}`,
           400,
         );
       }
 
-      /*
-       * Atomically deduct the source quantity.
+      /**
+       * Atomically deduct the source quantity using optimistic locking.
        *
-       * The balance >= quantity condition protects against a concurrent
-       * transfer making the source balance insufficient between the read
-       * above and this update.
+       * Why this pattern instead of SELECT...FOR UPDATE?
+       * - Prisma doesn't support SELECT...FOR UPDATE without raw SQL
+       * - Optimistic locking via balance comparison is race-condition safe:
+       *   If another transfer decrements between our read (line 89) and this
+       *   update, the condition `balance >= quantity` fails, updateMany returns
+       *   count: 0, and we throw "Insufficient stock" instead of going negative.
+       *
+       * The count check (line 116) ensures exactly 1 row was updated.
+       * If count !== 1, another concurrent transfer succeeded, and we fail safely.
        */
       const sourceUpdate = await tx.binCard.updateMany({
         where: {
@@ -110,7 +139,9 @@ export const createStockTransfer = async (
 
       if (sourceUpdate.count !== 1) {
         throw new AppError(
-          'Insufficient stock. Source stock changed before transfer could be completed',
+          `Insufficient stock. Source stock for item (id: ${input.itemId}) ` +
+          `changed or was reduced by another transfer before this transfer could be completed. ` +
+          `Available: ${sourceBinCard.balance}, Required: ${input.quantity}`,
           400,
         );
       }
@@ -171,6 +202,16 @@ export const createStockTransfer = async (
         },
       });
 
+      /**
+       * Returns transfer confirmation with updated balances.
+       *
+       * NOTE on balance fields:
+       * - sourceBalance: Calculated as (balance at start of transaction - quantity transferred).
+       *   Reflects the expected state if no concurrent updates occur.
+       *   For real-time balance, query BinCard directly after response.
+       * - destinationBalance: Actual balance after upsert (from Prisma response).
+       *   This is the post-operation state as confirmed by the database.
+       */
       return {
         transaction,
         sourceWarehouseId: input.fromWarehouseId,
