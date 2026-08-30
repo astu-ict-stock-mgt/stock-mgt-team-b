@@ -11,3 +11,5 @@ skills-lock.json
 
 # Seed file
 src/seed.ts
+
+src/generated/
