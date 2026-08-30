@@ -44,22 +44,37 @@ enum InspectionStatus {
   REJECTED
 }
 
-model User {
-  id                 String   @id @default(uuid())
-  email              String   @unique
-  passwordHash       String
-  firstName          String
-  lastName           String
-  role               Role
-  department         String?
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+enum StockTakeStatus {
+  DRAFT
+  COUNTING
+  COMPLETED
+}
 
-  StockTransaction   StockTransaction[]
-  AuditLog           AuditLog[]
-  Report             Report[]
-  GoodsReceivingNote GoodsReceivingNote[]
+enum ReconciliationStatus {
+  PENDING
+  REJECTED
+  APPLIED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role
+  department   String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  StockTransaction        StockTransaction[]
+  auditLogs               AuditLog[]
+  reports                 Report[]
+  goodsReceivingNotes     GoodsReceivingNote[]
+  stockTakeSessions       StockTake[]          @relation("StockTakeCreator")
+  stockTakeCounts         StockTakeCount[]     @relation("StockTakeCounter")
+  approvedReconciliations Reconciliation[]     @relation("ReconciliationApprover")
 }
 
 model Supplier {
@@ -69,11 +84,12 @@ model Supplier {
   email       String?
   phone       String?
   address     String?
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  StockTransaction   StockTransaction[]
-  GoodsReceivingNote GoodsReceivingNote[]
+  stockTransactions   StockTransaction[]
+  goodsReceivingNotes GoodsReceivingNote[]
 }
 
 model Category {
@@ -93,10 +109,46 @@ model Warehouse {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  Inventory          InventoryItem[]
-  StockTransaction   StockTransaction[]
-  BinCard            BinCard[]
-  GoodsReceivingNote GoodsReceivingNote[]
+  Inventory           InventoryItem[]
+  StockTransaction    StockTransaction[]
+  BinCard             BinCard[]
+  goodsReceivingNotes GoodsReceivingNote[]
+  stockTakes          StockTake[]
+  reconciliations     Reconciliation[]
+}
+
+model GoodsReceivingNote {
+  id           String   @id @default(uuid())
+  grnNumber    String   @unique
+  supplierId   String
+  warehouseId  String
+  receivedDate DateTime @default(now())
+  receivedBy   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  supplier  Supplier                 @relation(fields: [supplierId], references: [id])
+  warehouse Warehouse                @relation(fields: [warehouseId], references: [id])
+  user      User                     @relation(fields: [receivedBy], references: [id])
+  items     GoodsReceivingNoteItem[]
+}
+
+model GoodsReceivingNoteItem {
+  id               String           @id @default(uuid())
+  grnId            String
+  inventoryItemId  String
+  quantity         Int
+  unitCost         Float
+  inspectionStatus InspectionStatus
+  rejectionReason  String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  goodsReceivingNote GoodsReceivingNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  inventoryItem      InventoryItem      @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([grnId])
+  @@index([inventoryItemId])
 }
 
 model InventoryItem {
@@ -118,12 +170,15 @@ model InventoryItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  StockTransaction       StockTransaction[]
-  BinCard                BinCard[]
-  StockLot               StockLot[]
-  GoodsReceivingNoteItem GoodsReceivingNoteItem[]
+  StockTransaction        StockTransaction[]
+  BinCard                 BinCard[]
+  StockLot                StockLot[]
+  goodsReceivingNoteItems GoodsReceivingNoteItem[]
+  stockTakeCounts         StockTakeCount[]
+  reconciliations         Reconciliation[]
 }
 
+// Represents a batch/lot of received items for FIFO tracking
 model StockLot {
   id                String   @id @default(uuid())
   inventoryItemId   String
@@ -173,6 +228,7 @@ model StockTransaction {
   user          User          @relation(fields: [userId], references: [id])
 
   LotConsumptions LotConsumption[]
+  reconciliation  Reconciliation?
 
   createdAt DateTime @default(now())
 }
@@ -219,37 +275,71 @@ model AuditLog {
   createdAt DateTime @default(now())
 }
 
-model GoodsReceivingNote {
-  id           String   @id @default(uuid())
-  grnNumber    String   @unique
-  supplierId   String
-  warehouseId  String
-  receivedDate DateTime @default(now())
-  receivedBy   String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+model StockTake {
+  id          String          @id @default(uuid())
+  warehouseId String
+  createdBy   String
+  status      StockTakeStatus @default(DRAFT)
+  startedAt   DateTime        @default(now())
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
-  supplier  Supplier  @relation(fields: [supplierId], references: [id])
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
-  user      User      @relation(fields: [receivedBy], references: [id])
+  warehouse Warehouse        @relation(fields: [warehouseId], references: [id])
+  creator   User             @relation("StockTakeCreator", fields: [createdBy], references: [id])
+  counts    StockTakeCount[]
 
-  items GoodsReceivingNoteItem[]
+  @@index([warehouseId])
+  @@index([createdBy])
 }
 
-model GoodsReceivingNoteItem {
-  id               String           @id @default(uuid())
-  grnId            String
+model StockTakeCount {
+  id               String   @id @default(uuid())
+  stockTakeId      String
   inventoryItemId  String
-  quantity         Int
-  unitCost         Float
-  inspectionStatus InspectionStatus
-  rejectionReason  String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  systemQuantity   Int
+  physicalQuantity Int
+  discrepancy      Int
+  hasDiscrepancy   Boolean
+  countedBy        String
+  countedAt        DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  grn           GoodsReceivingNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
-  inventoryItem InventoryItem      @relation(fields: [inventoryItemId], references: [id])
+  stockTake      StockTake       @relation(fields: [stockTakeId], references: [id], onDelete: Cascade)
+  inventoryItem  InventoryItem   @relation(fields: [inventoryItemId], references: [id])
+  counter        User            @relation("StockTakeCounter", fields: [countedBy], references: [id])
+  reconciliation Reconciliation?
 
-  @@index([grnId])
+  @@unique([stockTakeId, inventoryItemId])
   @@index([inventoryItemId])
+  @@index([countedBy])
+}
+
+model Reconciliation {
+  id                      String               @id @default(uuid())
+  stockTakeCountId        String               @unique
+  inventoryItemId         String
+  warehouseId             String
+  discrepancy             Int
+  reason                  String?
+  unitCost                Float?
+  status                  ReconciliationStatus @default(PENDING)
+  approvedBy              String?
+  approvedAt              DateTime?
+  appliedAt               DateTime?
+  adjustmentTransactionId String?              @unique
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  stockTakeCount        StockTakeCount    @relation(fields: [stockTakeCountId], references: [id])
+  inventoryItem         InventoryItem     @relation(fields: [inventoryItemId], references: [id])
+  warehouse             Warehouse         @relation(fields: [warehouseId], references: [id])
+  approver              User?             @relation("ReconciliationApprover", fields: [approvedBy], references: [id])
+  adjustmentTransaction StockTransaction? @relation(fields: [adjustmentTransactionId], references: [id])
+
+  @@index([inventoryItemId])
+  @@index([warehouseId])
+  @@index([approvedBy])
+  @@index([status])
 }

@@ -385,7 +385,7 @@ export const getSupplierReport = async (
   const suppliers = await prisma.supplier.findMany({
     where,
     include: {
-      StockTransaction: {
+      stockTransactions: {
         where: {
           type: 'RECEIVE',
           ...(createdAt ? { createdAt } : {}),
@@ -401,7 +401,7 @@ export const getSupplierReport = async (
   let totalValueSupplied = 0;
 
   const mappedSuppliers = suppliers.map((s) => {
-    const transactions = s.StockTransaction || [];
+    const transactions = s.stockTransactions || [];
     let qtySupplied = 0;
     let valSupplied = 0;
     let lastDate: Date | null = null;
