@@ -507,3 +507,159 @@ Deletes or deactivates a supplier record. Requires `ADMINISTRATOR` or `PAO`.
 ```
 
 **Errors:** `400 Invalid supplier ID format`, `404 Supplier not found`.
+
+---
+
+## Stock Monitoring
+
+Module: `server/src/modules/stock-monitoring/` — **all routes require authentication** (`STOREKEEPER`, `STOCK_CLERK`, `ACCOUNTANT`, `DEPARTMENT_HEAD`, `PAO`, `ADMINISTRATOR`, `SECURITY_OFFICER`).
+
+The Stock Monitoring API tracks inventory stock levels against configured thresholds (minimum, maximum, reorder, and safety levels) per item. Items are categorized by severity: **critical** (below safety stock, red), **warning** (below reorder level but above safety stock, yellow), and **healthy** (green). This implements Workflow Step 13 ("Monitor Stock Levels Continuously") and SRS Section 3.1 Business Rule: "Reorder levels and safety stock must be maintained to avoid stock shortages."
+
+### `GET /api/stock-monitoring`
+
+Retrieves all inventory items with their current stock levels and categorizes them by severity across all warehouses (or optionally filtered by warehouse).
+
+**Query parameters** (all optional)
+
+| Param | Type | Notes |
+| --- | --- | --- |
+| `warehouseId` | string | Valid UUID; filters results to a specific warehouse |
+
+**`200 OK`**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "critical": [
+      {
+        "id": "50000000-0000-4000-8000-000000000001",
+        "itemCode": "ITEM-001",
+        "name": "Printing Paper A4",
+        "description": "80gsm white paper",
+        "currentStock": 150,
+        "minLevel": 200,
+        "maxLevel": 1000,
+        "reorderLevel": 300,
+        "safetyStock": 200,
+        "warehouseId": "warehouse-1",
+        "status": "critical",
+        "severity": "red"
+      }
+    ],
+    "warning": [
+      {
+        "id": "50000000-0000-4000-8000-000000000002",
+        "itemCode": "ITEM-002",
+        "name": "Ballpoint Pens",
+        "description": "Blue ballpoint pens",
+        "currentStock": 250,
+        "minLevel": 100,
+        "maxLevel": 500,
+        "reorderLevel": 300,
+        "safetyStock": 200,
+        "warehouseId": "warehouse-1",
+        "status": "warning",
+        "severity": "yellow"
+      }
+    ],
+    "healthy": [
+      {
+        "id": "50000000-0000-4000-8000-000000000003",
+        "itemCode": "ITEM-003",
+        "name": "Folders",
+        "description": "A4 manila folders",
+        "currentStock": 800,
+        "minLevel": 100,
+        "maxLevel": 1000,
+        "reorderLevel": 300,
+        "safetyStock": 200,
+        "warehouseId": "warehouse-1",
+        "status": "healthy",
+        "severity": "green"
+      }
+    ],
+    "summary": {
+      "totalItems": 3,
+      "criticalCount": 1,
+      "warningCount": 1,
+      "healthyCount": 1
+    }
+  }
+}
+```
+
+**Response Fields**
+
+- **`critical`** — Items with `currentStock < safetyStock` (danger level)
+- **`warning`** — Items with `safetyStock ≤ currentStock < reorderLevel` (alert level)
+- **`healthy`** — Items with `currentStock ≥ reorderLevel` (normal operation)
+- **`summary`** — Aggregate counts for dashboard/dashboard oversight
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `itemCode` | string | Unique inventory item identifier |
+| `currentStock` | integer | Actual quantity on hand (from BinCard) |
+| `minLevel` | integer | Absolute minimum to maintain |
+| `maxLevel` | integer | Capacity/re-order threshold |
+| `reorderLevel` | integer | Trigger point to place new order |
+| `safetyStock` | integer | Minimum safety buffer to avoid stockout |
+| `status` | enum | `'critical'` \| `'warning'` \| `'healthy'` |
+| `severity` | enum | `'red'` \| `'yellow'` \| `'green'` |
+
+**Errors**
+
+| Status | Message | Cause |
+| --- | --- | --- |
+| `400` | `warehouseId must be a valid UUID` | `warehouseId` provided but not a valid UUID |
+| `401` | `Authentication required` | Missing or invalid bearer token |
+
+---
+
+### `GET /api/stock-monitoring/:itemId`
+
+Retrieves the stock level details for a specific inventory item.
+
+**Path parameters**
+
+| Param | Type | Notes |
+| --- | --- | --- |
+| `itemId` | string | Valid UUID of the inventory item |
+
+**Query parameters** (all optional)
+
+| Param | Type | Notes |
+| --- | --- | --- |
+| `warehouseId` | string | Valid UUID; if provided, verifies the item exists in that warehouse |
+
+**`200 OK`**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "50000000-0000-4000-8000-000000000001",
+    "itemCode": "ITEM-001",
+    "name": "Printing Paper A4",
+    "description": "80gsm white paper",
+    "currentStock": 150,
+    "minLevel": 200,
+    "maxLevel": 1000,
+    "reorderLevel": 300,
+    "safetyStock": 200,
+    "warehouseId": "warehouse-1",
+    "status": "critical",
+    "severity": "red"
+  }
+}
+```
+
+**Errors**
+
+| Status | Message | Cause |
+| --- | --- | --- |
+| `400` | `warehouseId must be a valid UUID` | `warehouseId` provided but not a valid UUID |
+| `401` | `Authentication required` | Missing or invalid bearer token |
+| `404` | `Item not found` | Item with the given `itemId` does not exist |
+| `404` | `Item does not exist in the specified warehouse` | Item exists but not in the provided warehouse |

@@ -10,6 +10,7 @@ import usersRoutes from '../modules/users/routes.ts';
 import suppliersRoutes from '../modules/suppliers/routes.ts';
 import auditLogRoutes from '../modules/audit-log/routes.ts';
 import stockTransferRoutes from '../modules/stock-transfer/routes.ts';
+import stockMonitoringRoutes from '../modules/stock-monitoring/routes.ts';
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.use('/inventory', inventoryRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/stock-issuing', stockIssuingRoutes);
 router.use('/stock-taking', stockTakingRoutes);
+router.use('/stock-monitoring', stockMonitoringRoutes);
 router.use('/users', usersRoutes);
 router.use('/suppliers', suppliersRoutes);
 router.use('/audit-log', auditLogRoutes);
