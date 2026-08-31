@@ -37,13 +37,15 @@ export function SupplierTable() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const { data, isLoading, isError } = useSuppliers(debouncedSearch, currentPage, PAGE_SIZE);
+  const { data, isLoading, isError } = useSuppliers(debouncedSearch);
   const { mutate: deleteSupplier, isPending: isDeleting } = useDeleteSupplier();
   const { mutate: updateSupplier } = useUpdateSupplier();
 
-  const suppliers = data?.data ?? [];
-  const totalCount = data?.totalCount ?? 0;
+  const allSuppliers = data ?? [];
+  const totalCount = allSuppliers.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const suppliers = allSuppliers.slice(startIndex, startIndex + PAGE_SIZE);
 
   const canManageSuppliers = user?.role === 'PAO' || user?.role === 'ADMINISTRATOR';
 
@@ -69,8 +71,8 @@ export function SupplierTable() {
 
   const handleToggleStatus = (supplier: Supplier) => {
     updateSupplier({
-      id: supplier.supplierId,
-      data: { status: supplier.status === 'Active' ? 'Inactive' : 'Active' },
+      id: supplier.id,
+      data: { isActive: !supplier.isActive },
     });
     setOpenDropdown(null);
   };
@@ -181,52 +183,50 @@ export function SupplierTable() {
                 </tr>
               ) : (
                 suppliers.map((supplier) => (
-                  <tr key={supplier.supplierId} className="hover:bg-gray-50/60">
+                  <tr key={supplier.id} className="hover:bg-gray-50/60">
                     <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-blue-600">
-                      {supplier.supplierId}
+                      {supplier.id.split('-')[0]}...
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold whitespace-nowrap text-gray-900">
-                      {supplier.companyName}
+                      {supplier.name}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
-                      {supplier.contactPerson}
+                      {supplier.contactName || '-'}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                      {supplier.businessPhone}
+                      {supplier.phone || '-'}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                      {supplier.contactEmail}
+                      {supplier.email || '-'}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap">
                       <span
                         className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                          supplier.status === 'Active'
+                          supplier.isActive
                             ? 'bg-green-100 text-green-700'
                             : 'bg-red-100 text-red-700'
                         }`}
                       >
-                        {supplier.status}
+                        {supplier.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     {canManageSuppliers && (
                       <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
                         <div
                           className="relative inline-block text-left"
-                          ref={openDropdown === supplier.supplierId ? dropdownRef : null}
+                          ref={openDropdown === supplier.id ? dropdownRef : null}
                         >
                           <button
-                            id={`action-btn-${supplier.supplierId}`}
+                            id={`action-btn-${supplier.id}`}
                             onClick={() =>
-                              setOpenDropdown(
-                                openDropdown === supplier.supplierId ? null : supplier.supplierId
-                              )
+                              setOpenDropdown(openDropdown === supplier.id ? null : supplier.id)
                             }
                             className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none"
                           >
                             <MoreHorizontal className="h-5 w-5" />
                           </button>
 
-                          {openDropdown === supplier.supplierId && (
+                          {openDropdown === supplier.id && (
                             <div className="absolute right-0 z-10 mt-1 w-48 origin-top-right rounded-md border border-gray-100 bg-white shadow-lg">
                               <div className="py-1">
                                 <button
@@ -241,10 +241,10 @@ export function SupplierTable() {
                                   className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                 >
                                   <ToggleLeft className="h-4 w-4 text-gray-400" />
-                                  {supplier.status === 'Active' ? 'Set Inactive' : 'Set Active'}
+                                  {supplier.isActive ? 'Set Inactive' : 'Set Active'}
                                 </button>
                                 <button
-                                  onClick={() => handleDelete(supplier.supplierId)}
+                                  onClick={() => handleDelete(supplier.id)}
                                   disabled={isDeleting}
                                   className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
                                 >
