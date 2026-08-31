@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchSuppliers, createSupplier, updateSupplier, deleteSupplier } from './api';
 import type { CreateSupplierDto } from './types';
 
-export function useSuppliers(searchQuery: string = '', page: number = 1, pageSize: number = 10) {
+export function useSuppliers(searchQuery: string = '', isActive?: boolean) {
   return useQuery({
-    queryKey: ['suppliers', searchQuery, page, pageSize],
-    queryFn: () => fetchSuppliers(searchQuery, page, pageSize),
+    queryKey: ['suppliers', searchQuery, isActive],
+    queryFn: () => fetchSuppliers(searchQuery, isActive),
   });
 }
 
