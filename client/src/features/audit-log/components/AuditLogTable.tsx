@@ -61,6 +61,9 @@ export function AuditLogTable() {
   const totalCount = data?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
+  const distinctUsers = data?.distinctUsers ?? [];
+  const distinctActions = data?.distinctActions ?? [];
+
   const handleSearch = () => {
     setFilters({
       user: selectedUser,
@@ -98,13 +101,11 @@ export function AuditLogTable() {
               className="block w-full rounded-md border border-gray-200 bg-white py-2.5 pr-10 pl-4 text-sm font-medium text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none md:w-48"
             >
               <option value="All Users">All Users</option>
-              <option value="j.storekeeper">j.storekeeper</option>
-              <option value="a.clerk">a.clerk</option>
-              <option value="m.vance">m.vance</option>
-              <option value="system">system</option>
-              <option value="a.stone">a.stone</option>
-              <option value="n.bello">n.bello</option>
-              <option value="p.parker">p.parker</option>
+              {distinctUsers.map((user) => (
+                <option key={user} value={user}>
+                  {user}
+                </option>
+              ))}
             </select>
 
             {/* Action */}
@@ -114,11 +115,11 @@ export function AuditLogTable() {
               className="block w-full rounded-md border border-gray-200 bg-white py-2.5 pr-10 pl-4 text-sm font-medium text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none md:w-48"
             >
               <option value="All">Action: All</option>
-              <option value="CREATED">CREATED</option>
-              <option value="UPDATED">UPDATED</option>
-              <option value="DELETED">DELETED</option>
-              <option value="APPROVED">APPROVED</option>
-              <option value="LOGIN">LOGIN</option>
+              {distinctActions.map((action) => (
+                <option key={action} value={action}>
+                  {action}
+                </option>
+              ))}
             </select>
           </div>
 
