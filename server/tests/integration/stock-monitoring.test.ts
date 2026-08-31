@@ -15,7 +15,7 @@ const mockPrisma = {
     findUnique: jest.fn(),
   },
 
-  binCard: {
+  BinCard: {
     findMany: jest.fn(),
     findUnique: jest.fn(),
   },
@@ -65,12 +65,12 @@ describe('Stock Monitoring', () => {
           itemCode: 'ITEM-001',
           name: 'Paper A4',
           description: '80gsm paper',
-          warehouseId: 'warehouse-1',
+          warehouseId: '10000000-0000-4000-8000-000000000001',
           minLevel: 200,
           maxLevel: 1000,
           reorderLevel: 300,
           safetyStock: 200,
-          binCard: [
+          BinCard: [
             {
               balance: 150, // Below safety stock - CRITICAL
             },
@@ -81,12 +81,12 @@ describe('Stock Monitoring', () => {
           itemCode: 'ITEM-002',
           name: 'Pens',
           description: 'Blue pens',
-          warehouseId: 'warehouse-1',
+          warehouseId: '10000000-0000-4000-8000-000000000001',
           minLevel: 100,
           maxLevel: 500,
           reorderLevel: 300,
           safetyStock: 200,
-          binCard: [
+          BinCard: [
             {
               balance: 250, // Between safety and reorder - WARNING
             },
@@ -97,12 +97,12 @@ describe('Stock Monitoring', () => {
           itemCode: 'ITEM-003',
           name: 'Folders',
           description: 'Manila folders',
-          warehouseId: 'warehouse-1',
+          warehouseId: '10000000-0000-4000-8000-000000000001',
           minLevel: 100,
           maxLevel: 1000,
           reorderLevel: 300,
           safetyStock: 200,
-          binCard: [
+          BinCard: [
             {
               balance: 800, // Above reorder - HEALTHY
             },
@@ -148,29 +148,29 @@ describe('Stock Monitoring', () => {
           itemCode: 'ITEM-001',
           name: 'Paper A4',
           description: '80gsm paper',
-          warehouseId: 'warehouse-1',
+          warehouseId: '10000000-0000-4000-8000-000000000001',
           minLevel: 200,
           maxLevel: 1000,
           reorderLevel: 300,
           safetyStock: 200,
-          binCard: [{ balance: 500 }],
+          BinCard: [{ balance: 500 }],
         },
       ];
 
       mockPrisma.inventoryItem.findMany.mockResolvedValue(mockItems);
 
       const response = await request(app)
-        .get('/api/stock-monitoring?warehouseId=warehouse-1')
+        .get('/api/stock-monitoring?warehouseId=10000000-0000-4000-8000-000000000001')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
       expect(response.body.status).toBe('success');
       expect(mockPrisma.inventoryItem.findMany).toHaveBeenCalledWith({
-        where: { warehouseId: 'warehouse-1' },
+        where: { warehouseId: '10000000-0000-4000-8000-000000000001' },
         include: {
           warehouse: true,
-          binCard: {
-            where: { warehouseId: 'warehouse-1' },
+          BinCard: {
+            where: { warehouseId: '10000000-0000-4000-8000-000000000001' },
           },
         },
       });
@@ -227,12 +227,12 @@ describe('Stock Monitoring', () => {
         itemCode: 'ITEM-001',
         name: 'Paper A4',
         description: '80gsm paper',
-        warehouseId: 'warehouse-1',
+        warehouseId: '10000000-0000-4000-8000-000000000001',
         minLevel: 200,
         maxLevel: 1000,
         reorderLevel: 300,
         safetyStock: 200,
-        binCard: [{ balance: 150 }],
+        BinCard: [{ balance: 150 }],
       };
 
       mockPrisma.inventoryItem.findUnique.mockResolvedValue(mockItem);
@@ -271,18 +271,18 @@ describe('Stock Monitoring', () => {
         id: 'item-1',
         itemCode: 'ITEM-001',
         name: 'Paper A4',
-        warehouseId: 'warehouse-1',
+        warehouseId: '10000000-0000-4000-8000-000000000001',
         minLevel: 200,
         maxLevel: 1000,
         reorderLevel: 300,
         safetyStock: 200,
-        binCard: [],
+        BinCard: [],
       };
 
       mockPrisma.inventoryItem.findUnique.mockResolvedValue(mockItem);
 
       const response = await request(app)
-        .get('/api/stock-monitoring/item-1?warehouseId=warehouse-2')
+        .get('/api/stock-monitoring/item-1?warehouseId=20000000-0000-4000-8000-000000000002')
         .set('Authorization', `Bearer ${token}`)
         .expect(404);
 
@@ -317,12 +317,12 @@ describe('Stock Monitoring', () => {
         id: 'item-1',
         itemCode: 'ITEM-001',
         name: 'Paper A4',
-        warehouseId: 'warehouse-1',
+        warehouseId: '10000000-0000-4000-8000-000000000001',
         minLevel: 100,
         maxLevel: 500,
         reorderLevel: 300,
         safetyStock: 200,
-        binCard: [{ balance: 250 }], // Between safety (200) and reorder (300)
+        BinCard: [{ balance: 250 }], // Between safety (200) and reorder (300)
       };
 
       mockPrisma.inventoryItem.findUnique.mockResolvedValue(mockItem);
@@ -343,12 +343,12 @@ describe('Stock Monitoring', () => {
         id: 'item-1',
         itemCode: 'ITEM-001',
         name: 'Paper A4',
-        warehouseId: 'warehouse-1',
+        warehouseId: '10000000-0000-4000-8000-000000000001',
         minLevel: 100,
         maxLevel: 1000,
         reorderLevel: 300,
         safetyStock: 200,
-        binCard: [{ balance: 500 }], // Above reorder (300)
+        BinCard: [{ balance: 500 }], // Above reorder (300)
       };
 
       mockPrisma.inventoryItem.findUnique.mockResolvedValue(mockItem);

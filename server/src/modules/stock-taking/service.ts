@@ -1,5 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Prisma, PrismaClient } from '../../generated/prisma/client.js';import { AppError } from '../../middlewares/errorHandler.ts';
+import { PrismaClient } from '../../generated/prisma/client.js';
+import type { Prisma } from '../../generated/prisma/client.js';
+import { AppError } from '../../middlewares/errorHandler.ts';
 import { applyFifoConsumption, InsufficientStockError } from '../inventory/fifo.ts';
 
 export interface CreateStockTakeInput {

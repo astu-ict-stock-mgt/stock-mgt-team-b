@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '../../generated/prisma/client.js';
+import { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const getPrisma = (): PrismaClient => {
@@ -25,7 +25,7 @@ export const createAuditLog = async (input: CreateAuditLogInput) => {
       action: input.action,
       entity: input.entity,
       entityId: input.entityId || null,
-      details: input.details ? (input.details as Prisma.JsonObject) : Prisma.JsonNull,
+      details: input.details ?? undefined,
     },
   });
 };

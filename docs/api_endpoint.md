@@ -311,7 +311,7 @@ Partial update — send only the fields you want changed. A **role change** writ
 
 Module: `server/src/modules/suppliers/`
 
-Allowed roles for management (`POST`, `PUT`, `DELETE`): `ADMINISTRATOR`, `PAO`.  
+Allowed roles for management (`POST`, `PUT`, `DELETE`): `ADMINISTRATOR`, `PAO`.
 Allowed roles for viewing (`GET`): All 7 authenticated roles (`ADMINISTRATOR`, `PAO`, `STOREKEEPER`, `STOCK_CLERK`, `ACCOUNTANT`, `DEPARTMENT_HEAD`, `SECURITY_OFFICER`).
 
 ### `GET /api/suppliers`

@@ -29,9 +29,9 @@ export const auditLogger = (req: Request, res: Response, next: NextFunction) => 
           action,
           entity,
           entityId,
-          details: { 
-            ...details, 
-            method: req.method, 
+          details: {
+            ...details,
+            method: req.method,
             originalUrl: req.originalUrl,
             statusCode: res.statusCode
           },

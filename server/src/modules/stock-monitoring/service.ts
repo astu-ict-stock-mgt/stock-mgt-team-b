@@ -58,7 +58,7 @@ export const getStockLevels = async (
       where: warehouseId ? { warehouseId } : undefined,
       include: {
         warehouse: true,
-        binCard: {
+        BinCard: {
           where: warehouseId ? { warehouseId } : undefined,
         },
       },
@@ -66,7 +66,7 @@ export const getStockLevels = async (
 
     const items: StockMonitoringItem[] = inventoryItems.map((item) => {
       // Get current stock from bin card
-      const binCard = item.binCard[0];
+      const binCard = item.BinCard[0];
       const currentStock = binCard?.balance || 0;
 
       // Determine status based on stock levels
@@ -131,7 +131,7 @@ export const getItemStockLevel = async (
     const item = await prisma.inventoryItem.findUnique({
       where: { id: itemId },
       include: {
-        binCard: {
+        BinCard: {
           where: warehouseId ? { warehouseId } : undefined,
         },
       },
@@ -150,7 +150,7 @@ export const getItemStockLevel = async (
     }
 
     // Get current stock from bin card
-    const binCard = item.binCard[0];
+    const binCard = item.BinCard[0];
     const currentStock = binCard?.balance || 0;
 
     // Determine status based on stock levels

@@ -60,7 +60,7 @@ export const applyFifoConsumption = (lots: FifoLot[], quantityToConsume: number)
 
   let remainingToConsume = quantityToConsume;
   let totalValue = 0;
-  
+
   const consumptions: ConsumptionRecord[] = [];
 
   // Map out unmodified active lots initially to retain their signatures

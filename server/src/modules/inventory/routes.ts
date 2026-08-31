@@ -1,25 +1,25 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/rbac.ts';
-import { 
-  getInventoryItems, 
-  getInventoryItemById, 
-  getInventoryItemStockLots, 
-  getInventoryItemStockLotById, 
-  getInventoryItemStockLotValuation, 
-  createInventoryItemController, 
-  createStockLotController, 
-  updateInventoryItemController, 
-  updateStockLotController, 
-  deleteInventoryItemController, 
-  deleteStockLotController 
+import {
+  getInventoryItems,
+  getInventoryItemById,
+  getInventoryItemStockLots,
+  getInventoryItemStockLotById,
+  getInventoryItemStockLotValuation,
+  createInventoryItemController,
+  createStockLotController,
+  updateInventoryItemController,
+  updateStockLotController,
+  deleteInventoryItemController,
+  deleteStockLotController
 } from './controller.ts';
-import { 
-  validateCreateItem, 
-  validateCreateStockLot, 
-  validateUpdateItem, 
-  validateUpdateStockLot, 
-  validateItemParams, 
-  validateLotParams 
+import {
+  validateCreateItem,
+  validateCreateStockLot,
+  validateUpdateItem,
+  validateUpdateStockLot,
+  validateItemParams,
+  validateLotParams
 } from './validation.ts';
 
 const router = Router();

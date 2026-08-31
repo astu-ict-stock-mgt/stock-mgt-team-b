@@ -46,7 +46,7 @@ describe('Audit Log Middleware & API', () => {
     mockCreateAuditLog.mockResolvedValue({});
 
     auditLogger(req, res, next);
-    
+
     // Simulate response finish
     finishCb();
 
