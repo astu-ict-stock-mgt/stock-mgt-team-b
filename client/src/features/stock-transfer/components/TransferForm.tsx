@@ -5,6 +5,7 @@ import {
   useAvailableSourceLocations,
   useCreateStockTransfer,
 } from '../hooks';
+import { useAuth } from '../../../context/AuthContext';
 
 interface ErrorContext {
   available?: number;
@@ -583,6 +584,7 @@ export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps
   const [shakeKey, setShakeKey] = useState(0);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+  const { user } = useAuth();
   const { data: items = [], isLoading: isLoadingItems } = useItems();
   const { data: allDestLocations = [] } = useLocations();
   const { availableLocations: sourceLocations = [], isLoading: isLoadingStock } =
@@ -671,7 +673,8 @@ export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps
         fromLocationId: effectiveFromLocationId,
         toLocationId: effectiveToLocationId,
         quantity: Number(quantity),
-        transferredBy: 'Admin User',
+        userId: user?.id,
+        transferredBy: user ? `${user.firstName} ${user.lastName}`.trim() : 'Admin User',
       });
       setIsConfirmOpen(false);
       onSuccessToast?.(
