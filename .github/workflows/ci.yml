@@ -21,11 +21,11 @@ jobs:
 
       - name: Install server dependencies
         working-directory: ./server
-        run: npm ci
+        run: npm ci || npm install
 
       - name: Install client dependencies
         working-directory: ./client
-        run: npm ci
+        run: npm ci || npm install
 
       - name: Generate Prisma Client
         working-directory: ./server
