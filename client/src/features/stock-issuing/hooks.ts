@@ -79,12 +79,36 @@ export const useIssueRequisition = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, issuedBy }: { id: string; issuedBy: string }) =>
-      stockIssuingApi.issueRequisition(id, issuedBy),
+    mutationFn: ({
+      id,
+      issuedBy,
+      warehouseId,
+    }: {
+      id: string;
+      issuedBy: string;
+      warehouseId?: string;
+    }) => stockIssuingApi.issueRequisition(id, issuedBy, warehouseId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: stockIssuingKeys.requisitions() });
       queryClient.invalidateQueries({ queryKey: stockIssuingKeys.inventory() });
-      // Invalidate inventory module caches as well to keep them in sync
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    },
+  });
+};
+
+export const useIssueStockBackend = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: {
+      inventoryItemId: string;
+      warehouseId: string;
+      quantity: number;
+      requisitionNumber: string;
+      isApproved: boolean;
+    }) => stockIssuingApi.issueStockBackend(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: stockIssuingKeys.inventory() });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
     },
   });

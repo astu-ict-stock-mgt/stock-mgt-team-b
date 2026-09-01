@@ -1,5 +1,7 @@
 // client/src/features/stock-issuing/api.ts
 
+import { apiClient } from '../../api/apiClient';
+
 // ============================================================
 // TYPES & INTERFACES
 // ============================================================
@@ -36,6 +38,43 @@ export interface Requisition {
   issuedBy?: string;
   issuedAt?: string;
   sivNumber?: string;
+}
+
+export interface IssueStockBackendPayload {
+  inventoryItemId: string;
+  warehouseId: string;
+  quantity: number;
+  requisitionNumber: string;
+  isApproved: boolean;
+}
+
+export interface IssueStockBackendResponse {
+  status: string;
+  message: string;
+  data: {
+    transaction: {
+      id: string;
+      type: string;
+      inventoryItemId: string;
+      warehouseId: string;
+      quantity: number;
+      unitCost: number;
+      totalValue: number;
+      referenceNumber: string;
+      userId: string;
+      createdAt: string;
+    };
+    consumptions: Array<{
+      stockLotId: string;
+      quantityConsumed: number;
+    }>;
+    binCard: {
+      inventoryItemId: string;
+      warehouseId: string;
+      balance: number;
+      lastUpdated: string;
+    };
+  };
 }
 
 // ============================================================
@@ -169,9 +208,26 @@ function saveStoredRequisitions(reqs: Requisition[]) {
 // ============================================================
 
 export const stockIssuingApi = {
-  // Get inventory items
+  // Direct Backend Stock Issue Endpoint (/api/stock-issuing)
+  issueStockBackend: async (
+    payload: IssueStockBackendPayload
+  ): Promise<IssueStockBackendResponse['data']> => {
+    const response = await apiClient.post<IssueStockBackendResponse>('/api/stock-issuing', payload);
+    return response.data.data;
+  },
+
+  // Get inventory items (attempts backend GET /api/inventory/items, falls back to local storage)
   getInventoryItems: async (): Promise<InventoryItem[]> => {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    try {
+      const response = await apiClient.get<{ status: string; data: InventoryItem[] }>(
+        '/api/inventory/items'
+      );
+      if (response.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+        return response.data.data;
+      }
+    } catch {
+      // Fallback to local stored inventory if backend API or DB seed is not ready
+    }
     return getStoredInventory();
   },
 
@@ -270,9 +326,12 @@ export const stockIssuingApi = {
     return requisitions[index];
   },
 
-  // Issue stock (Storekeeper view)
-  issueRequisition: async (id: string, issuedBy: string): Promise<Requisition> => {
-    await new Promise((resolve) => setTimeout(resolve, 600));
+  // Issue stock (Storekeeper view) - Dispatches to backend POST /api/stock-issuing
+  issueRequisition: async (
+    id: string,
+    issuedBy: string,
+    warehouseId: string = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22'
+  ): Promise<Requisition> => {
     const requisitions = getStoredRequisitions();
     const inventory = getStoredInventory();
     const index = requisitions.findIndex((r) => r.id === id);
@@ -287,26 +346,40 @@ export const stockIssuingApi = {
       throw new Error('Only approved requisitions can be issued');
     }
 
-    // Verify stock and update quantities
+    // Is UUID helper function
+    const isUuid = (val: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+    // Call real backend POST /api/stock-issuing for each item if items have valid UUIDs
+    for (const item of req.items) {
+      if (isUuid(item.itemId) && isUuid(warehouseId)) {
+        await stockIssuingApi.issueStockBackend({
+          inventoryItemId: item.itemId,
+          warehouseId,
+          quantity: item.quantityRequested,
+          requisitionNumber: req.requisitionNumber,
+          isApproved: true,
+        });
+      }
+    }
+
+    // Verify stock and update quantities locally for UI sync
     const updatedInventory = [...inventory];
     for (const item of req.items) {
       const invIndex = updatedInventory.findIndex((inv) => inv.id === item.itemId);
-      if (invIndex === -1) {
-        throw new Error(`Inventory item ${item.itemName} not found`);
-      }
+      if (invIndex !== -1) {
+        const invItem = updatedInventory[invIndex];
+        if (invItem.quantity < item.quantityRequested) {
+          throw new Error(
+            `Insufficient stock for ${item.itemName}. Available: ${invItem.quantity}, Requested: ${item.quantityRequested}`
+          );
+        }
 
-      const invItem = updatedInventory[invIndex];
-      if (invItem.quantity < item.quantityRequested) {
-        throw new Error(
-          `Insufficient stock for ${item.itemName}. Available: ${invItem.quantity}, Requested: ${item.quantityRequested}`
-        );
+        updatedInventory[invIndex] = {
+          ...invItem,
+          quantity: invItem.quantity - item.quantityRequested,
+        };
       }
-
-      // Deduct quantity
-      updatedInventory[invIndex] = {
-        ...invItem,
-        quantity: invItem.quantity - item.quantityRequested,
-      };
     }
 
     // Generate SIV Number
