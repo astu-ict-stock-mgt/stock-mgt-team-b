@@ -1,3 +1,5 @@
+import apiClient from '../../api/apiClient';
+
 export interface Item {
   id: string;
   name: string;
@@ -34,6 +36,8 @@ export interface CreateTransferPayload {
   fromLocationId: string;
   toLocationId: string;
   quantity: number;
+  userId?: string;
+  referenceNumber?: string;
   transferredBy?: string;
 }
 
@@ -190,15 +194,41 @@ export const stockTransferApi = {
   },
 
   async createTransfer(payload: CreateTransferPayload): Promise<TransferRecord> {
+    // 1. Resolve user ID from payload, auth_user in localStorage, or fallback
+    let currentUserId = payload.userId;
+    if (!currentUserId) {
+      try {
+        const savedUser = localStorage.getItem('auth_user');
+        if (savedUser) {
+          const parsed = JSON.parse(savedUser);
+          currentUserId = parsed.id;
+        }
+      } catch {
+        // fallback
+      }
+    }
+    if (!currentUserId) {
+      currentUserId = '00000000-0000-0000-0000-000000000000';
+    }
+
+    // 2. Call backend endpoint POST /api/stock-transfers
+    const response = await apiClient.post('/stock-transfers', {
+      itemId: payload.itemId,
+      fromWarehouseId: payload.fromLocationId,
+      toWarehouseId: payload.toLocationId,
+      quantity: Number(payload.quantity),
+      userId: currentUserId,
+      referenceNumber: payload.referenceNumber || `TR-${Date.now()}`,
+    });
+
+    const responseData = response.data;
+
+    // 3. Update local state / balances for UI reactivity
     const balances = getStoredBalances();
     const itemBalances = { ...(balances[payload.itemId] || {}) };
     const currentFromQty = itemBalances[payload.fromLocationId] ?? 0;
 
-    if (currentFromQty < payload.quantity) {
-      throw new Error(`Not enough stock! Only ${currentFromQty} units available at this location.`);
-    }
-
-    itemBalances[payload.fromLocationId] = currentFromQty - payload.quantity;
+    itemBalances[payload.fromLocationId] = Math.max(0, currentFromQty - payload.quantity);
     itemBalances[payload.toLocationId] =
       (itemBalances[payload.toLocationId] ?? 0) + payload.quantity;
     balances[payload.itemId] = itemBalances;
@@ -209,7 +239,7 @@ export const stockTransferApi = {
     const toLoc = INITIAL_LOCATIONS.find((l) => l.id === payload.toLocationId);
 
     const newRecord: TransferRecord = {
-      id: `tr-${Date.now()}`,
+      id: responseData?.data?.sourceTransaction?.id || `tr-${Date.now()}`,
       itemId: payload.itemId,
       itemName: item?.name || 'Unknown Item',
       fromLocationId: payload.fromLocationId,
@@ -222,6 +252,6 @@ export const stockTransferApi = {
     };
 
     saveTransfers([newRecord, ...getStoredTransfers()]);
-    return Promise.resolve(newRecord);
+    return newRecord;
   },
 };
