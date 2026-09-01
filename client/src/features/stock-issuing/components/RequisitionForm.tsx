@@ -12,7 +12,7 @@ interface SelectedItem {
 
 export const RequisitionForm: React.FC = () => {
   const { user } = useAuth();
-  
+
   // Queries & Mutations
   const { data: inventory = [], isLoading: isInventoryLoading } = useInventoryItems();
   const { data: requisitions = [], isLoading: isReqsLoading } = useRequisitions();
@@ -28,7 +28,10 @@ export const RequisitionForm: React.FC = () => {
 
   // Filters for user's own requisitions (or all if admin simulating)
   const myRequisitions = requisitions.filter(
-    (r) => user?.role === 'ADMINISTRATOR' || r.requesterId === user?.id || r.requesterName === `${user?.firstName} ${user?.lastName}`
+    (r) =>
+      user?.role === 'ADMINISTRATOR' ||
+      r.requesterId === user?.id ||
+      r.requesterName === `${user?.firstName} ${user?.lastName}`
   );
 
   // Active item details for checking stock warnings
@@ -46,7 +49,10 @@ export const RequisitionForm: React.FC = () => {
       updated[existingIndex].quantityRequested += currentQty;
       setSelectedItems(updated);
     } else {
-      setSelectedItems([...selectedItems, { itemId: currentItemId, quantityRequested: currentQty }]);
+      setSelectedItems([
+        ...selectedItems,
+        { itemId: currentItemId, quantityRequested: currentQty },
+      ]);
     }
 
     // Reset current item inputs
@@ -127,11 +133,13 @@ export const RequisitionForm: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Requisitions (Department Head View)</h2>
-          <p className="text-sm text-gray-500">Draft, submit, and track stock requisition requests.</p>
+          <p className="text-sm text-gray-500">
+            Draft, submit, and track stock requisition requests.
+          </p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
         >
           <Plus className="h-4 w-4" />
           {showForm ? 'Cancel' : 'New Requisition'}
@@ -147,22 +155,22 @@ export const RequisitionForm: React.FC = () => {
       {/* Requisition Submission Form */}
       {showForm && (
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-2">
+          <h3 className="mb-4 border-b border-gray-100 pb-2 text-lg font-semibold text-gray-800">
             Create Requisition Request
           </h3>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Left side inputs: Add item form */}
-            <div className="md:col-span-1 rounded-lg border border-gray-100 bg-gray-50/50 p-4 space-y-4">
+            <div className="space-y-4 rounded-lg border border-gray-100 bg-gray-50/50 p-4 md:col-span-1">
               <h4 className="text-sm font-semibold text-gray-700">Add Item to Request</h4>
-              
+
               <form onSubmit={handleAddItem} className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  <label className="mb-1 block text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Select Material
                   </label>
                   {isInventoryLoading ? (
-                    <div className="text-xs text-gray-400 py-2">Loading materials...</div>
+                    <div className="py-2 text-xs text-gray-400">Loading materials...</div>
                   ) : (
                     <select
                       value={currentItemId}
@@ -184,14 +192,19 @@ export const RequisitionForm: React.FC = () => {
                 </div>
 
                 {activeInvItem && (
-                  <div className="rounded bg-blue-50/50 p-2.5 text-xs text-blue-800 space-y-0.5">
+                  <div className="space-y-0.5 rounded bg-blue-50/50 p-2.5 text-xs text-blue-800">
                     <p className="font-semibold">Code: {activeInvItem.itemCode}</p>
-                    <p>Current Stock: <span className="font-bold">{activeInvItem.quantity} {activeInvItem.unit}</span></p>
+                    <p>
+                      Current Stock:{' '}
+                      <span className="font-bold">
+                        {activeInvItem.quantity} {activeInvItem.unit}
+                      </span>
+                    </p>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  <label className="mb-1 block text-xs font-medium tracking-wider text-gray-500 uppercase">
                     Quantity Needed
                   </label>
                   <input
@@ -206,11 +219,15 @@ export const RequisitionForm: React.FC = () => {
 
                 {/* Acceptance Criteria #1: Warnings if quantity requested exceeds available stock */}
                 {isStockLowForActiveItem && activeInvItem && (
-                  <div className="flex gap-2 rounded bg-yellow-50 border border-yellow-200 p-3 text-xs text-yellow-800">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                  <div className="flex gap-2 rounded border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-800">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0 text-yellow-600" />
                     <div>
                       <p className="font-semibold">Insufficient Stock Alert</p>
-                      <p>Requested quantity ({currentQty}) exceeds available stock ({activeInvItem.quantity}). Requisition can still be drafted, but Storekeeper may be unable to issue it.</p>
+                      <p>
+                        Requested quantity ({currentQty}) exceeds available stock (
+                        {activeInvItem.quantity}). Requisition can still be drafted, but Storekeeper
+                        may be unable to issue it.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -218,7 +235,7 @@ export const RequisitionForm: React.FC = () => {
                 <button
                   type="submit"
                   disabled={!currentItemId}
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-md bg-gray-800 hover:bg-gray-700 text-white py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-gray-800 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" /> Add to List
                 </button>
@@ -226,20 +243,20 @@ export const RequisitionForm: React.FC = () => {
             </div>
 
             {/* Right side list: Request items table */}
-            <div className="md:col-span-2 space-y-4">
+            <div className="space-y-4 md:col-span-2">
               <h4 className="text-sm font-semibold text-gray-700">Requested Items Draft</h4>
 
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="overflow-hidden rounded-lg border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                         Item Details
                       </th>
-                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-right text-xs font-medium tracking-wider text-gray-500 uppercase">
                         Qty Needed
                       </th>
-                      <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-center text-xs font-medium tracking-wider text-gray-500 uppercase">
                         Actions
                       </th>
                     </tr>
@@ -247,7 +264,9 @@ export const RequisitionForm: React.FC = () => {
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {selectedItems.map((item, idx) => {
                       const invItem = inventory.find((i) => i.id === item.itemId);
-                      const isQtyExceeded = invItem ? item.quantityRequested > invItem.quantity : false;
+                      const isQtyExceeded = invItem
+                        ? item.quantityRequested > invItem.quantity
+                        : false;
 
                       return (
                         <tr key={item.itemId} className={isQtyExceeded ? 'bg-yellow-50/20' : ''}>
@@ -255,23 +274,22 @@ export const RequisitionForm: React.FC = () => {
                             <div className="text-sm font-medium text-gray-900">
                               {invItem ? invItem.name : 'Unknown Item'}
                             </div>
-                            <div className="text-xs text-gray-400 font-mono">
-                              ID: {item.itemId}
-                            </div>
+                            <div className="font-mono text-xs text-gray-400">ID: {item.itemId}</div>
                             {isQtyExceeded && invItem && (
-                              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-yellow-700 bg-yellow-100/50 rounded px-1.5 py-0.5 mt-1">
-                                <AlertTriangle className="h-3 w-3 text-yellow-600" /> Exceeds Stock ({invItem.quantity} avail)
+                              <span className="mt-1 inline-flex items-center gap-0.5 rounded bg-yellow-100/50 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-700">
+                                <AlertTriangle className="h-3 w-3 text-yellow-600" /> Exceeds Stock
+                                ({invItem.quantity} avail)
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-right text-sm text-gray-800 font-medium">
+                          <td className="px-4 py-3 text-right text-sm font-medium text-gray-800">
                             {item.quantityRequested} {invItem?.unit || 'Units'}
                           </td>
                           <td className="px-4 py-3 text-center">
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(idx)}
-                              className="text-red-500 hover:text-red-700 p-1 transition"
+                              className="p-1 text-red-500 transition hover:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -291,7 +309,7 @@ export const RequisitionForm: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="mb-1 block text-sm font-medium text-gray-700">
                   Justification (Purpose of requisition)
                 </label>
                 <textarea
@@ -312,7 +330,7 @@ export const RequisitionForm: React.FC = () => {
                     setJustification('');
                     setShowForm(false);
                   }}
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 >
                   Discard Requisition
                 </button>
@@ -320,7 +338,7 @@ export const RequisitionForm: React.FC = () => {
                   type="button"
                   onClick={handleSubmitRequisition}
                   disabled={isSubmitting || selectedItems.length === 0}
-                  className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Requisition'}
                 </button>
@@ -331,9 +349,11 @@ export const RequisitionForm: React.FC = () => {
       )}
 
       {/* History table */}
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-200 bg-gray-50/50 px-6 py-4">
-          <h3 className="text-md font-semibold text-gray-800">Past Requisitions & Status History</h3>
+          <h3 className="text-md font-semibold text-gray-800">
+            Past Requisitions & Status History
+          </h3>
         </div>
 
         <div className="overflow-x-auto">
@@ -341,76 +361,96 @@ export const RequisitionForm: React.FC = () => {
             <div className="py-12 text-center text-gray-400">Loading history...</div>
           ) : myRequisitions.length === 0 ? (
             <div className="py-12 text-center text-gray-500">
-              <FileText className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+              <FileText className="mx-auto mb-2 h-8 w-8 text-gray-300" />
               <p className="text-sm font-medium">No past requisitions found</p>
-              <p className="text-xs text-gray-400 mt-0.5">Submit a requisition to see it logged here.</p>
+              <p className="mt-0.5 text-xs text-gray-400">
+                Submit a requisition to see it logged here.
+              </p>
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                     Req No / Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                     Materials Requested
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                     Justification
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">
                     Workflow Details
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {myRequisitions.slice().reverse().map((req) => (
-                  <tr key={req.id} className="hover:bg-gray-50/30">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-800">{req.requisitionNumber}</div>
-                      <div className="text-xs text-gray-400">
-                        {new Date(req.createdAt).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <ul className="text-sm text-gray-700 list-disc list-inside space-y-0.5">
-                        {req.items.map((it, i) => (
-                          <li key={i}>
-                            {it.itemName} <span className="font-semibold text-gray-900">x{it.quantityRequested}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                      {req.justification}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {getStatusBadge(req.status)}
-                    </td>
-                    <td className="px-6 py-4 text-xs text-gray-500 space-y-1">
-                      {req.status === 'REJECTED' && req.rejectionReason && (
-                        <div className="rounded bg-red-50 border border-red-100 p-2 text-red-800">
-                          <p className="font-semibold uppercase tracking-wider text-[9px] text-red-500">Reason for Rejection</p>
-                          <p className="font-medium mt-0.5">{req.rejectionReason}</p>
+                {myRequisitions
+                  .slice()
+                  .reverse()
+                  .map((req) => (
+                    <tr key={req.id} className="hover:bg-gray-50/30">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-bold text-gray-800">
+                          {req.requisitionNumber}
                         </div>
-                      )}
-                      {req.status === 'APPROVED' && (
-                        <p>Approved by {req.approvedBy} on {new Date(req.approvedAt!).toLocaleDateString()}</p>
-                      )}
-                      {req.status === 'ISSUED' && (
-                        <div>
-                          <p className="font-semibold text-green-700">Issued (SIV generated)</p>
-                          <p className="font-mono text-[10px] mt-0.5">SIV No: {req.sivNumber}</p>
-                          <p className="mt-0.5">Issued by {req.issuedBy} on {new Date(req.issuedAt!).toLocaleDateString()}</p>
+                        <div className="text-xs text-gray-400">
+                          {new Date(req.createdAt).toLocaleDateString()}
                         </div>
-                      )}
-                      {req.status === 'PENDING' && <p>Awaiting review by Property Administration Officer (PAO).</p>}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <ul className="list-inside list-disc space-y-0.5 text-sm text-gray-700">
+                          {req.items.map((it, i) => (
+                            <li key={i}>
+                              {it.itemName}{' '}
+                              <span className="font-semibold text-gray-900">
+                                x{it.quantityRequested}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </td>
+                      <td className="max-w-xs truncate px-6 py-4 text-sm text-gray-600">
+                        {req.justification}
+                      </td>
+                      <td className="px-6 py-4 text-sm whitespace-nowrap">
+                        {getStatusBadge(req.status)}
+                      </td>
+                      <td className="space-y-1 px-6 py-4 text-xs text-gray-500">
+                        {req.status === 'REJECTED' && req.rejectionReason && (
+                          <div className="rounded border border-red-100 bg-red-50 p-2 text-red-800">
+                            <p className="text-[9px] font-semibold tracking-wider text-red-500 uppercase">
+                              Reason for Rejection
+                            </p>
+                            <p className="mt-0.5 font-medium">{req.rejectionReason}</p>
+                          </div>
+                        )}
+                        {req.status === 'APPROVED' && (
+                          <p>
+                            Approved by {req.approvedBy} on{' '}
+                            {new Date(req.approvedAt!).toLocaleDateString()}
+                          </p>
+                        )}
+                        {req.status === 'ISSUED' && (
+                          <div>
+                            <p className="font-semibold text-green-700">Issued (SIV generated)</p>
+                            <p className="mt-0.5 font-mono text-[10px]">SIV No: {req.sivNumber}</p>
+                            <p className="mt-0.5">
+                              Issued by {req.issuedBy} on{' '}
+                              {new Date(req.issuedAt!).toLocaleDateString()}
+                            </p>
+                          </div>
+                        )}
+                        {req.status === 'PENDING' && (
+                          <p>Awaiting review by Property Administration Officer (PAO).</p>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           )}

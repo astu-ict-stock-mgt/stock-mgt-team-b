@@ -13,10 +13,15 @@ import { Shield, Truck, Package, AlertTriangle, FileSpreadsheet, RefreshCw } fro
 
 const StorekeeperQueue: React.FC = () => {
   const { user } = useAuth();
-  
+
   // Queries & Mutations
   const { data: inventory = [], isLoading: isInventoryLoading } = useInventoryItems();
-  const { data: requisitions = [], isLoading: isReqsLoading, refetch, isRefetching } = useRequisitions();
+  const {
+    data: requisitions = [],
+    isLoading: isReqsLoading,
+    refetch,
+    isRefetching,
+  } = useRequisitions();
   const { mutate: issueReq, isPending: isIssuing } = useIssueRequisition();
 
   // State for success modal after issuing
@@ -82,7 +87,9 @@ const StorekeeperQueue: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Approved Requisitions (Storekeeper View)</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            Approved Requisitions (Storekeeper View)
+          </h2>
           <p className="text-sm text-gray-500">
             Check availability, generate Stock Issue Vouchers (SIV), and release items.
           </p>
@@ -99,8 +106,8 @@ const StorekeeperQueue: React.FC = () => {
 
       {/* SIV Generated Dialog */}
       {issuedSiv && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl space-y-4 border border-green-100">
+        <div className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md space-y-4 rounded-xl border border-green-100 bg-white p-6 shadow-2xl">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
                 <FileSpreadsheet className="h-5 w-5" />
@@ -110,9 +117,9 @@ const StorekeeperQueue: React.FC = () => {
                 <p className="text-xs text-gray-500">Stock Issue Voucher created in database.</p>
               </div>
             </div>
-            
+
             {/* Voucher Bill */}
-            <div className="rounded-lg bg-gray-50 border border-gray-100 p-4 font-mono text-xs space-y-2 text-gray-800">
+            <div className="space-y-2 rounded-lg border border-gray-100 bg-gray-50 p-4 font-mono text-xs text-gray-800">
               <div className="flex justify-between border-b border-gray-200 pb-1.5 font-bold">
                 <span>VOUCHER NO:</span>
                 <span className="text-green-700">{issuedSiv.sivNumber}</span>
@@ -121,32 +128,32 @@ const StorekeeperQueue: React.FC = () => {
                 <span>REF REQ:</span>
                 <span>{issuedSiv.reqNo}</span>
               </div>
-              <div className="flex justify-between text-[10px] pb-1.5 border-b border-gray-150">
+              <div className="border-gray-150 flex justify-between border-b pb-1.5 text-[10px]">
                 <span>DATE:</span>
                 <span>{new Date(issuedSiv.issuedAt).toLocaleString()}</span>
               </div>
-              
+
               <div className="space-y-1 pt-1.5">
-                <div className="flex justify-between font-bold text-[10px] text-gray-400">
+                <div className="flex justify-between text-[10px] font-bold text-gray-400">
                   <span>ITEM</span>
                   <span>QTY</span>
                 </div>
                 {issuedSiv.items.map((it, i) => (
                   <div key={i} className="flex justify-between">
-                    <span className="truncate max-w-[200px]">{it.name}</span>
+                    <span className="max-w-[200px] truncate">{it.name}</span>
                     <span className="font-bold">x{it.qty}</span>
                   </div>
                 ))}
               </div>
-              
-              <div className="border-t border-dashed border-gray-300 pt-2 text-[10px] text-center text-gray-400">
+
+              <div className="border-t border-dashed border-gray-300 pt-2 text-center text-[10px] text-gray-400">
                 Authorized Stock Issue - SMS Enterprise
               </div>
             </div>
 
             <button
               onClick={() => setIssuedSiv(null)}
-              className="w-full rounded-lg bg-green-600 py-2.5 text-sm font-semibold text-white shadow hover:bg-green-700 transition"
+              className="w-full rounded-lg bg-green-600 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-green-700"
             >
               Close Receipt
             </button>
@@ -159,9 +166,9 @@ const StorekeeperQueue: React.FC = () => {
         <div className="py-12 text-center text-gray-400">Loading approved requisitions...</div>
       ) : approvedUnissuedReqs.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-500">
-          <Truck className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+          <Truck className="mx-auto mb-3 h-12 w-12 text-gray-300" />
           <h3 className="text-md font-semibold text-gray-700">No Requisitions to Issue</h3>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="mt-0.5 text-xs text-gray-400">
             Approved requisitions awaiting dispatch will show up here.
           </p>
         </div>
@@ -170,7 +177,7 @@ const StorekeeperQueue: React.FC = () => {
           {approvedUnissuedReqs.map((req) => {
             // Check if any item in this request exceeds available inventory
             let containsOutofStock = false;
-            
+
             const checkedItems = req.items.map((item) => {
               const stock = checkItemAvailability(item.itemId, item.quantityRequested);
               if (!stock.sufficient) containsOutofStock = true;
@@ -185,9 +192,9 @@ const StorekeeperQueue: React.FC = () => {
             return (
               <div
                 key={req.id}
-                className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col md:flex-row justify-between gap-6 hover:shadow-md transition duration-200"
+                className="flex flex-col justify-between gap-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:shadow-md md:flex-row"
               >
-                <div className="space-y-3 flex-1">
+                <div className="flex-1 space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-lg font-bold text-gray-800">{req.requisitionNumber}</span>
                     <span className="text-xs text-gray-400">•</span>
@@ -203,22 +210,36 @@ const StorekeeperQueue: React.FC = () => {
                   </div>
 
                   {/* Items List with Availability Warning Indicators */}
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="overflow-hidden rounded-lg border border-gray-200">
                     <table className="min-w-full divide-y divide-gray-200 text-xs">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-2 text-left font-semibold text-gray-500 uppercase tracking-wider">Item Name</th>
-                          <th className="px-4 py-2 text-right font-semibold text-gray-500 uppercase tracking-wider">Requested</th>
-                          <th className="px-4 py-2 text-right font-semibold text-gray-500 uppercase tracking-wider">Available Stock</th>
-                          <th className="px-4 py-2 text-center font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-4 py-2 text-left font-semibold tracking-wider text-gray-500 uppercase">
+                            Item Name
+                          </th>
+                          <th className="px-4 py-2 text-right font-semibold tracking-wider text-gray-500 uppercase">
+                            Requested
+                          </th>
+                          <th className="px-4 py-2 text-right font-semibold tracking-wider text-gray-500 uppercase">
+                            Available Stock
+                          </th>
+                          <th className="px-4 py-2 text-center font-semibold tracking-wider text-gray-500 uppercase">
+                            Status
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
                         {checkedItems.map((item) => (
                           <tr key={item.itemId} className={!item.sufficient ? 'bg-red-50/30' : ''}>
-                            <td className="px-4 py-2.5 font-medium text-gray-900">{item.itemName}</td>
-                            <td className="px-4 py-2.5 text-right font-bold text-gray-800">{item.quantityRequested} {item.unit}</td>
-                            <td className="px-4 py-2.5 text-right text-gray-600">{item.available} {item.unit}</td>
+                            <td className="px-4 py-2.5 font-medium text-gray-900">
+                              {item.itemName}
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-bold text-gray-800">
+                              {item.quantityRequested} {item.unit}
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-gray-600">
+                              {item.available} {item.unit}
+                            </td>
                             <td className="px-4 py-2.5 text-center">
                               {/* Acceptance Criteria #1: UI warns the user if requested quantity exceeds available stock */}
                               {item.sufficient ? (
@@ -226,7 +247,7 @@ const StorekeeperQueue: React.FC = () => {
                                   ✓ In Stock
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] font-bold text-red-700 animate-pulse">
+                                <span className="inline-flex animate-pulse items-center gap-0.5 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700">
                                   <AlertTriangle className="h-3 w-3 text-red-600" /> Out of Stock
                                 </span>
                               )}
@@ -244,16 +265,16 @@ const StorekeeperQueue: React.FC = () => {
                 </div>
 
                 {/* Issue SIV Action */}
-                <div className="flex md:flex-col justify-end gap-2 md:justify-center md:border-l md:border-gray-100 md:pl-6 min-w-[170px]">
+                <div className="flex min-w-[170px] justify-end gap-2 md:flex-col md:justify-center md:border-l md:border-gray-100 md:pl-6">
                   {containsOutofStock && (
-                    <div className="text-center rounded bg-red-50 border border-red-200 p-2.5 text-[10.5px] text-red-700 mb-1 font-medium">
+                    <div className="mb-1 rounded border border-red-200 bg-red-50 p-2.5 text-center text-[10.5px] font-medium text-red-700">
                       ⚠️ Stock Insufficient. Fill inventory before issuing.
                     </div>
                   )}
                   <button
                     onClick={() => handleIssue(req.id)}
                     disabled={isIssuing || containsOutofStock}
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Package className="h-4 w-4" />
                     {isIssuing ? 'Issuing...' : 'Issue & Create SIV'}
@@ -274,9 +295,11 @@ const StorekeeperQueue: React.FC = () => {
 
 export const IssuingView: React.FC = () => {
   const { user } = useAuth();
-  
+
   // Simulation Active Role State (For ADMINISTRATOR only)
-  const [simulatedRole, setSimulatedRole] = useState<'DEPARTMENT_HEAD' | 'PAO' | 'STOREKEEPER' | null>(null);
+  const [simulatedRole, setSimulatedRole] = useState<
+    'DEPARTMENT_HEAD' | 'PAO' | 'STOREKEEPER' | null
+  >(null);
 
   const activeRole = simulatedRole || user?.role || 'DEPARTMENT_HEAD';
 
@@ -293,14 +316,16 @@ export const IssuingView: React.FC = () => {
       default:
         // Fallback for unauthorized roles
         return (
-          <div className="rounded-xl border border-red-100 bg-red-50/50 p-8 text-center max-w-xl mx-auto space-y-3">
-            <Shield className="h-12 w-12 text-red-500 mx-auto" />
+          <div className="mx-auto max-w-xl space-y-3 rounded-xl border border-red-100 bg-red-50/50 p-8 text-center">
+            <Shield className="mx-auto h-12 w-12 text-red-500" />
             <h3 className="text-lg font-bold text-gray-800">Access Restricted</h3>
             <p className="text-sm text-gray-600">
-              Your logged-in role (<strong className="text-gray-800">{user?.role}</strong>) does not have access permissions for the Stock Requisition & Issuing module.
+              Your logged-in role (<strong className="text-gray-800">{user?.role}</strong>) does not
+              have access permissions for the Stock Requisition & Issuing module.
             </p>
             <p className="text-xs text-gray-500">
-              Only Department Heads, Property Administration Officers, or Storekeepers are authorized.
+              Only Department Heads, Property Administration Officers, or Storekeepers are
+              authorized.
             </p>
           </div>
         );
@@ -311,16 +336,20 @@ export const IssuingView: React.FC = () => {
     <div className="space-y-6">
       {/* Simulation Bar for Admin */}
       {user?.role === 'ADMINISTRATOR' && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50/60 p-4 shadow-sm">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-blue-600" />
             <div>
-              <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Administrator Mode</p>
-              <p className="text-[11px] text-blue-700">Simulate workflow roles to test the end-to-end stock issuing process.</p>
+              <p className="text-xs font-bold tracking-wider text-blue-800 uppercase">
+                Administrator Mode
+              </p>
+              <p className="text-[11px] text-blue-700">
+                Simulate workflow roles to test the end-to-end stock issuing process.
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-blue-800 font-semibold">Active Role:</span>
+            <span className="text-xs font-semibold text-blue-800">Active Role:</span>
             <div className="inline-flex rounded-lg border border-blue-200 bg-white p-1">
               <button
                 onClick={() => setSimulatedRole('DEPARTMENT_HEAD')}
@@ -358,9 +387,7 @@ export const IssuingView: React.FC = () => {
       )}
 
       {/* Primary Page Container */}
-      <div className="min-h-[500px]">
-        {renderView()}
-      </div>
+      <div className="min-h-[500px]">{renderView()}</div>
     </div>
   );
 };
