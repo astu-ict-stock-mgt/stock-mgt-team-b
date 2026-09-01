@@ -51,6 +51,10 @@ export const createReceiving = async (
         throw new AppError('Supplier not found', 404);
       }
 
+      if (supplier.isActive === false) {
+        throw new AppError('Supplier is inactive', 400);
+      }
+
       const warehouse = await tx.warehouse.findUnique({
         where: { id: input.warehouseId },
       });

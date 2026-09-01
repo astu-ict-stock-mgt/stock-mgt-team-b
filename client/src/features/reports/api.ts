@@ -398,6 +398,33 @@ const cleanParams = (params: Partial<ReportFiltersState>) => {
   return p;
 };
 
+const isWithinDateRange = (
+  value: string | null | undefined,
+  filters: Partial<ReportFiltersState>
+): boolean => {
+  if (!value) return true;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return true;
+
+  if (filters.dateFrom) {
+    const from = new Date(`${filters.dateFrom}T00:00:00`);
+    if (date < from) {
+      return false;
+    }
+  }
+
+  if (filters.dateTo) {
+    const to = new Date(`${filters.dateTo}T23:59:59.999`);
+    if (date > to) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export async function fetchReportsSummary(
   filters: Partial<ReportFiltersState> = {}
 ): Promise<ReportsSummaryData> {
@@ -416,13 +443,50 @@ export async function fetchStockMovementReport(
   filters: Partial<ReportFiltersState> = {}
 ): Promise<StockMovementReportData> {
   try {
-    const res = await axios.get<{ status: string; data: StockMovementReportData }>(
-      `${API_BASE}/stock-movement`,
-      { params: cleanParams(filters) }
-    );
+    const res = await axios.get<{
+      status: string;
+      data: StockMovementReportData;
+    }>(`${API_BASE}/stock-movement`, {
+      params: cleanParams(filters),
+    });
+
     return res.data.data;
   } catch {
-    return mockStockMovements;
+    const transactions = mockStockMovements.transactions.filter((transaction) =>
+      isWithinDateRange(transaction.createdAt, filters)
+    );
+
+    return {
+      ...mockStockMovements,
+      transactions,
+      summary: {
+        ...mockStockMovements.summary,
+        totalTransactions: transactions.length,
+        totalReceived: transactions
+          .filter((t) => t.type === 'RECEIVE')
+          .reduce((sum, t) => sum + t.quantity, 0),
+        totalIssued: transactions
+          .filter((t) => t.type === 'ISSUE')
+          .reduce((sum, t) => sum + t.quantity, 0),
+        totalTransferred: transactions
+          .filter((t) => t.type === 'TRANSFER')
+          .reduce((sum, t) => sum + t.quantity, 0),
+        totalAdjusted: transactions
+          .filter((t) => t.type === 'ADJUSTMENT')
+          .reduce((sum, t) => sum + t.quantity, 0),
+        netQuantity: transactions.reduce((sum, t) => {
+          if (t.type === 'RECEIVE') return sum + t.quantity;
+          if (t.type === 'ISSUE') return sum - t.quantity;
+          return sum;
+        }, 0),
+        totalValueReceived: transactions
+          .filter((t) => t.type === 'RECEIVE')
+          .reduce((sum, t) => sum + (t.totalValue || 0), 0),
+        totalValueIssued: transactions
+          .filter((t) => t.type === 'ISSUE')
+          .reduce((sum, t) => sum + (t.totalValue || 0), 0),
+      },
+    };
   }
 }
 
@@ -430,13 +494,31 @@ export async function fetchReceivingReport(
   filters: Partial<ReportFiltersState> = {}
 ): Promise<ReceivingReportData> {
   try {
-    const res = await axios.get<{ status: string; data: ReceivingReportData }>(
-      `${API_BASE}/receiving`,
-      { params: cleanParams(filters) }
-    );
+    const res = await axios.get<{
+      status: string;
+      data: ReceivingReportData;
+    }>(`${API_BASE}/receiving`, {
+      params: cleanParams(filters),
+    });
+
     return res.data.data;
   } catch {
-    return mockReceivingData;
+    const transactions = mockReceivingData.transactions.filter((transaction) =>
+      isWithinDateRange(transaction.createdAt, filters)
+    );
+
+    return {
+      ...mockReceivingData,
+      transactions,
+      summary: {
+        ...mockReceivingData.summary,
+        totalReceipts: transactions.length,
+        totalQuantity: transactions.reduce((sum, t) => sum + t.quantity, 0),
+        totalValue: transactions.reduce((sum, t) => sum + (t.totalValue || 0), 0),
+        uniqueSuppliers: new Set(transactions.map((t) => t.supplierName)).size,
+        uniqueWarehouseCount: new Set(transactions.map((t) => t.warehouseName)).size,
+      },
+    };
   }
 }
 
@@ -444,13 +526,29 @@ export async function fetchIssuingReport(
   filters: Partial<ReportFiltersState> = {}
 ): Promise<IssuingReportData> {
   try {
-    const res = await axios.get<{ status: string; data: IssuingReportData }>(
-      `${API_BASE}/issuing`,
-      { params: cleanParams(filters) }
-    );
+    const res = await axios.get<{
+      status: string;
+      data: IssuingReportData;
+    }>(`${API_BASE}/issuing`, {
+      params: cleanParams(filters),
+    });
+
     return res.data.data;
   } catch {
-    return mockIssuingData;
+    const transactions = mockIssuingData.transactions.filter((transaction) =>
+      isWithinDateRange(transaction.createdAt, filters)
+    );
+
+    return {
+      ...mockIssuingData,
+      transactions,
+      summary: {
+        ...mockIssuingData.summary,
+        totalIssues: transactions.length,
+        totalQuantity: transactions.reduce((sum, t) => sum + t.quantity, 0),
+        totalValue: transactions.reduce((sum, t) => sum + (t.totalValue || 0), 0),
+      },
+    };
   }
 }
 
@@ -458,13 +556,47 @@ export async function fetchValuationReport(
   filters: Partial<ReportFiltersState> = {}
 ): Promise<ValuationReportData> {
   try {
-    const res = await axios.get<{ status: string; data: ValuationReportData }>(
-      `${API_BASE}/valuation`,
-      { params: cleanParams(filters) }
-    );
+    const res = await axios.get<{
+      status: string;
+      data: ValuationReportData;
+    }>(`${API_BASE}/valuation`, {
+      params: cleanParams(filters),
+    });
+
     return res.data.data;
   } catch {
-    return mockValuationData;
+    const items = mockValuationData.items
+      .map((item) => {
+        const lots = item.lots.filter((lot) => isWithinDateRange(lot.receivedDate, filters));
+
+        if (lots.length === 0) {
+          return null;
+        }
+
+        const totalQuantityOnHand = lots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+        const totalFifoValue = lots.reduce((sum, lot) => sum + lot.totalLotValue, 0);
+
+        return {
+          ...item,
+          lots,
+          totalQuantityOnHand,
+          totalFifoValue,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    return {
+      ...mockValuationData,
+      items,
+      summary: {
+        ...mockValuationData.summary,
+        totalItems: items.length,
+        totalQuantityOnHand: items.reduce((sum, item) => sum + item.totalQuantityOnHand, 0),
+        totalFifoValuation: items.reduce((sum, item) => sum + item.totalFifoValue, 0),
+        activeLotsCount: items.reduce((sum, item) => sum + item.lots.length, 0),
+      },
+    };
   }
 }
 
@@ -472,13 +604,32 @@ export async function fetchSupplierReport(
   filters: Partial<ReportFiltersState> = {}
 ): Promise<SupplierReportData> {
   try {
-    const res = await axios.get<{ status: string; data: SupplierReportData }>(
-      `${API_BASE}/suppliers`,
-      { params: cleanParams(filters) }
-    );
+    const res = await axios.get<{
+      status: string;
+      data: SupplierReportData;
+    }>(`${API_BASE}/suppliers`, {
+      params: cleanParams(filters),
+    });
+
     return res.data.data;
   } catch {
-    return mockSupplierData;
+    const suppliers = mockSupplierData.suppliers.filter((supplier) =>
+      isWithinDateRange(supplier.lastDeliveryDate, filters)
+    );
+
+    return {
+      ...mockSupplierData,
+      suppliers,
+      summary: {
+        ...mockSupplierData.summary,
+        totalSuppliers: suppliers.length,
+        totalDeliveries: suppliers.reduce((sum, supplier) => sum + supplier.totalDeliveries, 0),
+        totalValueSupplied: suppliers.reduce(
+          (sum, supplier) => sum + supplier.totalSuppliedValue,
+          0
+        ),
+      },
+    };
   }
 }
 
@@ -486,10 +637,13 @@ export async function fetchStockStatusReport(
   filters: Partial<ReportFiltersState> = {}
 ): Promise<StockStatusReportData> {
   try {
-    const res = await axios.get<{ status: string; data: StockStatusReportData }>(
-      `${API_BASE}/stock-status`,
-      { params: cleanParams(filters) }
-    );
+    const res = await axios.get<{
+      status: string;
+      data: StockStatusReportData;
+    }>(`${API_BASE}/stock-status`, {
+      params: cleanParams(filters),
+    });
+
     return res.data.data;
   } catch {
     return mockStockStatusData;
@@ -535,55 +689,131 @@ export async function downloadReportCsv(
 ): Promise<void> {
   try {
     const response = await axios.get(`${API_BASE}/export`, {
-      params: { ...cleanParams(filters), type: reportType, format: 'csv' },
+      params: {
+        ...cleanParams(filters),
+        type: reportType,
+        format: 'csv',
+      },
       responseType: 'blob',
     });
 
-    const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([response.data], {
+      type: 'text/csv;charset=utf-8;',
+    });
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
+
     link.href = url;
     link.setAttribute(
       'download',
       `${reportType}-report-${new Date().toISOString().slice(0, 10)}.csv`
     );
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   } catch {
-    // Client-side fallback CSV generator
     let csvContent = 'Report,Data\n';
+
     if (reportType === 'stock-movement') {
+      const transactions = mockStockMovements.transactions.filter((transaction) =>
+        isWithinDateRange(transaction.createdAt, filters)
+      );
+
       csvContent =
         'ID,Type,Item Code,Item Name,Category,Warehouse,Quantity,Unit Cost,Total Value,Reference,Date\n' +
-        mockStockMovements.transactions
+        transactions
           .map(
             (t) =>
               `${t.id},${t.type},"${t.itemCode}","${t.itemName}","${t.categoryName || ''}","${t.warehouseName || ''}",${t.quantity},${t.unitCost || 0},${t.totalValue || 0},"${t.referenceNumber || ''}",${t.createdAt}`
           )
           .join('\n');
+    } else if (reportType === 'receiving') {
+      const transactions = mockReceivingData.transactions.filter((transaction) =>
+        isWithinDateRange(transaction.createdAt, filters)
+      );
+
+      csvContent =
+        'ID,Reference,Item Code,Item Name,Supplier,Warehouse,Quantity,Unit Cost,Total Value,Received Date\n' +
+        transactions
+          .map(
+            (t) =>
+              `${t.id},"${t.referenceNumber}","${t.itemCode}","${t.itemName}","${t.supplierName || ''}","${t.warehouseName || ''}",${t.quantity},${t.unitCost || 0},${t.totalValue || 0},${t.receivedDate}`
+          )
+          .join('\n');
+    } else if (reportType === 'issuing') {
+      const transactions = mockIssuingData.transactions.filter((transaction) =>
+        isWithinDateRange(transaction.createdAt, filters)
+      );
+
+      csvContent =
+        'ID,Reference,Item Code,Item Name,Warehouse,Quantity,Unit Cost,Total Value,Department,Issued By,Date\n' +
+        transactions
+          .map(
+            (t) =>
+              `${t.id},"${t.referenceNumber}","${t.itemCode}","${t.itemName}","${t.warehouseName || ''}",${t.quantity},${t.unitCost || 0},${t.totalValue || 0},"${t.department || ''}","${t.issuedByName || ''}",${t.createdAt}`
+          )
+          .join('\n');
     } else if (reportType === 'valuation') {
+      const items = mockValuationData.items
+        .map((item) => ({
+          ...item,
+          lots: item.lots.filter((lot) => isWithinDateRange(lot.receivedDate, filters)),
+        }))
+        .filter((item) => item.lots.length > 0);
+
       csvContent =
         'Item Code,Item Name,Category,Warehouse,Quantity on Hand,Avg Cost,Total FIFO Value\n' +
-        mockValuationData.items
+        items
+          .map((i) => {
+            const quantityOnHand = i.lots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+            const fifoValue = i.lots.reduce((sum, lot) => sum + lot.totalLotValue, 0);
+
+            return `"${i.itemCode}","${i.itemName}","${i.categoryName}","${i.warehouseName}",${quantityOnHand},${i.averageUnitCost},${fifoValue}`;
+          })
+          .join('\n');
+    } else if (reportType === 'suppliers') {
+      const suppliers = mockSupplierData.suppliers.filter((supplier) =>
+        isWithinDateRange(supplier.lastDeliveryDate, filters)
+      );
+
+      csvContent =
+        'Supplier ID,Supplier Name,Contact,Email,Phone,Deliveries,Quantity Supplied,Total Supplied Value,Last Delivery Date\n' +
+        suppliers
+          .map(
+            (s) =>
+              `"${s.supplierId}","${s.supplierName}","${s.contactName}","${s.email}","${s.phone}",${s.totalDeliveries},${s.totalQuantitySupplied},${s.totalSuppliedValue},${s.lastDeliveryDate}`
+          )
+          .join('\n');
+    } else if (reportType === 'stock-status') {
+      csvContent =
+        'Item Code,Item Name,Category,Warehouse,State,Current Stock,Min Level,Max Level,Reorder Level,Safety Stock,Low Stock,Below Safety Stock\n' +
+        mockStockStatusData.items
           .map(
             (i) =>
-              `"${i.itemCode}","${i.itemName}","${i.categoryName}","${i.warehouseName}",${i.totalQuantityOnHand},${i.averageUnitCost},${i.totalFifoValue}`
+              `"${i.itemCode}","${i.itemName}","${i.categoryName}","${i.warehouseName}","${i.state}",${i.currentStock},${i.minLevel},${i.maxLevel},${i.reorderLevel},${i.safetyStock},${i.isLowStock},${i.isBelowSafetyStock}`
           )
           .join('\n');
     } else {
       csvContent = 'Report Type,Export Date\n' + `${reportType},${new Date().toISOString()}\n`;
     }
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], {
+      type: 'text/csv;charset=utf-8;',
+    });
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
+
     link.href = url;
     link.setAttribute(
       'download',
       `${reportType}-report-${new Date().toISOString().slice(0, 10)}.csv`
     );
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

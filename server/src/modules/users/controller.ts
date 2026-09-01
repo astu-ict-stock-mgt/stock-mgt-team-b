@@ -14,10 +14,9 @@ export const getUsersHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { role, isActive, search } = req.query;
+    const { role, search } = req.query;
     const users = await getUsers({
       role: role as Role | undefined,
-      isActive: isActive as string | undefined,
       search: search as string | undefined,
     });
     res.status(200).json({ status: 'success', data: users });
@@ -80,7 +79,7 @@ export const deactivateUserHandler = async (
     const user = await deactivateUser(id as string, adminId);
     res.status(200).json({
       status: 'success',
-      message: 'User deactivated successfully',
+      message: 'User deleted successfully',
       data: user,
     });
   } catch (error) {

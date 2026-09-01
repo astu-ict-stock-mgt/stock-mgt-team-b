@@ -21,12 +21,10 @@ export interface UpdateUserData {
   lastName?: string;
   role?: Role;
   department?: string | null;
-  isActive?: boolean;
 }
 
 export interface GetUsersParams {
   role?: Role;
-  isActive?: boolean | string;
   search?: string;
 }
 
@@ -67,10 +65,6 @@ export const getUsers = async (params: GetUsersParams = {}) => {
 
   if (params.role) {
     where.role = params.role;
-  }
-
-  if (params.isActive !== undefined) {
-    where.isActive = typeof params.isActive === 'string' ? params.isActive === 'true' : Boolean(params.isActive);
   }
 
   if (params.search) {
@@ -119,7 +113,6 @@ export const createUser = async (data: CreateUserData, adminId: string) => {
       lastName: data.lastName,
       role: data.role,
       department: data.department ?? null,
-      isActive: true,
     },
   });
 
@@ -165,7 +158,6 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
   if (data.lastName !== undefined) updatePayload.lastName = data.lastName;
   if (data.role !== undefined) updatePayload.role = data.role;
   if (data.department !== undefined) updatePayload.department = data.department;
-  if (data.isActive !== undefined) updatePayload.isActive = data.isActive;
 
   if (data.password) {
     updatePayload.passwordHash = await bcrypt.hash(data.password, 10);
@@ -199,7 +191,6 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
   return sanitizeUser(updatedUser);
 };
 
-// Soft delete: deactivate user (isActive: false) to maintain foreign key integrity in transactions
 export const deactivateUser = async (id: string, adminId: string) => {
   const prisma = getPrisma();
   const existingUser = await prisma.user.findUnique({ where: { id } });
@@ -208,7 +199,7 @@ export const deactivateUser = async (id: string, adminId: string) => {
     throw new AppError('User not found', 404);
   }
 
-  const deactivatedUser = await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: { id },
     data: { isActive: false },
   });
@@ -225,9 +216,9 @@ export const deactivateUser = async (id: string, adminId: string) => {
         },
       });
     } catch {
-      // Prevent audit failure from blocking user deactivation in mock setups
+      // Prevent audit failure from blocking user execution
     }
   }
 
-  return sanitizeUser(deactivatedUser);
+  return sanitizeUser(updatedUser);
 };

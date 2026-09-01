@@ -72,11 +72,11 @@ export function DashboardPage() {
             </div>
           </div>
           <p className="mt-3 text-2xl font-black text-gray-900">
-            {statsLoading ? '...' : (stats?.totalItemsMonitored ?? 45)}
+            {statsLoading ? '...' : (stats?.totalItemsMonitored ?? 0)}
           </p>
           <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
             <span className="font-semibold text-emerald-600">
-              {statsLoading ? '...' : (stats?.adequateStockCount ?? 35)}
+              {statsLoading ? '...' : (stats?.adequateStockCount ?? 0)}
             </span>{' '}
             optimal stock level items
           </div>
