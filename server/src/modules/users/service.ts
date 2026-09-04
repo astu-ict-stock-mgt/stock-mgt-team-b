@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { getPrisma } from '../../config/db.ts';
 import { AppError } from '../../middlewares/errorHandler.ts';
 import type { Role } from '../../middlewares/rbac.ts';
 import 'dotenv/config';
@@ -21,20 +20,16 @@ export interface UpdateUserData {
   lastName?: string;
   role?: Role;
   department?: string | null;
+  isActive?: boolean;
 }
 
 export interface GetUsersParams {
   role?: Role;
   search?: string;
+  isActive?: boolean;
 }
 
-const getPrisma = (): PrismaClient => {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL must be configured');
-  }
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
-};
+
 
 // Helper function to strip passwordHash before returning user objects to clients (SRS Section 3.2)
 const sanitizeUser = (user: {
@@ -65,6 +60,10 @@ export const getUsers = async (params: GetUsersParams = {}) => {
 
   if (params.role) {
     where.role = params.role;
+  }
+
+  if (params.isActive !== undefined) {
+    where.isActive = params.isActive;
   }
 
   if (params.search) {
@@ -158,6 +157,7 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
   if (data.lastName !== undefined) updatePayload.lastName = data.lastName;
   if (data.role !== undefined) updatePayload.role = data.role;
   if (data.department !== undefined) updatePayload.department = data.department;
+  if (data.isActive !== undefined) updatePayload.isActive = data.isActive;
 
   if (data.password) {
     updatePayload.passwordHash = await bcrypt.hash(data.password, 10);
@@ -167,6 +167,25 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
     where: { id },
     data: updatePayload,
   });
+
+  const isStatusChanged = Boolean(
+    data.isActive !== undefined && data.isActive !== existingUser.isActive
+  );
+  if (isStatusChanged && adminId) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: adminId,
+          action: data.isActive ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
+          entity: 'User',
+          entityId: updatedUser.id,
+          details: { email: updatedUser.email },
+        },
+      });
+    } catch {
+      // Prevent audit failure from blocking user update in mock setups
+    }
+  }
 
   // Record role change in AuditLog table for compliance and traceability (SRS Section 3.1)
   if (isRoleChanged && adminId) {

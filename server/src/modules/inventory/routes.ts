@@ -11,7 +11,9 @@ import {
   updateInventoryItemController, 
   updateStockLotController, 
   deleteInventoryItemController, 
-  deleteStockLotController 
+  deleteStockLotController,
+  getCategoriesController,
+  getWarehousesController,
 } from './controller.ts';
 import { 
   validateCreateItem, 
@@ -27,12 +29,24 @@ const router = Router();
 // Apply global authentication across all inventory actions
 router.use(requireAuth);
 
-// Item Management Operations
+// Category and Warehouse lookups
+router.get('/categories', getCategoriesController);
+router.get('/warehouses', getWarehousesController);
+
+// Item Management Operations (supports both /api/inventory and /api/inventory/items)
+router.get('/', getInventoryItems);
 router.get('/items', getInventoryItems);
 router.get('/items/:itemId', validateItemParams, getInventoryItemById);
 router.post('/items', validateCreateItem, createInventoryItemController);
 router.put('/items/:itemId', validateUpdateItem, updateInventoryItemController);
 router.delete('/items/:itemId', validateItemParams, deleteInventoryItemController);
+
+// Direct /:itemId aliases for client simplicity
+router.get('/:itemId', validateItemParams, getInventoryItemById);
+router.get('/:itemId/lots', validateItemParams, getInventoryItemStockLots);
+router.post('/', validateCreateItem, createInventoryItemController);
+router.put('/:itemId', validateUpdateItem, updateInventoryItemController);
+router.delete('/:itemId', validateItemParams, deleteInventoryItemController);
 
 // Stock Lot Management Operations
 router.get('/items/:itemId/lots', validateItemParams, getInventoryItemStockLots);

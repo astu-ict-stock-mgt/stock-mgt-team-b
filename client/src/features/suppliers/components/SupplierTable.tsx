@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MoreHorizontal, Pencil, Trash2, ToggleLeft } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, ToggleLeft, Plus } from 'lucide-react';
 import { useSuppliers, useDeleteSupplier, useUpdateSupplier } from '../hooks';
 import { useAuth } from '../../auth/hooks';
 import { SupplierFormModal } from './SupplierFormModal';
@@ -112,10 +112,10 @@ export function SupplierTable() {
             <button
               id="add-supplier-btn"
               onClick={handleAddNew}
-              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
             >
-              <div className="mr-2 h-1.5 w-1.5 rounded-full bg-white" />
-              Add Supplier Record
+              <Plus className="mr-2 h-4 w-4" />
+              Add Supplier
             </button>
           )}
         </div>

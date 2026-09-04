@@ -17,7 +17,8 @@ import {
 const QUERY_KEYS = {
   suppliers: ['stock-receiving', 'suppliers'] as const,
   warehouses: ['stock-receiving', 'warehouses'] as const,
-  items: (query: string) => ['stock-receiving', 'items', query] as const,
+  items: (query: string, warehouseId?: string) =>
+    ['stock-receiving', 'items', query, warehouseId] as const,
   grns: ['stock-receiving', 'grns'] as const,
   grn: (id: string) => ['stock-receiving', 'grns', id] as const,
 };
@@ -38,10 +39,10 @@ export function useWarehouses() {
   });
 }
 
-export function useItemSearch(query: string) {
+export function useItemSearch(query: string, warehouseId?: string) {
   return useQuery({
-    queryKey: QUERY_KEYS.items(query),
-    queryFn: () => searchItems(query),
+    queryKey: QUERY_KEYS.items(query, warehouseId),
+    queryFn: () => searchItems(query, warehouseId),
     enabled: query.trim().length > 0,
     staleTime: 30 * 1000,
   });

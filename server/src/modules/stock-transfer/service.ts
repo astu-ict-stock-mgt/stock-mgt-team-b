@@ -225,3 +225,55 @@ export const createStockTransfer = async (
     await prisma.$disconnect();
   }
 };
+
+export const listStockTransfers = async () => {
+  const prisma = createPrismaClient();
+  try {
+    const transactions = await prisma.stockTransaction.findMany({
+      where: { type: 'TRANSFER' },
+      include: {
+        inventoryItem: true,
+        warehouse: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return transactions.map((t) => ({
+      id: t.id,
+      itemId: t.inventoryItemId,
+      itemName: t.inventoryItem.name,
+      itemCode: t.inventoryItem.itemCode,
+      fromWarehouseId: t.warehouseId,
+      fromWarehouseName: t.warehouse.name,
+      quantity: t.quantity,
+      unitCost: t.unitCost,
+      totalValue: t.totalValue,
+      referenceNumber: t.referenceNumber,
+      transferDate: t.createdAt.toISOString(),
+      performedBy: t.user ? `${t.user.firstName} ${t.user.lastName}`.trim() : 'System',
+      status: 'COMPLETED',
+    }));
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+export const getTransferLocations = async () => {
+  const prisma = createPrismaClient();
+  try {
+    return await prisma.warehouse.findMany({
+      orderBy: { name: 'asc' },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+

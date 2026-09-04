@@ -1,6 +1,7 @@
+import apiClient from '../../api/apiClient';
 import type { InventoryItem, CreateStockTakeDto, StockTakeStatus } from './types';
 
-// Mocked inventory data (since we don't have a real DB yet)
+// Fallback inventory data if inventory endpoint is empty
 const mockInventoryItems: InventoryItem[] = [
   {
     id: 'INV-1001',
@@ -54,9 +55,46 @@ export async function fetchStockTakeItems(
   page: number = 1,
   pageSize: number = 10
 ): Promise<{ data: InventoryItem[]; totalCount: number }> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
   let result = mockInventoryItems;
+
+  try {
+    const res = await apiClient.get('/inventory');
+    const items = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+    if (items.length > 0) {
+      result = items.map(
+        (i: {
+          id: string;
+          itemCode?: string;
+          sku?: string;
+          name: string;
+          quantity?: number;
+          totalQuantity?: number;
+          totalValue?: number;
+          category?: string;
+        }) => ({
+          id: i.id,
+          itemCode: i.itemCode ?? i.sku ?? '',
+          itemName: i.name,
+          systemQuantity: i.quantity ?? i.totalQuantity ?? 0,
+          actualQuantity: null,
+          unitPrice: (i.quantity ?? 0) > 0 ? (i.totalValue ?? 0) / (i.quantity ?? 1) : 10,
+          category: i.category ?? 'General',
+        })
+      );
+    }
+  } catch {
+    result = mockInventoryItems;
+  }
+
+  const storedOverlay = localStorage.getItem('stock_take_overlay');
+  if (storedOverlay) {
+    try {
+      const overlay = JSON.parse(storedOverlay);
+      result = result.map((item) => (overlay[item.id] ? { ...item, ...overlay[item.id] } : item));
+    } catch {
+      result = mockInventoryItems;
+    }
+  }
 
   if (statusFilter) {
     if (statusFilter === 'pending') {
@@ -81,22 +119,26 @@ export async function fetchStockTakeItems(
 }
 
 export async function submitStockTake(data: CreateStockTakeDto): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  // Update the actual quantities
-  const itemIndex = mockInventoryItems.findIndex((i) => i.id === data.itemId);
-  if (itemIndex === -1) throw new Error('Item not found');
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  let overlay: Record<string, Record<string, unknown>> = {};
+  try {
+    const stored = localStorage.getItem('stock_take_overlay');
+    if (stored) overlay = JSON.parse(stored);
+  } catch {
+    overlay = {};
+  }
 
-  const item = mockInventoryItems[itemIndex];
-  mockInventoryItems[itemIndex] = {
-    ...item,
+  overlay[data.itemId] = {
     actualQuantity: data.actualQuantity,
-    discrepancy: item.systemQuantity - data.actualQuantity,
+    discrepancy: data.actualQuantity,
     submittedReason: data.reason,
     submittedAt: new Date().toISOString(),
-    submittedBy: 'Storekeeper', // Mocked user
+    submittedBy: 'Storekeeper',
     approved: false,
     rejected: false,
   };
+
+  localStorage.setItem('stock_take_overlay', JSON.stringify(overlay));
 }
 
 export async function processStockTake(
@@ -104,23 +146,31 @@ export async function processStockTake(
   action: 'approve' | 'reject',
   notes?: string
 ): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const index = mockInventoryItems.findIndex((i) => i.id === id);
-  if (index === -1) throw new Error('Item not found');
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  let overlay: Record<string, Record<string, unknown>> = {};
+  try {
+    const stored = localStorage.getItem('stock_take_overlay');
+    if (stored) overlay = JSON.parse(stored);
+  } catch {
+    overlay = {};
+  }
 
+  const current = overlay[id] || {};
   if (action === 'approve') {
-    mockInventoryItems[index] = {
-      ...mockInventoryItems[index],
+    overlay[id] = {
+      ...current,
       approved: true,
       approvedAt: new Date().toISOString(),
       approverNotes: notes,
     };
   } else {
-    mockInventoryItems[index] = {
-      ...mockInventoryItems[index],
+    overlay[id] = {
+      ...current,
       rejected: true,
       rejectedAt: new Date().toISOString(),
       rejectionNotes: notes,
     };
   }
+
+  localStorage.setItem('stock_take_overlay', JSON.stringify(overlay));
 }

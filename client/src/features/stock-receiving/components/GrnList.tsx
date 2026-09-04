@@ -17,7 +17,11 @@ function money(n: number) {
   return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
-export default function GrnList() {
+interface GrnListProps {
+  onAddNew?: () => void;
+}
+
+export default function GrnList({ onAddNew }: GrnListProps) {
   const { data: grns, isLoading, isError } = useGrnList();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<GrnStatus | 'All'>('All');
@@ -40,9 +44,15 @@ export default function GrnList() {
           <h2>Goods Received Notes</h2>
           <p>Complete history of inbound shipments logged into the system ledger.</p>
         </div>
-        <Link to="/stock-receiving" className={styles.newButton}>
-          + New GRN
-        </Link>
+        {onAddNew ? (
+          <button type="button" onClick={onAddNew} className={styles.newButton}>
+            + New GRN
+          </button>
+        ) : (
+          <Link to="/stock-receiving" className={styles.newButton}>
+            + New GRN
+          </Link>
+        )}
       </div>
 
       <div className={styles.toolbar}>

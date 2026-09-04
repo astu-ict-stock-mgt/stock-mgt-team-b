@@ -16,4 +16,7 @@ export interface CreateSupplierDto {
   phone?: string | null;
   email?: string | null;
   address?: string | null;
+  isActive?: boolean;
 }
+
+export type UpdateSupplierDto = Partial<CreateSupplierDto>;

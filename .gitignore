@@ -13,3 +13,6 @@ client/.next/
 client/out/
 client/build/
 client/coverage/
+*.tsbuildinfo
+create-issues.js
+temp_issue_body.md

@@ -1,5 +1,4 @@
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { getPrisma } from '../../config/db.ts';
 import { AppError } from '../../middlewares/errorHandler.ts';
 
 export interface CreateSupplierInput {
@@ -23,20 +22,7 @@ export interface GetSuppliersParams {
   isActive?: boolean;
 }
 
-const getDatabaseUrl = (): string => {
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
-    throw new AppError('DATABASE_URL must be configured', 500);
-  }
-
-  return databaseUrl;
-};
-
-const createPrismaClient = (): PrismaClient =>
-  new PrismaClient({
-    adapter: new PrismaPg({ connectionString: getDatabaseUrl() }),
-  });
+const createPrismaClient = () => getPrisma();
 
 export const getSuppliers = async (params: GetSuppliersParams = {}) => {
   const prisma = createPrismaClient();

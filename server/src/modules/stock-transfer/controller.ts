@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { createStockTransfer } from './service.ts';
+import { createStockTransfer, listStockTransfers, getTransferLocations } from './service.ts';
 import { AppError } from '../../middlewares/errorHandler.ts';
 
 export const createTransfer = async (
@@ -33,7 +33,34 @@ export const createTransfer = async (
       status: 'success',
       message: 'Stock transferred successfully',
       data: transfer,
+      ...transfer,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listTransfersController = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await listStockTransfers();
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTransferLocationsController = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await getTransferLocations();
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

@@ -1,8 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import PasswordInput from '../components/PasswordInput';
-import { useLogin } from '../hooks';
+import { useLogin, useAuth } from '../hooks';
 
 interface FormErrors {
   email?: string;
@@ -12,6 +12,13 @@ interface FormErrors {
 export default function LoginPage() {
   const navigate = useNavigate();
   const { submitLogin } = useLogin();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,10 +27,6 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Google sign-in state
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState('');
 
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
@@ -58,17 +61,12 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await submitLogin({
+      await submitLogin({
         email,
         password,
       });
 
-      // Role-based redirection
-      if (response.user.role === 'ADMIN') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       setAuthError(
@@ -265,69 +263,6 @@ export default function LoginPage() {
             <span>{isSubmitting ? 'Signing in...' : 'Log in to Console'}</span>
           </button>
         </form>
-
-        {/* Divider */}
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs font-medium text-slate-400">OR</span>
-          <div className="h-px flex-1 bg-slate-200" />
-        </div>
-
-        {/* Google login button */}
-        <button
-          type="button"
-          disabled={googleLoading}
-          onClick={() => {
-            setGoogleError('');
-            setGoogleLoading(true);
-
-            setTimeout(() => {
-              setGoogleLoading(false);
-              setGoogleError(
-                'Google sign-in is not configured yet. Please use your username or email and password.'
-              );
-            }, 1000);
-          }}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {googleLoading ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
-              Connecting to Google...
-            </>
-          ) : (
-            <>
-              <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M21.35 12.23c0-.79-.07-1.55-.22-2.27H12v4.3h5.23a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.92-4.18 2.92-7.42Z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 21.67c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.72-5.46-4.03H3.29v2.53A9.75 9.75 0 0 0 12 21.67Z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M6.54 13.75A5.86 5.86 0 0 1 6.23 12c0-.61.11-1.2.31-1.75V7.72H3.29A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.05 1.04 4.28l3.25-2.53Z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 6.22c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.28 14.63 2.33 12 2.33a9.75 9.75 0 0 0-8.71 5.39l3.25 2.53C7.31 7.94 9.46 6.22 12 6.22Z"
-                />
-              </svg>
-              Continue with Google
-            </>
-          )}
-        </button>
-
-        {googleError && (
-          <div
-            role="alert"
-            className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-          >
-            {googleError}
-          </div>
-        )}
 
         <footer className="mt-6">
           <p className="text-center text-xs leading-5 text-slate-500">

@@ -11,6 +11,8 @@ import {
   deleteInventoryItem,
   updateStockLot,
   deleteStockLot,
+  getInventoryCategories,
+  getInventoryWarehouses,
 } from './service.ts';
 
 type PrismaLikeError = {
@@ -74,14 +76,52 @@ const handleControllerError = (
 };
 
 export const getInventoryItems = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const search = req.query.search as string | undefined;
+    const category = req.query.category as string | undefined;
+    const warehouseId = req.query.warehouseId as string | undefined;
+    const page = req.query.page ? parseInt(req.query.page as string, 10) : undefined;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+
+    const data = await getAllItemsValuationResult({
+      search,
+      category,
+      warehouseId,
+      page,
+      limit,
+    });
+
+    res.status(200).json(data);
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+export const getCategoriesController = async (
   _req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const data = await getAllItemsValuationResult();
+    const categories = await getInventoryCategories();
+    res.status(200).json(categories);
+  } catch (error: unknown) {
+    next(error);
+  }
+};
 
-    res.status(200).json(data);
+export const getWarehousesController = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const warehouses = await getInventoryWarehouses();
+    res.status(200).json(warehouses);
   } catch (error: unknown) {
     next(error);
   }

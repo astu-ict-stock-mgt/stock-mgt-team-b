@@ -75,6 +75,13 @@ model User {
   stockTakeSessions       StockTake[]          @relation("StockTakeCreator")
   stockTakeCounts         StockTakeCount[]     @relation("StockTakeCounter")
   approvedReconciliations Reconciliation[]     @relation("ReconciliationApprover")
+  requisitionsRequested   Requisition[]        @relation("RequisitionRequester")
+  requisitionsApproved    Requisition[]        @relation("RequisitionApprover")
+  requisitionsIssued      Requisition[]        @relation("RequisitionIssuer")
+  writeOffsRequested      WriteOffRequest[]    @relation("WriteOffRequester")
+  writeOffsApproved       WriteOffRequest[]    @relation("WriteOffApprover")
+  writeOffsRejected       WriteOffRequest[]    @relation("WriteOffRejecter")
+  writeOffsDisposed       WriteOffRequest[]    @relation("WriteOffDisposer")
 }
 
 model Supplier {
@@ -176,6 +183,8 @@ model InventoryItem {
   goodsReceivingNoteItems GoodsReceivingNoteItem[]
   stockTakeCounts         StockTakeCount[]
   reconciliations         Reconciliation[]
+  requisitionItems        RequisitionItem[]
+  writeOffRequests        WriteOffRequest[]
 }
 
 // Represents a batch/lot of received items for FIFO tracking
@@ -341,5 +350,76 @@ model Reconciliation {
   @@index([inventoryItemId])
   @@index([warehouseId])
   @@index([approvedBy])
+  @@index([status])
+}
+
+model Requisition {
+  id              String            @id @default(uuid())
+  requisitionNumber String          @unique
+  requesterId     String
+  department      String
+  justification   String
+  status          String            @default("PENDING")
+  rejectionReason String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  issuedBy        String?
+  issuedAt        DateTime?
+  sivNumber       String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  requester       User              @relation("RequisitionRequester", fields: [requesterId], references: [id])
+  approver        User?             @relation("RequisitionApprover", fields: [approvedBy], references: [id])
+  issuer          User?             @relation("RequisitionIssuer", fields: [issuedBy], references: [id])
+  items           RequisitionItem[]
+
+  @@index([requesterId])
+  @@index([status])
+}
+
+model RequisitionItem {
+  id                String        @id @default(uuid())
+  requisitionId     String
+  inventoryItemId   String
+  quantityRequested Int
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  requisition       Requisition   @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  inventoryItem     InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@index([requisitionId])
+  @@index([inventoryItemId])
+}
+
+model WriteOffRequest {
+  id                String        @id @default(uuid())
+  itemId            String
+  quantity          Int
+  reasonCode        String
+  reasonDescription String?
+  notes             String?
+  status            String        @default("PENDING")
+  rejectionReason   String?
+  requestedBy       String
+  requestedAt       DateTime      @default(now())
+  approvedBy        String?
+  approvedAt        DateTime?
+  rejectedBy        String?
+  rejectedAt        DateTime?
+  disposedBy        String?
+  disposedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  item              InventoryItem @relation(fields: [itemId], references: [id])
+  requester         User          @relation("WriteOffRequester", fields: [requestedBy], references: [id])
+  approver          User?         @relation("WriteOffApprover", fields: [approvedBy], references: [id])
+  rejecter          User?         @relation("WriteOffRejecter", fields: [rejectedBy], references: [id])
+  disposer          User?         @relation("WriteOffDisposer", fields: [disposedBy], references: [id])
+
+  @@index([itemId])
+  @@index([requestedBy])
   @@index([status])
 }

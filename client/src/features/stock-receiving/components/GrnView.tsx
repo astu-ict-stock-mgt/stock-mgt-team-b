@@ -3,7 +3,8 @@
  * Read-only, print-friendly view of a submitted GRN.
  * Route: /stock-receiving/grns/:id
  */
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, Printer } from 'lucide-react';
 import { useGrn } from '../hooks';
 import styles from './GrnView.module.css';
 
@@ -20,8 +21,23 @@ export default function GrnView() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.printBar}>
-        <button type="button" onClick={() => window.print()} className={styles.printButton}>
+      <div
+        className={styles.printBar}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <Link
+          to="/stock-receiving"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 print:hidden"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to GRN Ledger
+        </Link>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className={`${styles.printButton} inline-flex items-center gap-1.5`}
+        >
+          <Printer className="h-4 w-4" />
           Print GRN
         </button>
       </div>

@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, CheckCircle2, AlertCircle } from 'lucide-react';
 import { InspectionStatus, InventoryItem } from '../api';
 import { useCreateGrn, useItemSearch, useSuppliers, useWarehouses } from '../hooks';
-import { useAuth } from '../../../lib/auth';
+import { useAuth } from '../../../context/AuthContext';
 import styles from './CreateGrnForm.module.css';
 
 interface LineItemDraft {
@@ -199,7 +199,7 @@ export default function CreateGrnForm() {
         supplierId,
         warehouseId,
         receivedDate,
-        createdBy: user?.name,
+        createdBy: user ? `${user.firstName} ${user.lastName}` : undefined,
         lineItems: lineItems.map((line) => ({
           itemId: line.item!.id,
           quantity: Number(line.quantity),
@@ -209,8 +209,14 @@ export default function CreateGrnForm() {
         })),
       });
       navigate(`/stock-receiving/grns/${grn.id}`);
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Unable to create GRN. Please try again.');
+    } catch (err: unknown) {
+      const axiosMsg =
+        typeof err === 'object' && err !== null && 'response' in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      setFormError(
+        axiosMsg || (err instanceof Error ? err.message : 'Unable to create GRN. Please try again.')
+      );
     }
   }
 
@@ -249,7 +255,7 @@ export default function CreateGrnForm() {
           )}
           {suppliersError && (
             <p className={styles.errorText}>
-              Unable to load suppliers. Confirm the mock API is running on port 4000.
+              Unable to load suppliers. Please check connection to the server.
             </p>
           )}
         </div>
@@ -303,7 +309,7 @@ export default function CreateGrnForm() {
           )}
           {warehousesError && (
             <p className={styles.errorText}>
-              Unable to load warehouses. Confirm the mock API is running on port 4000.
+              Unable to load warehouses. Please check connection to the server.
             </p>
           )}
         </div>
@@ -326,6 +332,7 @@ export default function CreateGrnForm() {
           <LineItemRow
             key={line.key}
             line={line}
+            warehouseId={warehouseId}
             errors={submitAttempted ? lineErrors[index] : {}}
             canRemove={lineItems.length > 1}
             onChange={(patch) => updateLineItem(line.key, patch)}
@@ -402,6 +409,7 @@ export default function CreateGrnForm() {
 
 interface LineItemRowProps {
   line: LineItemDraft;
+  warehouseId?: string;
   errors: LineItemErrors;
   canRemove: boolean;
   onChange: (patch: Partial<LineItemDraft>) => void;
@@ -411,13 +419,14 @@ interface LineItemRowProps {
 
 function LineItemRow({
   line,
+  warehouseId,
   errors,
   canRemove,
   onChange,
   onRemove,
   selectedItemIds,
 }: LineItemRowProps) {
-  const { data: itemResults, isFetching } = useItemSearch(line.itemQuery);
+  const { data: itemResults, isFetching } = useItemSearch(line.itemQuery, warehouseId);
   const showResults = line.itemQuery.trim().length > 0 && !line.item;
   const availableResults = itemResults?.filter(
     (item) => item.id === line.item?.id || !selectedItemIds.includes(item.id)

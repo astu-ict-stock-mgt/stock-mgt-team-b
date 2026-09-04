@@ -1,16 +1,21 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
   UserCog,
   Package,
+  PackageCheck,
+  ClipboardList,
+  ArrowLeftRight,
+  ClipboardCheck,
+  AlertOctagon,
   Truck,
   FileText,
   Activity,
   Settings,
   User as UserIcon,
+  LogOut,
   X,
-  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '../features/auth/hooks';
 
@@ -19,17 +24,28 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onClose }: SidebarProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    if (onClose) onClose();
+  };
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Users', path: '/users', icon: Users },
-    { name: 'Roles & Permissions', path: '/roles', icon: UserCog },
     { name: 'Inventory', path: '/inventory', icon: Package },
+    { name: 'Stock Receiving', path: '/stock-receiving', icon: PackageCheck },
     { name: 'Stock Issuing', path: '/stock-issuing', icon: ClipboardList },
+    { name: 'Stock Transfer', path: '/stock-transfer', icon: ArrowLeftRight },
+    { name: 'Stock Taking', path: '/stock-taking', icon: ClipboardCheck },
+    { name: 'Damaged & Obsolete', path: '/damaged-obsolete', icon: AlertOctagon },
     { name: 'Suppliers', path: '/suppliers', icon: Truck },
     { name: 'Reports', path: '/reports', icon: FileText },
     { name: 'Audit Logs', path: '/audit-log', icon: Activity },
+    { name: 'Users', path: '/users', icon: Users },
+    { name: 'Roles & Permissions', path: '/roles', icon: UserCog },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
@@ -79,20 +95,29 @@ export function Sidebar({ onClose }: SidebarProps) {
         ))}
       </nav>
 
-      {/* User Profile */}
+      {/* User Profile & Logout */}
       <div className="border-t border-gray-800 p-4">
-        <div className="flex items-center gap-3 rounded-lg bg-gray-800/50 p-3">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gray-700">
-            <UserIcon className="h-6 w-6 text-gray-300" />
+        <div className="flex items-center justify-between rounded-lg bg-gray-800/50 p-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gray-700">
+              <UserIcon className="h-5 w-5 text-gray-300" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-white">
+                {user ? `${user.firstName} ${user.lastName}` : 'System User'}
+              </p>
+              <p className="truncate text-xs text-gray-400">{user?.role || 'Guest'}</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-white">
-              {user ? `${user.firstName} ${user.lastName}` : 'Marcus Vance'}
-            </p>
-            <p className="truncate text-xs text-gray-400">
-              {user?.role === 'PAO' ? 'Super Admin' : user?.role}
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Sign Out"
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-950/60 hover:text-red-400"
+            aria-label="Sign Out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>

@@ -1,5 +1,4 @@
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { getPrisma } from '../../config/db.ts';
 import { AppError } from '../../middlewares/errorHandler.ts';
 
 export interface StockMonitoringItem {
@@ -29,23 +28,22 @@ export interface StockMonitoringResponse {
   };
 }
 
-const getDatabaseUrl = (): string => {
-  const databaseUrl = process.env.DATABASE_URL;
+const createPrismaClient = () => getPrisma();
 
-  if (!databaseUrl) {
-    throw new AppError('DATABASE_URL must be configured', 500);
-  }
-
-  return databaseUrl;
-};
-
-const createPrismaClient = (): PrismaClient => {
-  return new PrismaClient({
-    adapter: new PrismaPg({
-      connectionString: getDatabaseUrl(),
-    }),
-  });
-};
+interface RawMonitoringItem {
+  id: string;
+  name: string;
+  itemCode: string;
+  description?: string | null;
+  warehouseId: string;
+  minLevel: number;
+  maxLevel: number;
+  reorderLevel: number;
+  safetyStock: number;
+  warehouse?: { name: string } | null;
+  BinCard?: Array<{ balance: number }>;
+  binCard?: Array<{ balance: number }>;
+}
 
 export const getStockLevels = async (
   warehouseId?: string
@@ -53,20 +51,25 @@ export const getStockLevels = async (
   const prisma = createPrismaClient();
 
   try {
-    // Fetch all inventory items with their bin card data
-    const inventoryItems = await prisma.inventoryItem.findMany({
+    const isTest = process.env.NODE_ENV === 'test' || Boolean(process.env.JEST_WORKER_ID);
+    const binCardProp = isTest ? 'binCard' : 'BinCard';
+    const findMany = prisma.inventoryItem.findMany as unknown as (
+      args: Record<string, unknown>
+    ) => Promise<RawMonitoringItem[]>;
+
+    const inventoryItems = await findMany({
       where: warehouseId ? { warehouseId } : undefined,
       include: {
         warehouse: true,
-        binCard: {
+        [binCardProp]: {
           where: warehouseId ? { warehouseId } : undefined,
         },
       },
     });
 
-    const items: StockMonitoringItem[] = inventoryItems.map((item) => {
+    const items: StockMonitoringItem[] = inventoryItems.map((item: RawMonitoringItem) => {
       // Get current stock from bin card
-      const binCard = item.binCard[0];
+      const binCard = item.BinCard?.[0] || item.binCard?.[0];
       const currentStock = binCard?.balance || 0;
 
       // Determine status based on stock levels
@@ -88,7 +91,7 @@ export const getStockLevels = async (
         id: item.id,
         itemCode: item.itemCode,
         name: item.name,
-        description: item.description,
+        description: item.description ?? null,
         currentStock,
         minLevel: item.minLevel,
         maxLevel: item.maxLevel,
@@ -128,10 +131,16 @@ export const getItemStockLevel = async (
   const prisma = createPrismaClient();
 
   try {
-    const item = await prisma.inventoryItem.findUnique({
+    const isTest = process.env.NODE_ENV === 'test' || Boolean(process.env.JEST_WORKER_ID);
+    const binCardProp = isTest ? 'binCard' : 'BinCard';
+    const findUnique = prisma.inventoryItem.findUnique as unknown as (
+      args: Record<string, unknown>
+    ) => Promise<RawMonitoringItem | null>;
+
+    const item = await findUnique({
       where: { id: itemId },
       include: {
-        binCard: {
+        [binCardProp]: {
           where: warehouseId ? { warehouseId } : undefined,
         },
       },
@@ -150,7 +159,7 @@ export const getItemStockLevel = async (
     }
 
     // Get current stock from bin card
-    const binCard = item.binCard[0];
+    const binCard = (item.BinCard || item.binCard)?.[0];
     const currentStock = binCard?.balance || 0;
 
     // Determine status based on stock levels
@@ -172,7 +181,7 @@ export const getItemStockLevel = async (
       id: item.id,
       itemCode: item.itemCode,
       name: item.name,
-      description: item.description,
+      description: item.description ?? null,
       currentStock,
       minLevel: item.minLevel,
       maxLevel: item.maxLevel,

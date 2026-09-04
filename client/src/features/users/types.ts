@@ -16,6 +16,7 @@ export interface User {
   lastName: string;
   role: Role;
   department?: string | null;
+  isActive?: boolean;
   status?: UserStatus;
   createdAt: string;
   updatedAt?: string;
@@ -28,6 +29,7 @@ export interface CreateUserDto {
   role: Role;
   department?: string | null;
   password?: string;
+  isActive?: boolean;
   status?: UserStatus;
 }
 
@@ -38,6 +40,7 @@ export interface UpdateUserDto {
   role?: Role;
   department?: string | null;
   password?: string;
+  isActive?: boolean;
   status?: UserStatus;
 }
 
@@ -52,6 +55,7 @@ export interface FetchUsersParams {
   search?: string;
   role?: Role | '';
   status?: UserStatus | '';
+  isActive?: boolean;
   page?: number;
   pageSize?: number;
 }

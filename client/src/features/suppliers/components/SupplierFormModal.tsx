@@ -24,6 +24,7 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
   const { mutate: updateSupplier, isPending: isUpdating } = useUpdateSupplier();
   const isPending = isCreating || isUpdating;
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateSupplierDto>(
     supplierToEdit
       ? {
@@ -45,6 +46,7 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     if (isEditMode && supplierToEdit) {
       updateSupplier(
         { id: supplierToEdit.id, data: formData },
@@ -53,6 +55,9 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
             onClose();
             setFormData(emptyForm);
           },
+          onError: (err: Error) => {
+            setErrorMessage(err.message || 'Failed to update supplier');
+          },
         }
       );
     } else {
@@ -60,6 +65,9 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
         onSuccess: () => {
           onClose();
           setFormData(emptyForm);
+        },
+        onError: (err: Error) => {
+          setErrorMessage(err.message || 'Failed to create supplier');
         },
       });
     }
@@ -82,6 +90,11 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
+          {errorMessage && (
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+              {errorMessage}
+            </div>
+          )}
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">

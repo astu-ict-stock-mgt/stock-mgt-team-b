@@ -27,7 +27,7 @@ const supplierFields = [
   body('contactName').optional({ nullable: true }).isString().trim(),
   body('phone').optional({ nullable: true }).isString().trim(),
   body('email')
-    .optional({ nullable: true })
+    .optional({ nullable: true, checkFalsy: true })
     .isEmail()
     .withMessage('A valid email is required')
     .normalizeEmail(),
