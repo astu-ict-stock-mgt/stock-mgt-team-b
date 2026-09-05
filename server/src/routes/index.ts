@@ -27,6 +27,7 @@ router.use('/users', usersRoutes);
 router.use('/suppliers', suppliersRoutes);
 router.use('/audit-log', auditLogRoutes);
 router.use('/stock-transfers', stockTransferRoutes);
+router.use('/stock-transfer', stockTransferRoutes);
 router.use('/stock-receiving', stockReceivingRoutes);
 router.use('/grns', stockReceivingRoutes);
 router.use('/write-off', writeOffRoutes);

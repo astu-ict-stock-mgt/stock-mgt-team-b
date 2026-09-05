@@ -5,6 +5,7 @@ import {
   useAvailableSourceLocations,
   useCreateStockTransfer,
 } from '../hooks';
+import { useAuth } from '../../auth/hooks';
 
 interface ErrorContext {
   available?: number;
@@ -574,19 +575,22 @@ interface TransferFormProps {
 
 /* ─── Main TransferForm Component ───────────────────────────────── */
 export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps) {
-  const [selectedItemId, setSelectedItemId] = useState('item-1');
-  const [fromLocationId, setFromLocationId] = useState('loc-1');
-  const [toLocationId, setToLocationId] = useState('loc-2');
-  const [quantity, setQuantity] = useState<number | ''>(10);
+  const { user } = useAuth();
+  const [selectedItemId, setSelectedItemId] = useState('');
+  const [fromLocationId, setFromLocationId] = useState('');
+  const [toLocationId, setToLocationId] = useState('');
+  const [quantity, setQuantity] = useState<number | ''>('');
+  const [referenceNumber, setReferenceNumber] = useState('');
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [errorCtx, setErrorCtx] = useState<ErrorContext>({});
   const [shakeKey, setShakeKey] = useState(0);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const { data: items = [], isLoading: isLoadingItems } = useItems();
+  const effectiveSelectedItemId = selectedItemId || items[0]?.id || '';
   const { data: allDestLocations = [] } = useLocations();
   const { availableLocations: sourceLocations = [], isLoading: isLoadingStock } =
-    useAvailableSourceLocations(selectedItemId || undefined);
+    useAvailableSourceLocations(effectiveSelectedItemId || undefined);
   const transferMutation = useCreateStockTransfer();
 
   // Derive effective selections
@@ -600,7 +604,7 @@ export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps
     ? toLocationId
     : destinationOptions[0]?.id || '';
 
-  const selectedItem = items.find((i) => i.id === selectedItemId);
+  const selectedItem = items.find((i) => i.id === effectiveSelectedItemId);
   const selectedSource = sourceLocations.find((l) => l.locationId === effectiveFromLocationId);
   const selectedDest = allDestLocations.find((l) => l.id === effectiveToLocationId);
   const availableStock = selectedSource ? selectedSource.availableQuantity : 0;
@@ -636,10 +640,15 @@ export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps
   }
 
   function handleReset() {
-    setSelectedItemId('');
+    if (items.length > 0) {
+      setSelectedItemId(items[0].id);
+    } else {
+      setSelectedItemId('');
+    }
     setFromLocationId('');
     setToLocationId('');
     setQuantity('');
+    setReferenceNumber('');
     clearError();
   }
 
@@ -647,7 +656,7 @@ export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps
     e.preventDefault();
     clearError();
 
-    if (!selectedItemId) return triggerError('noItem');
+    if (!effectiveSelectedItemId) return triggerError('noItem');
     if (!effectiveFromLocationId) return triggerError('noSource');
     if (!effectiveToLocationId) return triggerError('noDest');
     if (effectiveFromLocationId === effectiveToLocationId) return triggerError('sameLocation');
@@ -664,20 +673,30 @@ export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps
   }
 
   async function handleExecuteTransfer() {
-    if (!selectedItemId || !effectiveFromLocationId || !effectiveToLocationId || !quantity) return;
+    if (
+      !effectiveSelectedItemId ||
+      !effectiveFromLocationId ||
+      !effectiveToLocationId ||
+      !quantity
+    ) {
+      return;
+    }
     try {
+      const userName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Storekeeper';
       await transferMutation.mutateAsync({
-        itemId: selectedItemId,
+        itemId: effectiveSelectedItemId,
         fromLocationId: effectiveFromLocationId,
         toLocationId: effectiveToLocationId,
         quantity: Number(quantity),
-        transferredBy: 'Admin User',
+        referenceNumber: referenceNumber.trim() || undefined,
+        transferredBy: userName,
       });
       setIsConfirmOpen(false);
       onSuccessToast?.(
         `✅ Transferred ${quantity} units of ${selectedItem?.name} from ${selectedSource?.locationName} to ${selectedDest?.name}.`
       );
       setQuantity('');
+      setReferenceNumber('');
       clearError();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Transfer failed.';
@@ -744,7 +763,7 @@ export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps
             <CustomDropdown
               id="item-select"
               label="Item"
-              value={selectedItemId}
+              value={effectiveSelectedItemId}
               onChange={(val) => {
                 setSelectedItemId(val);
                 clearError();
@@ -854,6 +873,25 @@ export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps
               )}
             </div>
 
+            {/* 5. Reference / Note Input (Optional) */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="transfer-reference"
+                className="block text-xs font-bold text-gray-700 sm:text-sm"
+              >
+                Reference / Voucher Number{' '}
+                <span className="font-normal text-gray-400">(optional)</span>
+              </label>
+              <input
+                id="transfer-reference"
+                type="text"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+                placeholder="e.g. TRF-2026-001 or Reason"
+                className="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-medium text-gray-900 shadow-2xs transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 focus:outline-hidden sm:text-sm"
+              />
+            </div>
+
             {/* Action Buttons */}
             <div className="flex flex-col-reverse items-center justify-between gap-3 pt-2 sm:flex-row">
               <button
@@ -867,7 +905,7 @@ export function TransferForm({ onSuccessToast, onErrorToast }: TransferFormProps
                 type="submit"
                 disabled={
                   transferMutation.isPending ||
-                  !selectedItemId ||
+                  !effectiveSelectedItemId ||
                   !effectiveFromLocationId ||
                   !effectiveToLocationId
                 }

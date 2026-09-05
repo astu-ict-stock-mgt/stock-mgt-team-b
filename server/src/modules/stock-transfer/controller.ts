@@ -1,5 +1,11 @@
 import type { NextFunction, Request, Response } from 'express';
-import { createStockTransfer, listStockTransfers, getTransferLocations } from './service.ts';
+import {
+  createStockTransfer,
+  listStockTransfers,
+  getTransferLocations,
+  getTransferableItems,
+  getItemStockLocations,
+} from './service.ts';
 import { AppError } from '../../middlewares/errorHandler.ts';
 
 export const createTransfer = async (
@@ -60,6 +66,36 @@ export const getTransferLocationsController = async (
 ): Promise<void> => {
   try {
     const result = await getTransferLocations();
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTransferableItemsController = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await getTransferableItems();
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getItemStockLocationsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { itemId } = req.params;
+    if (!itemId) {
+      throw new AppError('Item ID is required', 400);
+    }
+    const result = await getItemStockLocations(itemId);
     res.status(200).json(result);
   } catch (error) {
     next(error);

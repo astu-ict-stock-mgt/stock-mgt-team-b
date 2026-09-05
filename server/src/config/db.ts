@@ -102,31 +102,35 @@ export const getPrisma = (): PrismaClient => {
     const adapter = new PrismaPg(p);
     const base = new PrismaClient({ adapter });
 
-    prismaInstance = (base.$extends({
-      query: {
-        $allModels: {
-          async $allOperations({ args, query }) {
-            let retries = 3;
-            let delay = 500;
-            while (true) {
-              try {
-                return await query(args);
-              } catch (err: unknown) {
-                retries--;
-                if (retries <= 0 || !isTransientDbError(err)) {
-                  throw err;
+    if (typeof (base as unknown as { $extends?: unknown }).$extends === 'function') {
+      prismaInstance = (base.$extends({
+        query: {
+          $allModels: {
+            async $allOperations({ args, query }) {
+              let retries = 3;
+              let delay = 500;
+              while (true) {
+                try {
+                  return await query(args);
+                } catch (err: unknown) {
+                  retries--;
+                  if (retries <= 0 || !isTransientDbError(err)) {
+                    throw err;
+                  }
+                  console.warn(
+                    `[DB Retry] Transient database error. Retrying in ${delay}ms...`
+                  );
+                  await new Promise((resolve) => setTimeout(resolve, delay));
+                  delay *= 2;
                 }
-                console.warn(
-                  `[DB Retry] Transient database error. Retrying in ${delay}ms...`
-                );
-                await new Promise((resolve) => setTimeout(resolve, delay));
-                delay *= 2;
               }
-            }
+            },
           },
         },
-      },
-    }) as unknown) as PrismaClient;
+      }) as unknown) as PrismaClient;
+    } else {
+      prismaInstance = base;
+    }
   }
   return prismaInstance;
 };

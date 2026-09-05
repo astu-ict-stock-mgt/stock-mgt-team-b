@@ -232,7 +232,14 @@ export function TransferHistory() {
                         {startIndex + idx + 1}
                       </span>
                     </td>
-                    <td className="px-3 py-3 font-semibold text-gray-900">{transfer.itemName}</td>
+                    <td className="px-3 py-3 font-semibold text-gray-900">
+                      <div>{transfer.itemName}</div>
+                      {transfer.referenceNumber && (
+                        <div className="text-[10px] font-normal text-gray-400">
+                          Ref: {transfer.referenceNumber}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-3 py-3 text-gray-600">
                       <div className="flex items-center gap-1">
                         <span className="text-xs">📤</span>

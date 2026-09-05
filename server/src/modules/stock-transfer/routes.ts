@@ -4,6 +4,8 @@ import {
   createTransfer,
   listTransfersController,
   getTransferLocationsController,
+  getTransferableItemsController,
+  getItemStockLocationsController,
 } from './controller.ts';
 import { validateStockTransfer } from './validation.ts';
 
@@ -14,10 +16,12 @@ router.use(requireAuth);
 router.get('/', listTransfersController);
 
 router.get('/locations', getTransferLocationsController);
+router.get('/items', getTransferableItemsController);
+router.get('/item-stock/:itemId', getItemStockLocationsController);
 
 router.post(
   '/',
-  requireRole('STOREKEEPER', 'ADMINISTRATOR'),
+  requireRole('STOREKEEPER', 'ADMINISTRATOR', 'PAO'),
   validateStockTransfer,
   createTransfer,
 );

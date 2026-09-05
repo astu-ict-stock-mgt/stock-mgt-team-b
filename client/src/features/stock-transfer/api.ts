@@ -1,13 +1,17 @@
+import apiClient from '../../api/apiClient';
+
 export interface Item {
   id: string;
   name: string;
   itemCode: string;
   category: string;
+  totalAvailable?: number;
 }
 
 export interface Location {
   id: string;
   name: string;
+  location?: string | null;
 }
 
 export interface ItemStockLocation {
@@ -20,13 +24,17 @@ export interface TransferRecord {
   id: string;
   itemId: string;
   itemName: string;
+  itemCode?: string;
   fromLocationId: string;
   fromLocationName: string;
   toLocationId: string;
   toLocationName: string;
   quantity: number;
   date: string;
+  transferDate?: string;
   transferredBy: string;
+  referenceNumber?: string | null;
+  status?: string;
 }
 
 export interface CreateTransferPayload {
@@ -34,147 +42,29 @@ export interface CreateTransferPayload {
   fromLocationId: string;
   toLocationId: string;
   quantity: number;
+  referenceNumber?: string;
   transferredBy?: string;
-}
-
-export const STORAGE_KEYS = {
-  BALANCES: 'stock_transfer_balances',
-  TRANSFERS: 'stock_transfer_history',
-};
-
-const INITIAL_ITEMS: Item[] = [
-  { id: 'item-1', name: 'Keyboard', itemCode: 'IT-KB-001', category: 'Peripherals' },
-  { id: 'item-2', name: 'Mouse', itemCode: 'IT-MS-002', category: 'Peripherals' },
-  { id: 'item-3', name: 'Monitor', itemCode: 'IT-MN-003', category: 'Displays' },
-  { id: 'item-4', name: 'Laptop', itemCode: 'IT-LP-004', category: 'Computers' },
-  { id: 'item-5', name: 'Printer', itemCode: 'IT-PR-005', category: 'Office Equipment' },
-  { id: 'item-6', name: 'Desk Chair', itemCode: 'FUR-DC-006', category: 'Furniture' },
-];
-
-const INITIAL_LOCATIONS: Location[] = [
-  { id: 'loc-1', name: 'Main Warehouse' },
-  { id: 'loc-2', name: 'Computer Lab' },
-  { id: 'loc-3', name: 'Office' },
-  { id: 'loc-4', name: 'Branch Warehouse' },
-  { id: 'loc-5', name: 'Shop' },
-];
-
-const INITIAL_STOCK_BALANCES: Record<string, Record<string, number>> = {
-  'item-1': { 'loc-1': 50, 'loc-2': 10, 'loc-3': 0, 'loc-4': 0, 'loc-5': 0 },
-  'item-2': { 'loc-1': 40, 'loc-2': 0, 'loc-3': 15, 'loc-4': 10, 'loc-5': 0 },
-  'item-3': { 'loc-1': 20, 'loc-2': 5, 'loc-3': 0, 'loc-4': 15, 'loc-5': 0 },
-  'item-4': { 'loc-1': 25, 'loc-2': 12, 'loc-3': 8, 'loc-4': 0, 'loc-5': 0 },
-  'item-5': { 'loc-1': 8, 'loc-2': 0, 'loc-3': 2, 'loc-4': 4, 'loc-5': 0 },
-  'item-6': { 'loc-1': 30, 'loc-2': 0, 'loc-3': 10, 'loc-4': 0, 'loc-5': 0 },
-};
-
-const INITIAL_TRANSFERS: TransferRecord[] = [
-  {
-    id: 'tr-1',
-    itemId: 'item-1',
-    itemName: 'Keyboard',
-    fromLocationId: 'loc-1',
-    fromLocationName: 'Main Warehouse',
-    toLocationId: 'loc-2',
-    toLocationName: 'Computer Lab',
-    quantity: 10,
-    date: 'May 15, 2025 10:30 AM',
-    transferredBy: 'Admin User',
-  },
-  {
-    id: 'tr-2',
-    itemId: 'item-2',
-    itemName: 'Mouse',
-    fromLocationId: 'loc-1',
-    fromLocationName: 'Main Warehouse',
-    toLocationId: 'loc-3',
-    toLocationName: 'Office',
-    quantity: 5,
-    date: 'May 14, 2025 03:20 PM',
-    transferredBy: 'Admin User',
-  },
-  {
-    id: 'tr-3',
-    itemId: 'item-4',
-    itemName: 'Laptop',
-    fromLocationId: 'loc-1',
-    fromLocationName: 'Main Warehouse',
-    toLocationId: 'loc-2',
-    toLocationName: 'Computer Lab',
-    quantity: 2,
-    date: 'May 13, 2025 09:15 AM',
-    transferredBy: 'Admin User',
-  },
-];
-
-function getStoredBalances(): Record<string, Record<string, number>> {
-  try {
-    const data = localStorage.getItem(STORAGE_KEYS.BALANCES);
-    if (data) return JSON.parse(data);
-  } catch {
-    // fallback
-  }
-  return INITIAL_STOCK_BALANCES;
-}
-
-function saveBalances(balances: Record<string, Record<string, number>>): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.BALANCES, JSON.stringify(balances));
-  } catch {
-    // fallback
-  }
-}
-
-function getStoredTransfers(): TransferRecord[] {
-  try {
-    const data = localStorage.getItem(STORAGE_KEYS.TRANSFERS);
-    if (data) return JSON.parse(data);
-  } catch {
-    // fallback
-  }
-  return INITIAL_TRANSFERS;
-}
-
-function saveTransfers(transfers: TransferRecord[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.TRANSFERS, JSON.stringify(transfers));
-  } catch {
-    // fallback
-  }
-}
-
-function formatCurrentDateTime(): string {
-  const now = new Date();
-  return (
-    now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
-    ' ' +
-    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-  );
 }
 
 export const stockTransferApi = {
   async getItems(): Promise<Item[]> {
-    return Promise.resolve(INITIAL_ITEMS);
+    const res = await apiClient.get<Item[]>('/stock-transfers/items');
+    return res.data;
   },
 
   async getLocations(): Promise<Location[]> {
-    return Promise.resolve(INITIAL_LOCATIONS);
+    const res = await apiClient.get<Location[]>('/stock-transfers/locations');
+    return res.data;
   },
 
   async getItemStockLocations(itemId: string): Promise<ItemStockLocation[]> {
-    const balances = getStoredBalances();
-    const itemBalances = balances[itemId] || {};
-    return Promise.resolve(
-      INITIAL_LOCATIONS.map((loc) => ({
-        locationId: loc.id,
-        locationName: loc.name,
-        availableQuantity: itemBalances[loc.id] ?? 0,
-      }))
-    );
+    const res = await apiClient.get<ItemStockLocation[]>(`/stock-transfers/item-stock/${itemId}`);
+    return res.data;
   },
 
   async getTransferHistory(search?: string): Promise<TransferRecord[]> {
-    let transfers = getStoredTransfers();
+    const res = await apiClient.get<TransferRecord[]>('/stock-transfers');
+    let transfers = res.data;
     if (search && search.trim() !== '') {
       const q = search.toLowerCase().trim();
       transfers = transfers.filter(
@@ -183,45 +73,55 @@ export const stockTransferApi = {
           t.fromLocationName.toLowerCase().includes(q) ||
           t.toLocationName.toLowerCase().includes(q) ||
           t.transferredBy.toLowerCase().includes(q) ||
+          (t.referenceNumber && t.referenceNumber.toLowerCase().includes(q)) ||
           t.date.toLowerCase().includes(q)
       );
     }
-    return Promise.resolve(transfers);
+    return transfers;
   },
 
   async createTransfer(payload: CreateTransferPayload): Promise<TransferRecord> {
-    const balances = getStoredBalances();
-    const itemBalances = { ...(balances[payload.itemId] || {}) };
-    const currentFromQty = itemBalances[payload.fromLocationId] ?? 0;
-
-    if (currentFromQty < payload.quantity) {
-      throw new Error(`Not enough stock! Only ${currentFromQty} units available at this location.`);
-    }
-
-    itemBalances[payload.fromLocationId] = currentFromQty - payload.quantity;
-    itemBalances[payload.toLocationId] =
-      (itemBalances[payload.toLocationId] ?? 0) + payload.quantity;
-    balances[payload.itemId] = itemBalances;
-    saveBalances(balances);
-
-    const item = INITIAL_ITEMS.find((i) => i.id === payload.itemId);
-    const fromLoc = INITIAL_LOCATIONS.find((l) => l.id === payload.fromLocationId);
-    const toLoc = INITIAL_LOCATIONS.find((l) => l.id === payload.toLocationId);
-
-    const newRecord: TransferRecord = {
-      id: `tr-${Date.now()}`,
+    const res = await apiClient.post<{
+      status: string;
+      message: string;
+      data: {
+        transaction: {
+          id: string;
+          quantity: number;
+          referenceNumber?: string | null;
+        };
+        sourceWarehouseId: string;
+        destinationWarehouseId: string;
+        sourceBalance: number;
+        destinationBalance: number;
+      };
+    }>('/stock-transfers', {
       itemId: payload.itemId,
-      itemName: item?.name || 'Unknown Item',
-      fromLocationId: payload.fromLocationId,
-      fromLocationName: fromLoc?.name || 'Unknown Location',
-      toLocationId: payload.toLocationId,
-      toLocationName: toLoc?.name || 'Unknown Location',
+      fromWarehouseId: payload.fromLocationId,
+      toWarehouseId: payload.toLocationId,
       quantity: payload.quantity,
-      date: formatCurrentDateTime(),
-      transferredBy: payload.transferredBy || 'Admin User',
-    };
+      referenceNumber: payload.referenceNumber,
+    });
 
-    saveTransfers([newRecord, ...getStoredTransfers()]);
-    return Promise.resolve(newRecord);
+    const now = new Date();
+    const formattedDate =
+      now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+      ' ' +
+      now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    return {
+      id: res.data.data?.transaction?.id || `tr-${Date.now()}`,
+      itemId: payload.itemId,
+      itemName: 'Transferred Item',
+      fromLocationId: payload.fromLocationId,
+      fromLocationName: 'Source',
+      toLocationId: payload.toLocationId,
+      toLocationName: 'Destination',
+      quantity: payload.quantity,
+      date: formattedDate,
+      transferredBy: payload.transferredBy || 'User',
+      referenceNumber: payload.referenceNumber,
+      status: 'COMPLETED',
+    };
   },
 };
