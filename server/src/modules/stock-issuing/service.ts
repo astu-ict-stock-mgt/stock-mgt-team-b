@@ -1,5 +1,4 @@
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { getPrisma } from '../../config/db.ts';
 import { AppError } from '../../middlewares/errorHandler.ts';
 import { applyFifoConsumption, InsufficientStockError } from '../inventory/fifo.ts';
 
@@ -12,12 +11,20 @@ export interface IssueStockInput {
   userId: string;
 }
 
-const getPrisma = (): PrismaClient => {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL must be configured');
+const safeDisconnect = async (prisma: unknown) => {
+  if (process.env.NODE_ENV === 'test') {
+    try {
+      const disc = (prisma as { $disconnect?: () => unknown })?.$disconnect;
+      if (typeof disc === 'function') {
+        const res = disc.call(prisma);
+        if (res && typeof (res as Promise<unknown>).then === 'function') {
+          await res;
+        }
+      }
+    } catch {
+      // ignore
+    }
   }
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 };
 
 export const issueStock = async (input: IssueStockInput) => {
@@ -248,7 +255,7 @@ export const createRequisition = async (input: CreateRequisitionInput, userId: s
 
     return formatRequisitionResponse(created);
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -273,7 +280,7 @@ export const getRequisitions = async (statusFilter?: string) => {
 
     return requisitions.map(formatRequisitionResponse);
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -300,7 +307,7 @@ export const getRequisitionById = async (id: string) => {
 
     return formatRequisitionResponse(requisition);
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -336,7 +343,7 @@ export const approveRequisition = async (id: string, approverId: string) => {
 
     return formatRequisitionResponse(updated);
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -372,7 +379,7 @@ export const rejectRequisition = async (id: string, approverId: string, reason?:
 
     return formatRequisitionResponse(updated);
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -510,7 +517,7 @@ export const issueRequisition = async (
       return formatRequisitionResponse(updated);
     });
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -549,7 +556,29 @@ export const getIssueHistory = async () => {
       status: 'ISSUED',
     }));
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
+
+export const getIssuingItems = async () => {
+  const prisma = getPrisma();
+  const items = await prisma.inventoryItem.findMany({
+    include: {
+      category: true,
+      BinCard: true,
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    itemCode: item.itemCode,
+    category: item.category?.name || 'General',
+    unit: 'Units',
+    quantity: item.BinCard.reduce((sum, b) => sum + b.balance, 0),
+    totalAvailable: item.BinCard.reduce((sum, b) => sum + b.balance, 0),
+  }));
+};
+
 

@@ -20,6 +20,7 @@ router.use('/reports', reportsRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/items', inventoryRoutes);
 router.use('/stock-issuing', stockIssuingRoutes);
+router.use('/requisitions', stockIssuingRoutes);
 router.use('/stock-taking', stockTakingRoutes);
 router.use('/stock-monitoring', stockMonitoringRoutes);
 router.use('/auth', authRoutes);

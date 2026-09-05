@@ -8,6 +8,7 @@ import {
   rejectRequisition,
   issueRequisition,
   getIssueHistory,
+  getIssuingItems,
 } from './service.ts';
 import { AppError } from '../../middlewares/errorHandler.ts';
 
@@ -143,3 +144,17 @@ export const getIssueHistoryController = async (
     next(error);
   }
 };
+
+export const getIssuingItemsController = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await getIssuingItems();
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+

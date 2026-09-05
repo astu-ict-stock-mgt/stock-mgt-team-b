@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../../auth/hooks';
-import { useInventoryItems, useRequisitions, useIssueRequisition } from '../hooks';
+import { useInventoryItems, useRequisitions, useIssueRequisition, useIssueHistory } from '../hooks';
 import { RequisitionForm } from './RequisitionForm';
 import { ApprovalQueue } from './ApprovalQueue';
 import { Shield, Truck, Package, AlertTriangle, FileSpreadsheet, RefreshCw } from 'lucide-react';
@@ -13,6 +13,7 @@ import { Shield, Truck, Package, AlertTriangle, FileSpreadsheet, RefreshCw } fro
 
 const StorekeeperQueue: React.FC = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
 
   // Queries & Mutations
   const { data: inventory = [], isLoading: isInventoryLoading } = useInventoryItems();
@@ -22,6 +23,7 @@ const StorekeeperQueue: React.FC = () => {
     refetch,
     isRefetching,
   } = useRequisitions();
+  const { data: issueHistory = [], isLoading: isHistoryLoading } = useIssueHistory();
   const { mutate: issueReq, isPending: isIssuing } = useIssueRequisition();
 
   // State for success modal after issuing
@@ -104,6 +106,32 @@ const StorekeeperQueue: React.FC = () => {
         </button>
       </div>
 
+      {/* Tab Switcher */}
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('queue')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+            activeTab === 'queue'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Package className="h-4 w-4" />
+          Pending Issue Queue ({approvedUnissuedReqs.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+            activeTab === 'history'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          Issued History / SIVs ({issueHistory.length})
+        </button>
+      </div>
+
       {/* SIV Generated Dialog */}
       {issuedSiv && (
         <div className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -161,128 +189,204 @@ const StorekeeperQueue: React.FC = () => {
         </div>
       )}
 
-      {/* Main Queue */}
-      {isReqsLoading || isInventoryLoading ? (
-        <div className="py-12 text-center text-gray-400">Loading approved requisitions...</div>
-      ) : approvedUnissuedReqs.length === 0 ? (
+      {/* Main Content: Queue or History */}
+      {activeTab === 'queue' ? (
+        isReqsLoading || isInventoryLoading ? (
+          <div className="py-12 text-center text-gray-400">Loading approved requisitions...</div>
+        ) : approvedUnissuedReqs.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-500">
+            <Truck className="mx-auto mb-3 h-12 w-12 text-gray-300" />
+            <h3 className="text-md font-semibold text-gray-700">No Requisitions to Issue</h3>
+            <p className="mt-0.5 text-xs text-gray-400">
+              Approved requisitions awaiting dispatch will show up here.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {approvedUnissuedReqs.map((req) => {
+              // Check if any item in this request exceeds available inventory
+              let containsOutofStock = false;
+
+              const checkedItems = req.items.map((item) => {
+                const stock = checkItemAvailability(item.itemId, item.quantityRequested);
+                if (!stock.sufficient) containsOutofStock = true;
+                return {
+                  ...item,
+                  available: stock.available,
+                  sufficient: stock.sufficient,
+                  unit: stock.unit,
+                };
+              });
+
+              return (
+                <div
+                  key={req.id}
+                  className="flex flex-col justify-between gap-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:shadow-md md:flex-row"
+                >
+                  <div className="flex-1 space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-lg font-bold text-gray-800">
+                        {req.requisitionNumber}
+                      </span>
+                      <span className="text-xs text-gray-400">•</span>
+                      <span className="text-sm font-semibold text-blue-600">{req.department}</span>
+                      <span className="text-xs text-gray-400">•</span>
+                      <span className="text-xs text-gray-500">
+                        Approved by <strong className="text-gray-700">{req.approvedBy}</strong>
+                      </span>
+                      <span className="text-xs text-gray-400">•</span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(req.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    {/* Items List with Availability Warning Indicators */}
+                    <div className="overflow-hidden rounded-lg border border-gray-200">
+                      <table className="min-w-full divide-y divide-gray-200 text-xs">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left font-semibold tracking-wider text-gray-500 uppercase">
+                              Item Name
+                            </th>
+                            <th className="px-4 py-2 text-right font-semibold tracking-wider text-gray-500 uppercase">
+                              Requested
+                            </th>
+                            <th className="px-4 py-2 text-right font-semibold tracking-wider text-gray-500 uppercase">
+                              Available Stock
+                            </th>
+                            <th className="px-4 py-2 text-center font-semibold tracking-wider text-gray-500 uppercase">
+                              Status
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                          {checkedItems.map((item) => (
+                            <tr
+                              key={item.itemId}
+                              className={!item.sufficient ? 'bg-red-50/30' : ''}
+                            >
+                              <td className="px-4 py-2.5 font-medium text-gray-900">
+                                {item.itemName}
+                              </td>
+                              <td className="px-4 py-2.5 text-right font-bold text-gray-800">
+                                {item.quantityRequested} {item.unit}
+                              </td>
+                              <td className="px-4 py-2.5 text-right text-gray-600">
+                                {item.available} {item.unit}
+                              </td>
+                              <td className="px-4 py-2.5 text-center">
+                                {/* Acceptance Criteria #1: UI warns the user if requested quantity exceeds available stock */}
+                                {item.sufficient ? (
+                                  <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                                    ✓ In Stock
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex animate-pulse items-center gap-0.5 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700">
+                                    <AlertTriangle className="h-3 w-3 text-red-600" /> Out of Stock
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="text-sm text-gray-600">
+                      <span className="font-semibold text-gray-700">Purpose: </span>
+                      {req.justification}
+                    </div>
+                  </div>
+
+                  {/* Issue SIV Action */}
+                  <div className="flex min-w-[170px] justify-end gap-2 md:flex-col md:justify-center md:border-l md:border-gray-100 md:pl-6">
+                    {containsOutofStock && (
+                      <div className="mb-1 rounded border border-red-200 bg-red-50 p-2.5 text-center text-[10.5px] font-medium text-red-700">
+                        ⚠️ Stock Insufficient. Fill inventory before issuing.
+                      </div>
+                    )}
+                    <button
+                      onClick={() => handleIssue(req.id)}
+                      disabled={isIssuing || containsOutofStock}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Package className="h-4 w-4" />
+                      {isIssuing ? 'Issuing...' : 'Issue & Create SIV'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : /* Issued History / SIVs */
+      isHistoryLoading ? (
+        <div className="py-12 text-center text-gray-400">Loading issue history...</div>
+      ) : issueHistory.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-500">
-          <Truck className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-          <h3 className="text-md font-semibold text-gray-700">No Requisitions to Issue</h3>
+          <FileSpreadsheet className="mx-auto mb-3 h-12 w-12 text-gray-300" />
+          <h3 className="text-md font-semibold text-gray-700">No Stock Issue Vouchers Yet</h3>
           <p className="mt-0.5 text-xs text-gray-400">
-            Approved requisitions awaiting dispatch will show up here.
+            When stock is issued, the generated SIV vouchers will appear here.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {approvedUnissuedReqs.map((req) => {
-            // Check if any item in this request exceeds available inventory
-            let containsOutofStock = false;
-
-            const checkedItems = req.items.map((item) => {
-              const stock = checkItemAvailability(item.itemId, item.quantityRequested);
-              if (!stock.sufficient) containsOutofStock = true;
-              return {
-                ...item,
-                available: stock.available,
-                sufficient: stock.sufficient,
-                unit: stock.unit,
-              };
-            });
-
-            return (
-              <div
-                key={req.id}
-                className="flex flex-col justify-between gap-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:shadow-md md:flex-row"
-              >
-                <div className="flex-1 space-y-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-lg font-bold text-gray-800">{req.requisitionNumber}</span>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-sm font-semibold text-blue-600">{req.department}</span>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">
-                      Approved by <strong className="text-gray-700">{req.approvedBy}</strong>
-                    </span>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(req.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  {/* Items List with Availability Warning Indicators */}
-                  <div className="overflow-hidden rounded-lg border border-gray-200">
-                    <table className="min-w-full divide-y divide-gray-200 text-xs">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left font-semibold tracking-wider text-gray-500 uppercase">
-                            Item Name
-                          </th>
-                          <th className="px-4 py-2 text-right font-semibold tracking-wider text-gray-500 uppercase">
-                            Requested
-                          </th>
-                          <th className="px-4 py-2 text-right font-semibold tracking-wider text-gray-500 uppercase">
-                            Available Stock
-                          </th>
-                          <th className="px-4 py-2 text-center font-semibold tracking-wider text-gray-500 uppercase">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 bg-white">
-                        {checkedItems.map((item) => (
-                          <tr key={item.itemId} className={!item.sufficient ? 'bg-red-50/30' : ''}>
-                            <td className="px-4 py-2.5 font-medium text-gray-900">
-                              {item.itemName}
-                            </td>
-                            <td className="px-4 py-2.5 text-right font-bold text-gray-800">
-                              {item.quantityRequested} {item.unit}
-                            </td>
-                            <td className="px-4 py-2.5 text-right text-gray-600">
-                              {item.available} {item.unit}
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              {/* Acceptance Criteria #1: UI warns the user if requested quantity exceeds available stock */}
-                              {item.sufficient ? (
-                                <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">
-                                  ✓ In Stock
-                                </span>
-                              ) : (
-                                <span className="inline-flex animate-pulse items-center gap-0.5 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700">
-                                  <AlertTriangle className="h-3 w-3 text-red-600" /> Out of Stock
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="text-sm text-gray-600">
-                    <span className="font-semibold text-gray-700">Purpose: </span>
-                    {req.justification}
-                  </div>
-                </div>
-
-                {/* Issue SIV Action */}
-                <div className="flex min-w-[170px] justify-end gap-2 md:flex-col md:justify-center md:border-l md:border-gray-100 md:pl-6">
-                  {containsOutofStock && (
-                    <div className="mb-1 rounded border border-red-200 bg-red-50 p-2.5 text-center text-[10.5px] font-medium text-red-700">
-                      ⚠️ Stock Insufficient. Fill inventory before issuing.
-                    </div>
-                  )}
-                  <button
-                    onClick={() => handleIssue(req.id)}
-                    disabled={isIssuing || containsOutofStock}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Package className="h-4 w-4" />
-                    {isIssuing ? 'Issuing...' : 'Issue & Create SIV'}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-xs">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 uppercase">
+                    SIV Number
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 uppercase">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 uppercase">
+                    Item
+                  </th>
+                  <th className="px-4 py-3 text-right font-semibold text-gray-600 uppercase">
+                    Qty
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 uppercase">
+                    Warehouse
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 uppercase">
+                    Issued By
+                  </th>
+                  <th className="px-4 py-3 text-center font-semibold text-gray-600 uppercase">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {issueHistory.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono font-bold text-blue-600">
+                      {item.sivNumber}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">
+                      {new Date(item.issueDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{item.item}</div>
+                      <div className="text-[10px] text-gray-400">{item.itemCode}</div>
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-gray-900">
+                      {item.quantity}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{item.warehouse}</td>
+                    <td className="px-4 py-3 text-gray-600">{item.issuedBy}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -1,13 +1,18 @@
-// client/src/features/stock-issuing/hooks.ts
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { stockIssuingApi } from './api';
+import {
+  stockIssuingApi,
+  CreateRequisitionPayload,
+  Requisition,
+  InventoryItem,
+  IssueHistoryItem,
+} from './api';
 
 // Cache keys
 export const stockIssuingKeys = {
   all: ['stock-issuing'] as const,
   inventory: () => [...stockIssuingKeys.all, 'inventory'] as const,
   requisitions: () => [...stockIssuingKeys.all, 'requisitions'] as const,
+  history: () => [...stockIssuingKeys.all, 'history'] as const,
 };
 
 // ============================================================
@@ -15,18 +20,26 @@ export const stockIssuingKeys = {
 // ============================================================
 
 export const useInventoryItems = () => {
-  return useQuery({
+  return useQuery<InventoryItem[]>({
     queryKey: stockIssuingKeys.inventory(),
     queryFn: () => stockIssuingApi.getInventoryItems(),
     staleTime: 10000,
   });
 };
 
-export const useRequisitions = () => {
-  return useQuery({
-    queryKey: stockIssuingKeys.requisitions(),
-    queryFn: () => stockIssuingApi.getRequisitions(),
+export const useRequisitions = (statusFilter?: string) => {
+  return useQuery<Requisition[]>({
+    queryKey: [...stockIssuingKeys.requisitions(), statusFilter ?? 'ALL'],
+    queryFn: () => stockIssuingApi.getRequisitions(statusFilter),
     staleTime: 5000,
+  });
+};
+
+export const useIssueHistory = () => {
+  return useQuery<IssueHistoryItem[]>({
+    queryKey: stockIssuingKeys.history(),
+    queryFn: () => stockIssuingApi.getIssueHistory(),
+    staleTime: 10000,
   });
 };
 
@@ -38,13 +51,7 @@ export const useCreateRequisition = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: {
-      requesterId: string;
-      requesterName: string;
-      department: string;
-      items: { itemId: string; quantityRequested: number }[];
-      justification: string;
-    }) => stockIssuingApi.createRequisition(data),
+    mutationFn: (data: CreateRequisitionPayload) => stockIssuingApi.createRequisition(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: stockIssuingKeys.requisitions() });
     },

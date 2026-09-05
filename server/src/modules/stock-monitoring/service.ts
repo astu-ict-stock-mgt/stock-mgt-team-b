@@ -120,7 +120,19 @@ export const getStockLevels = async (
       },
     };
   } finally {
-    await prisma.$disconnect();
+    if (process.env.NODE_ENV === 'test') {
+      try {
+        const disc = (prisma as unknown as { $disconnect?: () => unknown }).$disconnect;
+        if (typeof disc === 'function') {
+          const res = disc.call(prisma);
+          if (res && typeof (res as Promise<unknown>).then === 'function') {
+            await res;
+          }
+        }
+      } catch {
+        // Disconnect errors ignored
+      }
+    }
   }
 };
 
@@ -192,6 +204,18 @@ export const getItemStockLevel = async (
       severity,
     };
   } finally {
-    await prisma.$disconnect();
+    if (process.env.NODE_ENV === 'test') {
+      try {
+        const disc = (prisma as unknown as { $disconnect?: () => unknown }).$disconnect;
+        if (typeof disc === 'function') {
+          const res = disc.call(prisma);
+          if (res && typeof (res as Promise<unknown>).then === 'function') {
+            await res;
+          }
+        }
+      } catch {
+        // Disconnect errors ignored
+      }
+    }
   }
 };

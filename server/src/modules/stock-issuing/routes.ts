@@ -10,11 +10,15 @@ import {
   rejectRequisitionController,
   issueRequisitionController,
   getIssueHistoryController,
+  getIssuingItemsController,
 } from './controller.ts';
 
 const router = Router();
 
 router.use(requireAuth);
+
+// Items for requisition and issuing
+router.get('/items', getIssuingItemsController);
 
 // Direct stock issuing (legacy / direct API)
 router.post(
