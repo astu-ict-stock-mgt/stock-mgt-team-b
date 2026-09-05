@@ -271,3 +271,120 @@ export interface CategoryValuationAggregation {
   percentageOfTotalValuation: number;
 }
 
+// Financial Valuation & Costing Workspace Types (Accountant Role)
+export interface CostLayerAnalysisItem {
+  lotId: string;
+  inventoryItemId: string;
+  itemCode: string;
+  itemName: string;
+  categoryName: string;
+  warehouseName: string;
+  quantityReceived: number;
+  quantityRemaining: number;
+  unitCost: number;
+  totalLotValue: number;
+  receivedDate: Date;
+  ageInDays: number;
+  agingBracket: '0-30 days' | '31-60 days' | '61-90 days' | '>90 days';
+  isDepleted: boolean;
+}
+
+export interface CostLayersSummary {
+  totalLots: number;
+  activeLotsCount: number;
+  depletedLotsCount: number;
+  totalQuantityRemaining: number;
+  totalValuation: number;
+  averageLotAgeDays: number;
+  agingBreakdown: {
+    '0-30 days': { count: number; value: number };
+    '31-60 days': { count: number; value: number };
+    '61-90 days': { count: number; value: number };
+    '>90 days': { count: number; value: number };
+  };
+}
+
+export interface CostLayersReportResult {
+  summary: CostLayersSummary;
+  lots: CostLayerAnalysisItem[];
+}
+
+export interface FinancialLedgerItem {
+  id: string;
+  date: Date;
+  transactionType: 'RECEIPT' | 'ISSUE' | 'WRITE_OFF' | 'STOCK_TAKE_ADJUSTMENT';
+  referenceNumber: string | null;
+  inventoryItemId: string;
+  itemCode: string;
+  itemName: string;
+  quantity: number;
+  unitCost: number;
+  debit: number;
+  credit: number;
+  netChange: number;
+  details?: string;
+  userName?: string;
+}
+
+export interface FinancialLedgerSummary {
+  totalDebits: number;
+  totalCredits: number;
+  netMovement: number;
+  receiptsTotalValue: number;
+  issuesTotalValue: number;
+  writeOffsTotalValue: number;
+  adjustmentsNetValue: number;
+}
+
+export interface FinancialLedgerResult {
+  summary: FinancialLedgerSummary;
+  entries: FinancialLedgerItem[];
+}
+
+export interface FiscalCategoryBreakdown {
+  categoryId: string;
+  categoryName: string;
+  totalItems: number;
+  quantity: number;
+  valuation: number;
+  percentage: number;
+}
+
+export interface FiscalWarehouseBreakdown {
+  warehouseId: string;
+  warehouseName: string;
+  quantity: number;
+  valuation: number;
+  percentage: number;
+}
+
+export interface FiscalStatementData {
+  period: {
+    from: Date | string | null;
+    to: Date | string | null;
+  };
+  beginningInventoryValue: number;
+  inboundPurchasesValue: number;
+  materialConsumptionValue: number;
+  writeOffLossesValue: number;
+  stockTakeAdjustmentNetValue: number;
+  endingInventoryValue: number;
+  categoryBreakdown: FiscalCategoryBreakdown[];
+  warehouseBreakdown: FiscalWarehouseBreakdown[];
+  certification: {
+    preparedByRole: string;
+    certificationStatement: string;
+    generatedAt: Date;
+  };
+}
+
+export interface AccountantFinancialSummary {
+  totalInventoryValue: number;
+  monthToDateConsumedValue: number;
+  totalWriteOffLosses: number;
+  unadjustedDiscrepanciesValue: number;
+  activeCostLayersCount: number;
+  totalItemsCount: number;
+}
+
+

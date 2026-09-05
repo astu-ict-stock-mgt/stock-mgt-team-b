@@ -4,6 +4,10 @@ import {
   generateReportCsv,
   getCategoryMovementAggregation,
   getCategoryValuationAggregation,
+  getCostLayersAnalysis,
+  getFinancialLedger,
+  getFinancialSummary,
+  getFiscalValuationStatement,
   getInventoryValuationReport,
   getIssuingReport,
   getMonthlyTrendsAggregation,
@@ -20,8 +24,17 @@ import {
 import type { ReportFilters } from './types.ts';
 
 const extractFilters = (req: Request): ReportFilters => {
-  const { dateFrom, dateTo, warehouseId, supplierId, inventoryItemId, type, categoryId, state } =
-    req.query;
+  const {
+    dateFrom,
+    dateTo,
+    warehouseId,
+    supplierId,
+    inventoryItemId,
+    type,
+    categoryId,
+    state,
+    search,
+  } = req.query;
 
   return {
     dateFrom: typeof dateFrom === 'string' ? dateFrom : undefined,
@@ -32,6 +45,7 @@ const extractFilters = (req: Request): ReportFilters => {
     type: typeof type === 'string' ? type : undefined,
     categoryId: typeof categoryId === 'string' ? categoryId : undefined,
     state: typeof state === 'string' ? state : undefined,
+    search: typeof search === 'string' ? search : undefined,
   };
 };
 
@@ -281,10 +295,67 @@ export const getCategoryValuationAggregationHandler = async (
   }
 };
 
+export const getCostLayersHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const filters = extractFilters(req);
+    const data = await getCostLayersAnalysis(filters);
+    res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFinancialLedgerHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const filters = extractFilters(req);
+    const data = await getFinancialLedger(filters);
+    res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFiscalStatementHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const filters = extractFilters(req);
+    const data = await getFiscalValuationStatement(filters);
+    res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFinancialSummaryHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const filters = extractFilters(req);
+    const data = await getFinancialSummary(filters);
+    res.status(200).json({ status: 'success', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Aliases for backward compatibility
 export const stockMovementReport = getStockMovementReportHandler;
 export const receivingReport = getReceivingReportHandler;
 export const issuingReport = getIssuingReportHandler;
 export const getStockTransactionSummary = getReportsSummaryHandler;
+
 
 

@@ -5,6 +5,10 @@ import {
   exportReportHandler,
   getCategoryMovementAggregationHandler,
   getCategoryValuationAggregationHandler,
+  getCostLayersHandler,
+  getFinancialLedgerHandler,
+  getFinancialSummaryHandler,
+  getFiscalStatementHandler,
   getInventoryValuationReportHandler,
   getIssuingReportHandler,
   getMonthlyTrendsAggregationHandler,
@@ -48,6 +52,12 @@ router.get('/summary', validateReportFilters, getReportsSummaryHandler);
 router.get('/stock-movement', validateReportFilters, getStockMovementReportHandler);
 router.get('/receiving', validateReportFilters, getReceivingReportHandler);
 router.get('/issuing', validateReportFilters, getIssuingReportHandler);
+// Financial Valuation & Costing Workspace APIs (SRS Section 2.3, 4.4.8 - Accountant Role)
+router.get('/valuation/summary', validateReportFilters, getFinancialSummaryHandler);
+router.get('/valuation/cost-layers', validateReportFilters, getCostLayersHandler);
+router.get('/valuation/layers', validateReportFilters, getCostLayersHandler);
+router.get('/valuation/ledger', validateReportFilters, getFinancialLedgerHandler);
+router.get('/valuation/statement', validateReportFilters, getFiscalStatementHandler);
 router.get('/valuation', validateReportFilters, getInventoryValuationReportHandler);
 router.get('/suppliers', validateReportFilters, getSupplierReportHandler);
 router.get('/stock-status', validateReportFilters, getStockStatusReportHandler);

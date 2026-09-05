@@ -1,11 +1,18 @@
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../../generated/prisma/client.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 import { AppError } from '../../middlewares/errorHandler.ts';
+import { getPrisma } from '../../config/db.ts';
 import type {
+  AccountantFinancialSummary,
   CategoryMovementAggregation,
   CategoryValuationAggregation,
+  CostLayerAnalysisItem,
+  CostLayersReportResult,
   CreateReportRecordDto,
+  FinancialLedgerItem,
+  FinancialLedgerResult,
+  FiscalCategoryBreakdown,
+  FiscalStatementData,
+  FiscalWarehouseBreakdown,
   IssuingReportResult,
   MonthlyTrendAggregation,
   ReceivingReportResult,
@@ -21,13 +28,6 @@ import type {
 } from './types.ts';
 import 'dotenv/config';
 
-const getPrisma = (): PrismaClient => {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL must be configured');
-  }
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
-};
 
 const buildDateFilter = (dateFrom?: Date | string, dateTo?: Date | string) => {
   if (!dateFrom && !dateTo) {
@@ -760,6 +760,80 @@ export const generateReportCsv = async (
     return { filename: `stock-status-report-${timestamp}.csv`, content: csvContent };
   }
 
+  if (reportType === 'cost-layers') {
+    const { lots } = await getCostLayersAnalysis(filters);
+    const headers = [
+      'Lot ID',
+      'Item Code',
+      'Item Name',
+      'Category',
+      'Warehouse',
+      'Received Qty',
+      'Remaining Qty',
+      'Unit Cost (ETB)',
+      'Total Value (ETB)',
+      'Received Date',
+      'Age (Days)',
+      'Aging Bracket',
+      'Status',
+    ];
+    const rows = lots.map((l) => [
+      `"${l.lotId}"`,
+      `"${l.itemCode}"`,
+      `"${l.itemName.replace(/"/g, '""')}"`,
+      `"${l.categoryName}"`,
+      `"${l.warehouseName}"`,
+      l.quantityReceived,
+      l.quantityRemaining,
+      l.unitCost,
+      l.totalLotValue,
+      l.receivedDate ? new Date(l.receivedDate).toISOString().split('T')[0] : 'N/A',
+      l.ageInDays,
+      `"${l.agingBracket}"`,
+      l.isDepleted ? 'Depleted' : 'Active',
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    return { filename: `fifo-cost-layers-${timestamp}.csv`, content: csvContent };
+  }
+
+  if (reportType === 'financial-ledger') {
+    const { entries } = await getFinancialLedger(filters);
+    const headers = [
+      'Entry ID',
+      'Date',
+      'Type',
+      'Reference',
+      'Item Code',
+      'Item Name',
+      'Quantity',
+      'Unit Cost (ETB)',
+      'Debit (+ ETB)',
+      'Credit (- ETB)',
+      'Net Impact (ETB)',
+      'Details',
+      'User',
+    ];
+    const rows = entries.map((e) => [
+      `"${e.id}"`,
+      new Date(e.date).toISOString().split('T')[0],
+      e.transactionType,
+      `"${e.referenceNumber || 'N/A'}"`,
+      `"${e.itemCode}"`,
+      `"${e.itemName.replace(/"/g, '""')}"`,
+      e.quantity,
+      e.unitCost,
+      e.debit,
+      e.credit,
+      e.netChange,
+      `"${(e.details || '').replace(/"/g, '""')}"`,
+      `"${e.userName || 'System'}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    return { filename: `financial-costing-ledger-${timestamp}.csv`, content: csvContent };
+  }
+
   throw new AppError(`Unsupported report type for export: ${reportType}`, 400);
 };
 
@@ -1219,5 +1293,537 @@ export const getCategoryValuationAggregation = async (
 
 // Alias for lowercase casing
 export const getstockMovementReport = getStockMovementReport;
+
+/**
+ * FIFO Cost Layers Analysis
+ * Returns lot-level cost layers with age in days and aging bracket analysis
+ */
+export const getCostLayersAnalysis = async (
+  filters: ReportFilters = {}
+): Promise<CostLayersReportResult> => {
+  const prisma = getPrisma();
+
+  const itemWhere: Record<string, unknown> = {};
+  if (filters.warehouseId) itemWhere.warehouseId = filters.warehouseId;
+  if (filters.categoryId) itemWhere.categoryId = filters.categoryId;
+  if (filters.inventoryItemId) itemWhere.id = filters.inventoryItemId;
+
+  const lots = await prisma.stockLot.findMany({
+    where: {
+      inventoryItem: itemWhere,
+    },
+    include: {
+      inventoryItem: {
+        include: {
+          category: true,
+          warehouse: true,
+        },
+      },
+    },
+    orderBy: {
+      receivedDate: 'asc', // FIFO priority
+    },
+  });
+
+  const now = new Date();
+  const agingBreakdown = {
+    '0-30 days': { count: 0, value: 0 },
+    '31-60 days': { count: 0, value: 0 },
+    '61-90 days': { count: 0, value: 0 },
+    '>90 days': { count: 0, value: 0 },
+  };
+
+  let totalValuation = 0;
+  let totalQuantityRemaining = 0;
+  let activeLotsCount = 0;
+  let depletedLotsCount = 0;
+  let totalAgeDays = 0;
+
+  const mappedLots: CostLayerAnalysisItem[] = [];
+
+  for (const lot of lots) {
+    const receivedTime = new Date(lot.receivedDate).getTime();
+    const ageInDays = Math.max(0, Math.floor((now.getTime() - receivedTime) / (1000 * 60 * 60 * 24)));
+
+    let agingBracket: '0-30 days' | '31-60 days' | '61-90 days' | '>90 days';
+    if (ageInDays <= 30) agingBracket = '0-30 days';
+    else if (ageInDays <= 60) agingBracket = '31-60 days';
+    else if (ageInDays <= 90) agingBracket = '61-90 days';
+    else agingBracket = '>90 days';
+
+    const lotValue = Math.round(lot.quantityRemaining * lot.unitCost * 100) / 100;
+    const isDepleted = lot.isDepleted || lot.quantityRemaining <= 0;
+
+    if (isDepleted) {
+      depletedLotsCount++;
+    } else {
+      activeLotsCount++;
+      totalValuation += lotValue;
+      totalQuantityRemaining += lot.quantityRemaining;
+      totalAgeDays += ageInDays;
+      agingBreakdown[agingBracket].count++;
+      agingBreakdown[agingBracket].value =
+        Math.round((agingBreakdown[agingBracket].value + lotValue) * 100) / 100;
+    }
+
+    // Apply search filter if specified
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      const match =
+        lot.inventoryItem.itemCode.toLowerCase().includes(q) ||
+        lot.inventoryItem.name.toLowerCase().includes(q) ||
+        lot.inventoryItem.category?.name.toLowerCase().includes(q) ||
+        lot.inventoryItem.warehouse?.name.toLowerCase().includes(q) ||
+        lot.id.toLowerCase().includes(q);
+      if (!match) continue;
+    }
+
+    // Apply state filter if specified (active vs depleted)
+    if (filters.state === 'active' && isDepleted) continue;
+    if (filters.state === 'depleted' && !isDepleted) continue;
+
+    mappedLots.push({
+      lotId: lot.id,
+      inventoryItemId: lot.inventoryItemId,
+      itemCode: lot.inventoryItem.itemCode,
+      itemName: lot.inventoryItem.name,
+      categoryName: lot.inventoryItem.category?.name ?? 'Uncategorized',
+      warehouseName: lot.inventoryItem.warehouse?.name ?? 'General Store',
+      quantityReceived: lot.quantityReceived,
+      quantityRemaining: lot.quantityRemaining,
+      unitCost: lot.unitCost,
+      totalLotValue: lotValue,
+      receivedDate: lot.receivedDate,
+      ageInDays,
+      agingBracket,
+      isDepleted,
+    });
+  }
+
+  const averageLotAgeDays = activeLotsCount > 0 ? Math.round(totalAgeDays / activeLotsCount) : 0;
+
+  return {
+    summary: {
+      totalLots: lots.length,
+      activeLotsCount,
+      depletedLotsCount,
+      totalQuantityRemaining,
+      totalValuation: Math.round(totalValuation * 100) / 100,
+      averageLotAgeDays,
+      agingBreakdown,
+    },
+    lots: mappedLots,
+  };
+};
+
+/**
+ * General Ledger / Costing Transaction Journal
+ * Captures all financial stock movements with debit and credit accounting entries.
+ */
+export const getFinancialLedger = async (
+  filters: ReportFilters = {}
+): Promise<FinancialLedgerResult> => {
+  const prisma = getPrisma();
+  const dateFilter = buildDateFilter(filters.dateFrom, filters.dateTo);
+
+  const txWhere: Record<string, unknown> = {};
+  if (dateFilter) txWhere.createdAt = dateFilter;
+  if (filters.warehouseId) txWhere.warehouseId = filters.warehouseId;
+  if (filters.inventoryItemId) txWhere.inventoryItemId = filters.inventoryItemId;
+
+  // 1. Stock Transactions (Receipts, Issues, Adjustments)
+  const transactions = await prisma.stockTransaction.findMany({
+    where: txWhere,
+    include: {
+      inventoryItem: {
+        include: {
+          category: true,
+          warehouse: true,
+        },
+      },
+      user: true,
+      LotConsumptions: {
+        include: {
+          stockLot: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // 2. Approved Write-Off Requests in period
+  const writeOffWhere: Record<string, unknown> = {
+    status: 'APPROVED',
+  };
+  if (dateFilter) writeOffWhere.approvedAt = dateFilter;
+  if (filters.inventoryItemId) writeOffWhere.itemId = filters.inventoryItemId;
+
+  const writeOffs = await prisma.writeOffRequest.findMany({
+    where: writeOffWhere,
+    include: {
+      item: {
+        include: {
+          category: true,
+          warehouse: true,
+          StockLot: true,
+        },
+      },
+      approver: true,
+    },
+    orderBy: { approvedAt: 'desc' },
+  });
+
+  const entries: FinancialLedgerItem[] = [];
+  let totalDebits = 0;
+  let totalCredits = 0;
+  let receiptsTotalValue = 0;
+  let issuesTotalValue = 0;
+  let writeOffsTotalValue = 0;
+  let adjustmentsNetValue = 0;
+
+  for (const tx of transactions) {
+    const itemCode = tx.inventoryItem.itemCode;
+    const itemName = tx.inventoryItem.name;
+    const userName = `${tx.user.firstName} ${tx.user.lastName}`;
+
+    if (tx.type === 'RECEIVE') {
+      const unitCost =
+        tx.unitCost ?? (tx.quantity > 0 && tx.totalValue ? tx.totalValue / tx.quantity : 0);
+      const debit = Math.round((tx.totalValue ?? tx.quantity * unitCost) * 100) / 100;
+      totalDebits += debit;
+      receiptsTotalValue += debit;
+
+      entries.push({
+        id: `TX-${tx.id}`,
+        date: tx.createdAt,
+        transactionType: 'RECEIPT',
+        referenceNumber: tx.referenceNumber,
+        inventoryItemId: tx.inventoryItemId,
+        itemCode,
+        itemName,
+        quantity: tx.quantity,
+        unitCost: Math.round(unitCost * 100) / 100,
+        debit,
+        credit: 0,
+        netChange: debit,
+        details: `Goods receipt capitalization - ${tx.quantity} units @ ETB ${unitCost}`,
+        userName,
+      });
+    } else if (tx.type === 'ISSUE') {
+      const consumptionValue =
+        tx.LotConsumptions && tx.LotConsumptions.length > 0
+          ? tx.LotConsumptions.reduce(
+              (sum, lc) => sum + lc.quantityConsumed * lc.stockLot.unitCost,
+              0
+            )
+          : tx.totalValue ?? tx.quantity * (tx.unitCost ?? 0);
+      const credit = Math.round(consumptionValue * 100) / 100;
+      const unitCost = tx.quantity > 0 ? credit / tx.quantity : 0;
+      totalCredits += credit;
+      issuesTotalValue += credit;
+
+      entries.push({
+        id: `TX-${tx.id}`,
+        date: tx.createdAt,
+        transactionType: 'ISSUE',
+        referenceNumber: tx.referenceNumber,
+        inventoryItemId: tx.inventoryItemId,
+        itemCode,
+        itemName,
+        quantity: tx.quantity,
+        unitCost: Math.round(unitCost * 100) / 100,
+        debit: 0,
+        credit,
+        netChange: -credit,
+        details: `Stock requisition issue (FIFO COGS) - ${tx.quantity} units`,
+        userName,
+      });
+    } else if (tx.type === 'ADJUSTMENT') {
+      const unitCost = tx.unitCost ?? 0;
+      const value = Math.round(Math.abs(tx.quantity * unitCost) * 100) / 100;
+      if (tx.quantity >= 0) {
+        totalDebits += value;
+        adjustmentsNetValue += value;
+        entries.push({
+          id: `TX-${tx.id}`,
+          date: tx.createdAt,
+          transactionType: 'STOCK_TAKE_ADJUSTMENT',
+          referenceNumber: tx.referenceNumber,
+          inventoryItemId: tx.inventoryItemId,
+          itemCode,
+          itemName,
+          quantity: tx.quantity,
+          unitCost,
+          debit: value,
+          credit: 0,
+          netChange: value,
+          details: `Stock taking surplus reconciliation (+${tx.quantity} units)`,
+          userName,
+        });
+      } else {
+        totalCredits += value;
+        adjustmentsNetValue -= value;
+        entries.push({
+          id: `TX-${tx.id}`,
+          date: tx.createdAt,
+          transactionType: 'STOCK_TAKE_ADJUSTMENT',
+          referenceNumber: tx.referenceNumber,
+          inventoryItemId: tx.inventoryItemId,
+          itemCode,
+          itemName,
+          quantity: Math.abs(tx.quantity),
+          unitCost,
+          debit: 0,
+          credit: value,
+          netChange: -value,
+          details: `Stock taking deficit reconciliation (${tx.quantity} units)`,
+          userName,
+        });
+      }
+    }
+  }
+
+  // Add write-off records
+  for (const wo of writeOffs) {
+    if (filters.warehouseId && wo.item.warehouseId !== filters.warehouseId) continue;
+
+    const activeLot = wo.item.StockLot.find((l) => l.quantityRemaining > 0) || wo.item.StockLot[0];
+    const unitCost = activeLot ? activeLot.unitCost : 0;
+    const credit = Math.round(wo.quantity * unitCost * 100) / 100;
+    totalCredits += credit;
+    writeOffsTotalValue += credit;
+
+    entries.push({
+      id: `WO-${wo.id}`,
+      date: wo.approvedAt || wo.requestedAt,
+      transactionType: 'WRITE_OFF',
+      referenceNumber: `WO-${wo.id.slice(0, 8)}`,
+      inventoryItemId: wo.itemId,
+      itemCode: wo.item.itemCode,
+      itemName: wo.item.name,
+      quantity: wo.quantity,
+      unitCost,
+      debit: 0,
+      credit,
+      netChange: -credit,
+      details: `Disposal loss - Reason: ${wo.reasonCode} (${wo.reasonDescription || 'Damaged/Obsolete'})`,
+      userName: wo.approver
+        ? `${wo.approver.firstName} ${wo.approver.lastName}`
+        : 'Authorized Approver',
+    });
+  }
+
+  // Sort all entries chronologically descending
+  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  return {
+    summary: {
+      totalDebits: Math.round(totalDebits * 100) / 100,
+      totalCredits: Math.round(totalCredits * 100) / 100,
+      netMovement: Math.round((totalDebits - totalCredits) * 100) / 100,
+      receiptsTotalValue: Math.round(receiptsTotalValue * 100) / 100,
+      issuesTotalValue: Math.round(issuesTotalValue * 100) / 100,
+      writeOffsTotalValue: Math.round(writeOffsTotalValue * 100) / 100,
+      adjustmentsNetValue: Math.round(adjustmentsNetValue * 100) / 100,
+    },
+    entries,
+  };
+};
+
+/**
+ * Fiscal Year-End Inventory Valuation Statement
+ * Compiles certified asset statements and reconciliation trial balances
+ */
+export const getFiscalValuationStatement = async (
+  filters: ReportFilters = {}
+): Promise<FiscalStatementData> => {
+  const prisma = getPrisma();
+
+  // 1. Current Ending Inventory Value from all active FIFO Lots
+  const activeLots = await prisma.stockLot.findMany({
+    where: {
+      quantityRemaining: { gt: 0 },
+      inventoryItem: {
+        ...(filters.warehouseId ? { warehouseId: filters.warehouseId } : {}),
+        ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+      },
+    },
+    include: {
+      inventoryItem: {
+        include: {
+          category: true,
+          warehouse: true,
+        },
+      },
+    },
+  });
+
+  let endingInventoryValue = 0;
+  const categoryMap = new Map<
+    string,
+    { categoryName: string; count: number; qty: number; value: number }
+  >();
+  const warehouseMap = new Map<string, { warehouseName: string; qty: number; value: number }>();
+
+  for (const lot of activeLots) {
+    const lotVal = lot.quantityRemaining * lot.unitCost;
+    endingInventoryValue += lotVal;
+
+    const catId = lot.inventoryItem.categoryId;
+    const catName = lot.inventoryItem.category?.name || 'Uncategorized';
+    const curCat = categoryMap.get(catId) || { categoryName: catName, count: 0, qty: 0, value: 0 };
+    curCat.count += 1;
+    curCat.qty += lot.quantityRemaining;
+    curCat.value += lotVal;
+    categoryMap.set(catId, curCat);
+
+    const whId = lot.inventoryItem.warehouseId;
+    const whName = lot.inventoryItem.warehouse?.name || 'General Store';
+    const curWh = warehouseMap.get(whId) || { warehouseName: whName, qty: 0, value: 0 };
+    curWh.qty += lot.quantityRemaining;
+    curWh.value += lotVal;
+    warehouseMap.set(whId, curWh);
+  }
+
+  // 2. Aggregate Transactions in period
+  const ledger = await getFinancialLedger(filters);
+
+  const inboundPurchasesValue = ledger.summary.receiptsTotalValue;
+  const materialConsumptionValue = ledger.summary.issuesTotalValue;
+  const writeOffLossesValue = ledger.summary.writeOffsTotalValue;
+  const stockTakeAdjustmentNetValue = ledger.summary.adjustmentsNetValue;
+
+  const netMovement =
+    inboundPurchasesValue -
+    materialConsumptionValue -
+    writeOffLossesValue +
+    stockTakeAdjustmentNetValue;
+  const calculatedBeginning = Math.max(0, endingInventoryValue - netMovement);
+
+  const categoryBreakdown: FiscalCategoryBreakdown[] = Array.from(categoryMap.entries()).map(
+    ([id, data]) => ({
+      categoryId: id,
+      categoryName: data.categoryName,
+      totalItems: data.count,
+      quantity: data.qty,
+      valuation: Math.round(data.value * 100) / 100,
+      percentage:
+        endingInventoryValue > 0 ? Math.round((data.value / endingInventoryValue) * 1000) / 10 : 0,
+    })
+  );
+
+  const warehouseBreakdown: FiscalWarehouseBreakdown[] = Array.from(warehouseMap.entries()).map(
+    ([id, data]) => ({
+      warehouseId: id,
+      warehouseName: data.warehouseName,
+      quantity: data.qty,
+      valuation: Math.round(data.value * 100) / 100,
+      percentage:
+        endingInventoryValue > 0 ? Math.round((data.value / endingInventoryValue) * 1000) / 10 : 0,
+    })
+  );
+
+  return {
+    period: {
+      from: filters.dateFrom || null,
+      to: filters.dateTo || null,
+    },
+    beginningInventoryValue: Math.round(calculatedBeginning * 100) / 100,
+    inboundPurchasesValue: Math.round(inboundPurchasesValue * 100) / 100,
+    materialConsumptionValue: Math.round(materialConsumptionValue * 100) / 100,
+    writeOffLossesValue: Math.round(writeOffLossesValue * 100) / 100,
+    stockTakeAdjustmentNetValue: Math.round(stockTakeAdjustmentNetValue * 100) / 100,
+    endingInventoryValue: Math.round(endingInventoryValue * 100) / 100,
+    categoryBreakdown,
+    warehouseBreakdown,
+    certification: {
+      preparedByRole: 'ACCOUNTANT',
+      certificationStatement:
+        'Certified true and fair inventory valuation statement calculated pursuant to First-In-First-Out (FIFO) standards in compliance with SRS Section 2.3 and Section 4.4.8.',
+      generatedAt: new Date(),
+    },
+  };
+};
+
+/**
+ * Accountant High-Level Financial Summary KPIs
+ */
+export const getFinancialSummary = async (
+  _filters: ReportFilters = {}
+): Promise<AccountantFinancialSummary> => {
+  const prisma = getPrisma();
+
+  // 1. Total Active Inventory Value & Lots
+  const activeLots = await prisma.stockLot.findMany({
+    where: { quantityRemaining: { gt: 0 } },
+    select: { quantityRemaining: true, unitCost: true },
+  });
+
+  const totalInventoryValue = activeLots.reduce(
+    (sum, lot) => sum + lot.quantityRemaining * lot.unitCost,
+    0
+  );
+  const activeCostLayersCount = activeLots.length;
+
+  // 2. Month to date consumption
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const mtdIssues = await prisma.stockTransaction.findMany({
+    where: {
+      type: 'ISSUE',
+      createdAt: { gte: startOfMonth },
+    },
+    include: {
+      LotConsumptions: {
+        include: { stockLot: true },
+      },
+    },
+  });
+
+  let monthToDateConsumedValue = 0;
+  for (const issue of mtdIssues) {
+    if (issue.LotConsumptions && issue.LotConsumptions.length > 0) {
+      monthToDateConsumedValue += issue.LotConsumptions.reduce(
+        (s, lc) => s + lc.quantityConsumed * lc.stockLot.unitCost,
+        0
+      );
+    } else {
+      monthToDateConsumedValue += issue.totalValue ?? issue.quantity * (issue.unitCost ?? 0);
+    }
+  }
+
+  // 3. Total write-off losses
+  const writeOffs = await prisma.writeOffRequest.findMany({
+    where: { status: 'APPROVED' },
+    include: { item: { include: { StockLot: true } } },
+  });
+  let totalWriteOffLosses = 0;
+  for (const wo of writeOffs) {
+    const unitCost = wo.item.StockLot[0]?.unitCost ?? 0;
+    totalWriteOffLosses += wo.quantity * unitCost;
+  }
+
+  // 4. Pending unadjusted stock take discrepancies
+  const pendingReconciliations = await prisma.reconciliation.findMany({
+    where: { status: 'PENDING' },
+  });
+  const unadjustedDiscrepanciesValue = pendingReconciliations.reduce(
+    (sum, r) => sum + Math.abs(r.discrepancy) * (r.unitCost ?? 0),
+    0
+  );
+
+  // 5. Total items count
+  const totalItemsCount = await prisma.inventoryItem.count();
+
+  return {
+    totalInventoryValue: Math.round(totalInventoryValue * 100) / 100,
+    monthToDateConsumedValue: Math.round(monthToDateConsumedValue * 100) / 100,
+    totalWriteOffLosses: Math.round(totalWriteOffLosses * 100) / 100,
+    unadjustedDiscrepanciesValue: Math.round(unadjustedDiscrepanciesValue * 100) / 100,
+    activeCostLayersCount,
+    totalItemsCount,
+  };
+};
+
 
 
