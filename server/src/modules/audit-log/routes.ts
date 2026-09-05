@@ -4,11 +4,11 @@ import { requireAuth, requireRole } from '../../middlewares/rbac.ts';
 
 const router = Router();
 
-// Retrieve all audit logs (only for Administrator or specific roles)
+// Retrieve all audit logs (accessible to Administrator, PAO, and Accountant)
 router.get(
   '/',
   requireAuth,
-  requireRole('ADMINISTRATOR'),
+  requireRole('ADMINISTRATOR', 'PAO', 'ACCOUNTANT'),
   getAuditLogsHandler
 );
 

@@ -22,8 +22,11 @@ export async function fetchAuditLogs(
     return {
       id: log.id,
       userId: log.userId,
-      userName:
-        `${log.user.firstName} ${log.user.lastName}`.trim() || log.user.email || 'Unknown User',
+      userName: log.user
+        ? `${log.user.firstName ?? ''} ${log.user.lastName ?? ''}`.trim() ||
+          log.user.email ||
+          'Unknown User'
+        : 'Unknown User',
       action: log.action,
       entity: log.entity,
       entityId: log.entityId,

@@ -71,14 +71,14 @@ describe('Audit Log Middleware & API', () => {
     expect(mockCreateAuditLog.mock.calls[0][0].details.password).toBeUndefined();
   });
 
-  it('should require ADMINISTRATOR role to fetch audit logs', async () => {
+  it('should reject unauthorized roles from fetching audit logs', async () => {
     const createToken = (role: string = 'STOREKEEPER', userId: string = 'user-1') => {
       return jwt.sign(
         { sub: userId, email: 'test@example.com', role },
         process.env.JWT_SECRET as string
       );
     };
-    const token = createToken('STOREKEEPER'); // not admin
+    const token = createToken('STOREKEEPER'); // not authorized
 
     await request(app)
       .get('/api/audit-log')
@@ -87,7 +87,7 @@ describe('Audit Log Middleware & API', () => {
   });
 
   it('should fetch audit logs if ADMINISTRATOR', async () => {
-    const createToken = (role: string = 'STOREKEEPER', userId: string = 'user-1') => {
+    const createToken = (role: string = 'ADMINISTRATOR', userId: string = 'user-1') => {
       return jwt.sign(
         { sub: userId, email: 'test@example.com', role },
         process.env.JWT_SECRET as string
@@ -102,6 +102,25 @@ describe('Audit Log Middleware & API', () => {
       .expect(200);
 
     expect(res.body.data).toEqual([{ id: 'log-1' }]);
+    expect(mockGetAuditLogs).toHaveBeenCalledTimes(1);
+  });
+
+  it('should fetch audit logs if ACCOUNTANT', async () => {
+    const createToken = (role: string = 'ACCOUNTANT', userId: string = 'user-1') => {
+      return jwt.sign(
+        { sub: userId, email: 'test@example.com', role },
+        process.env.JWT_SECRET as string
+      );
+    };
+    const token = createToken('ACCOUNTANT');
+    mockGetAuditLogs.mockResolvedValue([{ id: 'log-2' }]);
+
+    const res = await request(app)
+      .get('/api/audit-log')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.data).toEqual([{ id: 'log-2' }]);
     expect(mockGetAuditLogs).toHaveBeenCalledTimes(1);
   });
 });
