@@ -58,22 +58,83 @@ export default function App() {
 
             <Route path="/dashboard" element={<DashboardPage />} />
 
-            <Route path="/finance" element={<FinancialValuationPage />} />
-            <Route path="/valuation" element={<Navigate to="/finance" replace />} />
+            {/* Financial Valuation & Costing */}
+            <Route
+              element={<ProtectedRoute allowedRoles={['ACCOUNTANT', 'PAO', 'ADMINISTRATOR']} />}
+            >
+              <Route path="/finance" element={<FinancialValuationPage />} />
+              <Route path="/valuation" element={<Navigate to="/finance" replace />} />
+            </Route>
 
-            <Route path="/reports" element={<ReportsPage />} />
+            {/* Reports */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'ADMINISTRATOR',
+                    'PAO',
+                    'STOREKEEPER',
+                    'STOCK_CLERK',
+                    'ACCOUNTANT',
+                    'DEPARTMENT_HEAD',
+                  ]}
+                />
+              }
+            >
+              <Route path="/reports" element={<ReportsPage />} />
+            </Route>
 
-            <Route path="/users" element={<UsersPage />} />
+            {/* Admin & PAO User Management */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMINISTRATOR', 'PAO']} />}>
+              <Route path="/users" element={<UsersPage />} />
+              <Route path="/roles" element={<RolesPermissionsPage />} />
+            </Route>
 
-            <Route path="/roles" element={<RolesPermissionsPage />} />
+            {/* System Settings */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMINISTRATOR']} />}>
+              <Route path="/settings" element={<SettingsPage />} />
+            </Route>
 
-            <Route path="/stock-taking" element={<StockTakingPage />} />
+            {/* Audit Logs */}
+            <Route
+              element={<ProtectedRoute allowedRoles={['ADMINISTRATOR', 'PAO', 'ACCOUNTANT']} />}
+            >
+              <Route path="/audit-log" element={<AuditLogPage />} />
+            </Route>
 
-            <Route path="/audit-log" element={<AuditLogPage />} />
+            {/* Stock Taking */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'STOCK_CLERK',
+                    'STOREKEEPER',
+                    'PAO',
+                    'ADMINISTRATOR',
+                    'ACCOUNTANT',
+                  ]}
+                />
+              }
+            >
+              <Route path="/stock-taking" element={<StockTakingPage />} />
+            </Route>
 
-            <Route path="/settings" element={<SettingsPage />} />
-
-            <Route path="/suppliers" element={<SuppliersPage />} />
+            {/* Suppliers */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'STOREKEEPER',
+                    'STOCK_CLERK',
+                    'PAO',
+                    'ADMINISTRATOR',
+                    'ACCOUNTANT',
+                  ]}
+                />
+              }
+            >
+              <Route path="/suppliers" element={<SuppliersPage />} />
+            </Route>
 
             {/* Stock Issuing & Requisitions */}
             <Route path="/stock-issuing" element={<IssuingView />} />
@@ -84,11 +145,51 @@ export default function App() {
             <Route path="/stock-receiving/grns/:id" element={<GrnView />} />
 
             {/* Damaged & Obsolete */}
-            <Route path="/damaged-obsolete" element={<DamagedObsoletePage />} />
-            <Route path="/write-off" element={<DamagedObsoletePage />} />
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'STOREKEEPER',
+                    'STOCK_CLERK',
+                    'DEPARTMENT_HEAD',
+                    'PAO',
+                    'ADMINISTRATOR',
+                    'ACCOUNTANT',
+                  ]}
+                />
+              }
+            >
+              <Route path="/damaged-obsolete" element={<DamagedObsoletePage />} />
+              <Route path="/write-off" element={<DamagedObsoletePage />} />
+            </Route>
 
-            <Route path="/stock-transfer" element={<StockTransferPage />} />
-            <Route path="/gate-pass" element={<GatePassPage />} />
+            {/* Stock Transfer */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'STOREKEEPER',
+                    'STOCK_CLERK',
+                    'PAO',
+                    'ADMINISTRATOR',
+                    'ACCOUNTANT',
+                  ]}
+                />
+              }
+            >
+              <Route path="/stock-transfer" element={<StockTransferPage />} />
+            </Route>
+
+            {/* Gate Clearance */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={['SECURITY_OFFICER', 'STOREKEEPER', 'PAO', 'ADMINISTRATOR']}
+                />
+              }
+            >
+              <Route path="/gate-pass" element={<GatePassPage />} />
+            </Route>
 
             {/* Inventory */}
             <Route path="/inventory" element={<InventoryTable />} />

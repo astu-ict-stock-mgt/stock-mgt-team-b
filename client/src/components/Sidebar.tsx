@@ -18,12 +18,133 @@ import {
   User as UserIcon,
   LogOut,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../features/auth/hooks';
+import type { Role } from '../features/users/types';
 
 interface SidebarProps {
   onClose?: () => void;
 }
+
+interface NavItem {
+  name: string;
+  path: string;
+  icon: LucideIcon;
+  allowedRoles?: Role[];
+}
+
+const navItems: NavItem[] = [
+  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { name: 'Inventory', path: '/inventory', icon: Package },
+  {
+    name: 'Stock Receiving',
+    path: '/stock-receiving',
+    icon: PackageCheck,
+    allowedRoles: [
+      'ADMINISTRATOR',
+      'PAO',
+      'STOREKEEPER',
+      'STOCK_CLERK',
+      'ACCOUNTANT',
+      'SECURITY_OFFICER',
+    ],
+  },
+  {
+    name: 'Stock Issuing',
+    path: '/stock-issuing',
+    icon: ClipboardList,
+    allowedRoles: [
+      'ADMINISTRATOR',
+      'PAO',
+      'STOREKEEPER',
+      'STOCK_CLERK',
+      'DEPARTMENT_HEAD',
+      'ACCOUNTANT',
+      'SECURITY_OFFICER',
+    ],
+  },
+  {
+    name: 'Stock Transfer',
+    path: '/stock-transfer',
+    icon: ArrowLeftRight,
+    allowedRoles: ['ADMINISTRATOR', 'PAO', 'STOREKEEPER', 'STOCK_CLERK', 'ACCOUNTANT'],
+  },
+  {
+    name: 'Gate Clearance',
+    path: '/gate-pass',
+    icon: ShieldCheck,
+    allowedRoles: ['SECURITY_OFFICER', 'STOREKEEPER', 'PAO', 'ADMINISTRATOR'],
+  },
+  {
+    name: 'Stock Taking',
+    path: '/stock-taking',
+    icon: ClipboardCheck,
+    allowedRoles: ['ADMINISTRATOR', 'PAO', 'STOREKEEPER', 'STOCK_CLERK', 'ACCOUNTANT'],
+  },
+  {
+    name: 'Damaged & Obsolete',
+    path: '/damaged-obsolete',
+    icon: AlertOctagon,
+    allowedRoles: [
+      'ADMINISTRATOR',
+      'PAO',
+      'STOREKEEPER',
+      'STOCK_CLERK',
+      'DEPARTMENT_HEAD',
+      'ACCOUNTANT',
+    ],
+  },
+  {
+    name: 'Suppliers',
+    path: '/suppliers',
+    icon: Truck,
+    allowedRoles: ['ADMINISTRATOR', 'PAO', 'STOREKEEPER', 'STOCK_CLERK', 'ACCOUNTANT'],
+  },
+  {
+    name: 'Financial Valuation',
+    path: '/finance',
+    icon: Calculator,
+    allowedRoles: ['ACCOUNTANT', 'PAO', 'ADMINISTRATOR'],
+  },
+  {
+    name: 'Reports',
+    path: '/reports',
+    icon: FileText,
+    allowedRoles: [
+      'ADMINISTRATOR',
+      'PAO',
+      'STOREKEEPER',
+      'STOCK_CLERK',
+      'ACCOUNTANT',
+      'DEPARTMENT_HEAD',
+    ],
+  },
+  {
+    name: 'Audit Logs',
+    path: '/audit-log',
+    icon: Activity,
+    allowedRoles: ['ADMINISTRATOR', 'PAO', 'ACCOUNTANT'],
+  },
+  {
+    name: 'Users',
+    path: '/users',
+    icon: Users,
+    allowedRoles: ['ADMINISTRATOR', 'PAO'],
+  },
+  {
+    name: 'Roles & Permissions',
+    path: '/roles',
+    icon: UserCog,
+    allowedRoles: ['ADMINISTRATOR', 'PAO'],
+  },
+  {
+    name: 'Settings',
+    path: '/settings',
+    icon: Settings,
+    allowedRoles: ['ADMINISTRATOR'],
+  },
+];
 
 export function Sidebar({ onClose }: SidebarProps) {
   const { user, logout } = useAuth();
@@ -35,23 +156,12 @@ export function Sidebar({ onClose }: SidebarProps) {
     if (onClose) onClose();
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Inventory', path: '/inventory', icon: Package },
-    { name: 'Stock Receiving', path: '/stock-receiving', icon: PackageCheck },
-    { name: 'Stock Issuing', path: '/stock-issuing', icon: ClipboardList },
-    { name: 'Stock Transfer', path: '/stock-transfer', icon: ArrowLeftRight },
-    { name: 'Gate Clearance', path: '/gate-pass', icon: ShieldCheck },
-    { name: 'Stock Taking', path: '/stock-taking', icon: ClipboardCheck },
-    { name: 'Damaged & Obsolete', path: '/damaged-obsolete', icon: AlertOctagon },
-    { name: 'Suppliers', path: '/suppliers', icon: Truck },
-    { name: 'Financial Valuation', path: '/finance', icon: Calculator },
-    { name: 'Reports', path: '/reports', icon: FileText },
-    { name: 'Audit Logs', path: '/audit-log', icon: Activity },
-    { name: 'Users', path: '/users', icon: Users },
-    { name: 'Roles & Permissions', path: '/roles', icon: UserCog },
-    { name: 'Settings', path: '/settings', icon: Settings },
-  ];
+  const userRole = user?.role as Role | undefined;
+  const filteredNavItems = navItems.filter((item) => {
+    if (!item.allowedRoles) return true;
+    if (!userRole) return false;
+    return item.allowedRoles.includes(userRole);
+  });
 
   return (
     <div className="flex h-full w-64 flex-col bg-[#0b1120] text-gray-300">
@@ -80,7 +190,7 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
-        {navItems.map((item) => (
+        {filteredNavItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
