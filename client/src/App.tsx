@@ -32,6 +32,7 @@ import { StockTransferPage } from './features/stock-transfer/pages/StockTransfer
 import { StockReceivingPage } from './features/stock-receiving/pages/StockReceivingPage';
 import GrnView from './features/stock-receiving/components/GrnView';
 import { DamagedObsoletePage } from './features/damaged-obsolete/pages/DamagedObsoletePage';
+import { GatePassPage } from './features/gate-pass/pages/GatePassPage';
 
 export default function App() {
   return (
@@ -83,6 +84,7 @@ export default function App() {
             <Route path="/write-off" element={<DamagedObsoletePage />} />
 
             <Route path="/stock-transfer" element={<StockTransferPage />} />
+            <Route path="/gate-pass" element={<GatePassPage />} />
 
             {/* Inventory */}
             <Route path="/inventory" element={<InventoryTable />} />

@@ -12,6 +12,7 @@ import stockTransferRoutes from '../modules/stock-transfer/routes.ts';
 import stockMonitoringRoutes from '../modules/stock-monitoring/routes.ts';
 import stockReceivingRoutes from '../modules/stock-receiving/routes.ts';
 import writeOffRoutes from '../modules/damaged-obsolete/routes.ts';
+import gatePassRoutes from '../modules/gate-pass/routes.ts';
 import { getInventoryWarehouses } from '../modules/inventory/service.ts';
 
 const router = Router();
@@ -33,6 +34,7 @@ router.use('/stock-receiving', stockReceivingRoutes);
 router.use('/grns', stockReceivingRoutes);
 router.use('/write-off', writeOffRoutes);
 router.use('/damaged-obsolete', writeOffRoutes);
+router.use('/gate-pass', gatePassRoutes);
 
 router.get('/warehouses', async (_req, res, next) => {
   try {
