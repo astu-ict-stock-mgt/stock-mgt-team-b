@@ -1,6 +1,8 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Prisma, PrismaClient } from '../../generated/prisma/client.js';import { AppError } from '../../middlewares/errorHandler.ts';
+import { Prisma, PrismaClient } from '../../generated/prisma/client.js';
+import { AppError } from '../../middlewares/errorHandler.ts';
 import { applyFifoConsumption, InsufficientStockError } from '../inventory/fifo.ts';
+import { getPrisma as getPooledPrisma } from '../../config/db.ts';
 
 export interface CreateStockTakeInput {
   warehouseId: string;
@@ -28,11 +30,30 @@ export interface RejectReconciliationInput {
 }
 
 const getPrisma = (): PrismaClient => {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new AppError('DATABASE_URL must be configured', 500);
+  if (process.env.NODE_ENV === 'test') {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      throw new AppError('DATABASE_URL must be configured', 500);
+    }
+    return new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
   }
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
+  return getPooledPrisma();
+};
+
+const safeDisconnect = async (prisma: unknown) => {
+  if (process.env.NODE_ENV === 'test') {
+    try {
+      const disc = (prisma as { $disconnect?: () => unknown })?.$disconnect;
+      if (typeof disc === 'function') {
+        const res = disc.call(prisma);
+        if (res && typeof (res as Promise<unknown>).then === 'function') {
+          await res;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
 };
 
 const ensureWarehouse = async (
@@ -62,7 +83,7 @@ export const createStockTake = async (input: CreateStockTakeInput) => {
       });
     });
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -157,7 +178,7 @@ export const submitStockTakeCount = async (input: SubmitCountInput) => {
       return { ...count, reconciliation };
     });
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -184,7 +205,7 @@ export const getStockTake = async (sessionId: string) => {
 
     return session;
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -207,7 +228,7 @@ export const completeStockTake = async (sessionId: string) => {
       });
     });
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -232,7 +253,7 @@ export const getReconciliations = async (sessionId: string) => {
       orderBy: { createdAt: 'asc' },
     });
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -440,7 +461,7 @@ export const approveReconciliation = async (input: ApproveReconciliationInput) =
       return { reconciliation: result, transaction: adjustmentTransaction, binCard };
     });
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
   }
 };
 
@@ -468,6 +489,190 @@ export const rejectReconciliation = async (input: RejectReconciliationInput) => 
       return result;
     });
   } finally {
-    await prisma.$disconnect();
+    await safeDisconnect(prisma);
+  }
+};
+
+export const listStockTakes = async (filters?: { warehouseId?: string; status?: string }) => {
+  const prisma = getPrisma();
+  try {
+    const where: Prisma.StockTakeWhereInput = {};
+    if (filters?.warehouseId) {
+      where.warehouseId = filters.warehouseId;
+    }
+    if (filters?.status) {
+      where.status = filters.status as Prisma.EnumStockTakeStatusFilter;
+    }
+
+    const sessions = await prisma.stockTake.findMany({
+      where,
+      include: {
+        warehouse: true,
+        creator: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+        counts: {
+          select: {
+            id: true,
+            hasDiscrepancy: true,
+            discrepancy: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return sessions.map((s) => ({
+      id: s.id,
+      warehouseId: s.warehouseId,
+      warehouseName: s.warehouse?.name || 'Warehouse',
+      warehouseLocation: s.warehouse?.location || '',
+      status: s.status,
+      startedAt: s.startedAt,
+      completedAt: s.completedAt,
+      createdAt: s.createdAt,
+      createdBy: s.creator ? `${s.creator.firstName} ${s.creator.lastName}` : s.createdBy,
+      totalCounted: s.counts.length,
+      discrepanciesCount: s.counts.filter((c) => c.hasDiscrepancy).length,
+    }));
+  } finally {
+    await safeDisconnect(prisma);
+  }
+};
+
+export const getWarehouseWorksheet = async (sessionId: string) => {
+  const prisma = getPrisma();
+  try {
+    const session = await prisma.stockTake.findUnique({
+      where: { id: sessionId },
+      include: {
+        warehouse: true,
+        counts: {
+          include: {
+            counter: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+            reconciliation: true,
+          },
+        },
+      },
+    });
+
+    if (!session) {
+      throw new AppError('Stock-take session not found', 404);
+    }
+
+    // Fetch all inventory items in this warehouse
+    const items = await prisma.inventoryItem.findMany({
+      where: { warehouseId: session.warehouseId },
+      include: {
+        category: true,
+        BinCard: {
+          where: { warehouseId: session.warehouseId },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    // Map counts by inventoryItemId
+    const countMap = new Map(session.counts.map((c) => [c.inventoryItemId, c]));
+
+    const worksheet = items.map((item) => {
+      const existingCount = countMap.get(item.id);
+      const systemQuantity = item.BinCard[0]?.balance ?? 0;
+
+      return {
+        id: item.id,
+        itemCode: item.itemCode,
+        name: item.name,
+        category: item.category?.name || 'General',
+        systemQuantity,
+        physicalQuantity: existingCount ? existingCount.physicalQuantity : null,
+        discrepancy: existingCount ? existingCount.discrepancy : null,
+        hasDiscrepancy: existingCount ? existingCount.hasDiscrepancy : false,
+        isCounted: Boolean(existingCount),
+        countedBy: existingCount?.counter
+          ? `${existingCount.counter.firstName} ${existingCount.counter.lastName}`
+          : null,
+        countedAt: existingCount?.countedAt || null,
+        reconciliationStatus: existingCount?.reconciliation?.status || null,
+        reconciliationId: existingCount?.reconciliation?.id || null,
+      };
+    });
+
+    return {
+      session: {
+        id: session.id,
+        warehouseId: session.warehouseId,
+        warehouseName: session.warehouse.name,
+        status: session.status,
+        startedAt: session.startedAt,
+        completedAt: session.completedAt,
+      },
+      worksheet,
+    };
+  } finally {
+    await safeDisconnect(prisma);
+  }
+};
+
+export const getAllReconciliations = async (statusFilter?: string) => {
+  const prisma = getPrisma();
+  try {
+    const where: Prisma.ReconciliationWhereInput = {};
+    if (statusFilter) {
+      where.status = statusFilter as Prisma.EnumReconciliationStatusFilter;
+    }
+
+    const reconciliations = await prisma.reconciliation.findMany({
+      where,
+      include: {
+        stockTakeCount: {
+          include: {
+            counter: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+            stockTake: {
+              include: { warehouse: true },
+            },
+          },
+        },
+        inventoryItem: {
+          include: { category: true },
+        },
+        warehouse: true,
+        approver: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return reconciliations.map((r) => ({
+      id: r.id,
+      stockTakeCountId: r.stockTakeCountId,
+      sessionId: r.stockTakeCount?.stockTakeId || '',
+      warehouseId: r.warehouseId,
+      warehouseName: r.warehouse?.name || 'Warehouse',
+      inventoryItemId: r.inventoryItemId,
+      itemCode: r.inventoryItem?.itemCode || '',
+      itemName: r.inventoryItem?.name || '',
+      category: r.inventoryItem?.category?.name || 'General',
+      systemQuantity: r.stockTakeCount?.systemQuantity ?? 0,
+      physicalQuantity: r.stockTakeCount?.physicalQuantity ?? 0,
+      discrepancy: r.discrepancy,
+      status: r.status,
+      reason: r.reason,
+      unitCost: r.unitCost,
+      countedBy: r.stockTakeCount?.counter
+        ? `${r.stockTakeCount.counter.firstName} ${r.stockTakeCount.counter.lastName}`
+        : 'Stock Clerk',
+      countedAt: r.stockTakeCount?.countedAt || r.createdAt,
+      approvedBy: r.approver ? `${r.approver.firstName} ${r.approver.lastName}` : null,
+      approvedAt: r.approvedAt,
+      createdAt: r.createdAt,
+    }));
+  } finally {
+    await safeDisconnect(prisma);
   }
 };
