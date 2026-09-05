@@ -69,6 +69,11 @@ export const requireAuth = (req: Request, _res: Response, next: NextFunction): v
       return;
     }
 
+    if (error instanceof jwt.TokenExpiredError || (error as Error).name === 'TokenExpiredError') {
+      next(new AppError('Your session has expired. Please log out and sign in again.', 401));
+      return;
+    }
+
     next(new AppError('Invalid or expired token', 401));
   }
 };

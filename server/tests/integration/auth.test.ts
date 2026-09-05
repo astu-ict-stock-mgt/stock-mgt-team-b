@@ -79,6 +79,22 @@ describe('authentication and role middleware', () => {
     await request(protectedApp).get('/protected').set('Authorization', 'Bearer invalid').expect(401);
   });
 
+  it('rejects expired tokens with user-friendly session expired message', async () => {
+    // Generate a token that expired 1 hour ago
+    const expiredToken = jwt.sign(
+      { sub: 'user-1', email: 'admin@example.com', role: 'ADMINISTRATOR' },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '-1h' }
+    );
+
+    const res = await request(protectedApp)
+      .get('/protected')
+      .set('Authorization', `Bearer ${expiredToken}`)
+      .expect(401);
+
+    expect(res.body.message).toBe('Your session has expired. Please log out and sign in again.');
+  });
+
   it('blocks authenticated users without the required role', async () => {
     const token = jwt.sign(
       { sub: 'user-2', email: 'clerk@example.com', role: 'STOCK_CLERK' },

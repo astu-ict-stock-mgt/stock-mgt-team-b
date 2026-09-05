@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Clock } from 'lucide-react';
 import AuthLayout from '../components/AuthLayout';
 import PasswordInput from '../components/PasswordInput';
 import { useLogin, useAuth } from '../hooks';
@@ -11,8 +12,11 @@ interface FormErrors {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { submitLogin } = useLogin();
   const { isAuthenticated } = useAuth();
+  const [dismissedNotice, setDismissedNotice] = useState(false);
+  const isSessionExpired = searchParams.get('reason') === 'session_expired' && !dismissedNotice;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -129,6 +133,38 @@ export default function LoginPage() {
 
           <p className="mt-2 text-sm text-slate-500">Sign in to manage corporate inventory</p>
         </header>
+
+        {isSessionExpired && (
+          <div
+            className="mb-5 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3.5 shadow-xs"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-start gap-3">
+              <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-900">Session Expired</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
+                  Your session has timed out for security reasons. Please enter your credentials to
+                  log in again and resume your work.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setDismissedNotice(true);
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.delete('reason');
+                  setSearchParams(nextParams, { replace: true });
+                }}
+                className="cursor-pointer text-xs font-medium text-amber-500 hover:text-amber-700"
+                aria-label="Dismiss notice"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {authError && (
           <div
