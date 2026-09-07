@@ -76,9 +76,10 @@ export const stockTransferApi = {
 
   async getLocations(): Promise<Location[]> {
     try {
-      const res = await apiClient.get<{ status: string; data: Array<{ id: string; name: string }> }>(
-        '/inventory/warehouses'
-      );
+      const res = await apiClient.get<{
+        status: string;
+        data: Array<{ id: string; name: string }>;
+      }>('/inventory/warehouses');
       return res.data?.data || [];
     } catch {
       return [

@@ -9,7 +9,7 @@ interface BackendItem {
 }
 
 export async function fetchStockTakeItems(
-  statusFilter?: StockTakeStatus,
+  _statusFilter?: StockTakeStatus,
   page: number = 1,
   pageSize: number = 10
 ): Promise<{ data: InventoryItem[]; totalCount: number }> {

@@ -13,9 +13,6 @@ import type {
 
 const API_BASE = '/reports';
 
-
-
-
 const cleanParams = (filters: Partial<ReportFiltersState>): Record<string, string> => {
   const params: Record<string, string> = {};
   // ReportFiltersState uses dateFrom/dateTo
@@ -123,7 +120,9 @@ export async function fetchStockStatusReport(
 }
 
 export async function fetchReportHistory(): Promise<SavedReportItem[]> {
-  const res = await apiClient.get<{ status: string; data: SavedReportItem[] }>(`${API_BASE}/history`);
+  const res = await apiClient.get<{ status: string; data: SavedReportItem[] }>(
+    `${API_BASE}/history`
+  );
   return res.data.data;
 }
 

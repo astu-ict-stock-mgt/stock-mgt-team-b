@@ -38,7 +38,9 @@ export async function fetchAuditLogs(
     }));
 
     if (filters.user && filters.user !== 'All Users') {
-      mapped = mapped.filter((log) => log.userName.toLowerCase().includes(filters.user!.toLowerCase()));
+      mapped = mapped.filter((log) =>
+        log.userName.toLowerCase().includes(filters.user!.toLowerCase())
+      );
     }
 
     if (filters.action && filters.action !== 'All') {

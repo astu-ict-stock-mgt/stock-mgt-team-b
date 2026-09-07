@@ -2,7 +2,7 @@ export interface AuditLog {
   id: string;
   userId: string;
   userName: string;
-  action: 'CREATED' | 'UPDATED' | 'DELETED' | 'LOGIN' | 'LOGOUT' | 'APPROVED' | 'REJECTED';
+  action: string;
   entity: string;
   entityId?: string | null;
   description?: string;

@@ -53,9 +53,11 @@ interface BackendItem {
   description?: string | null;
   minLevel?: number;
   maxLevel?: number;
+  totalQuantity?: number;
+  totalValue?: number;
   category?: { name: string } | string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ============================================================
@@ -81,13 +83,13 @@ export const inventoryApi = {
         name: i.name,
         sku: i.itemCode,
         category: typeof i.category === 'object' ? i.category.name : i.category || 'General',
-        quantity: 0,
+        quantity: i.totalQuantity ?? 0,
         unit: 'Units',
-        totalValue: 0,
+        totalValue: i.totalValue ?? 0,
         minStock: i.minLevel,
         maxStock: i.maxLevel,
-        createdAt: i.createdAt,
-        updatedAt: i.updatedAt,
+        createdAt: i.createdAt || new Date().toISOString(),
+        updatedAt: i.updatedAt || new Date().toISOString(),
       }));
 
       return {
@@ -113,15 +115,16 @@ export const inventoryApi = {
       name: i.name,
       sku: i.itemCode,
       category: typeof i.category === 'object' ? i.category.name : i.category || 'General',
-      quantity: 0,
+      quantity: i.totalQuantity ?? 0,
       unit: 'Units',
-      totalValue: 0,
+      totalValue: i.totalValue ?? 0,
       minStock: i.minLevel,
       maxStock: i.maxLevel,
-      createdAt: i.createdAt,
-      updatedAt: i.updatedAt,
+      createdAt: i.createdAt || new Date().toISOString(),
+      updatedAt: i.updatedAt || new Date().toISOString(),
     };
   },
+
 
   // Get lots for a specific item (for detail view)
   getLotsByItemId: async (itemId: string): Promise<InventoryLot[]> => {
@@ -156,8 +159,8 @@ export const inventoryApi = {
       quantity: 0,
       unit: 'Units',
       totalValue: 0,
-      createdAt: i.createdAt,
-      updatedAt: i.updatedAt,
+      createdAt: i.createdAt || new Date().toISOString(),
+      updatedAt: i.updatedAt || new Date().toISOString(),
     };
   },
 
@@ -180,8 +183,8 @@ export const inventoryApi = {
       quantity: 0,
       unit: 'Units',
       totalValue: 0,
-      createdAt: i.createdAt,
-      updatedAt: i.updatedAt,
+      createdAt: i.createdAt || new Date().toISOString(),
+      updatedAt: i.updatedAt || new Date().toISOString(),
     };
   },
 

@@ -74,7 +74,10 @@ export async function createSupplier(data: CreateSupplierDto): Promise<Supplier>
   return mapBackendSupplier(res.data.data);
 }
 
-export async function updateSupplier(id: string, data: Partial<CreateSupplierDto>): Promise<Supplier> {
+export async function updateSupplier(
+  id: string,
+  data: Partial<CreateSupplierDto>
+): Promise<Supplier> {
   const res = await apiClient.put<{ status: string; data: BackendSupplier }>(`/suppliers/${id}`, {
     name: data.companyName,
     contactPerson: data.contactPerson,

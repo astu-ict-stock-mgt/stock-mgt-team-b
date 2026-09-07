@@ -38,6 +38,7 @@ interface BackendItem {
   id: string;
   itemCode: string;
   name: string;
+  totalQuantity?: number;
   category?: { name: string } | string;
 }
 
@@ -63,7 +64,7 @@ export const stockIssuingApi = {
         id: i.id,
         itemCode: i.itemCode,
         name: i.name,
-        quantity: 0,
+        quantity: i.totalQuantity ?? 0,
         category: typeof i.category === 'object' ? i.category.name : i.category || 'General',
         unit: 'Units',
       }));
@@ -72,9 +73,12 @@ export const stockIssuingApi = {
     }
   },
 
+
   getRequisitions: async (): Promise<Requisition[]> => {
     try {
-      const res = await apiClient.get<{ status: string; data: BackendStockIssue[] }>('/stock-issuing');
+      const res = await apiClient.get<{ status: string; data: BackendStockIssue[] }>(
+        '/stock-issuing'
+      );
       const issues = res.data?.data || [];
       return issues.map((issue) => ({
         id: issue.id,
@@ -113,11 +117,14 @@ export const stockIssuingApi = {
     // Issue each item — backend issues one item at a time
     const results: BackendStockIssue[] = [];
     for (const item of data.items) {
-      const res = await apiClient.post<{ status: string; data: BackendStockIssue }>('/stock-issuing', {
-        inventoryItemId: item.itemId,
-        quantity: item.quantityRequested,
-        isApproved: false,
-      });
+      const res = await apiClient.post<{ status: string; data: BackendStockIssue }>(
+        '/stock-issuing',
+        {
+          inventoryItemId: item.itemId,
+          quantity: item.quantityRequested,
+          isApproved: false,
+        }
+      );
       results.push(res.data.data);
     }
     const first = results[0];
@@ -139,7 +146,8 @@ export const stockIssuingApi = {
     };
   },
 
-  approveRequisition: async (id: string, _approvedBy: string): Promise<Requisition> => {
+  approveRequisition: async (id: string, _approvedBy?: string): Promise<Requisition> => {
+    void _approvedBy;
     const res = await apiClient.put<{ status: string; data: BackendStockIssue }>(
       `/stock-issuing/${id}/approve`
     );
@@ -183,7 +191,8 @@ export const stockIssuingApi = {
     };
   },
 
-  issueRequisition: async (id: string, _issuedBy: string): Promise<Requisition> => {
+  issueRequisition: async (id: string, _issuedBy?: string): Promise<Requisition> => {
+    void _issuedBy;
     const res = await apiClient.post<{ status: string; data: BackendStockIssue }>(
       `/stock-issuing/${id}/issue`
     );
