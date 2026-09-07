@@ -27,6 +27,7 @@ export interface UpdateUserData {
 export interface GetUsersParams {
   role?: Role;
   search?: string;
+  isActive?: boolean;
 }
 
 const getPrisma = (): PrismaClient => {
@@ -75,6 +76,10 @@ export const getUsers = async (params: GetUsersParams = {}) => {
       { lastName: { contains: search, mode: 'insensitive' } },
       { email: { contains: search, mode: 'insensitive' } },
     ];
+  }
+
+  if (params.isActive !== undefined) {
+    where.isActive = params.isActive;
   }
 
   const users = await prisma.user.findMany({

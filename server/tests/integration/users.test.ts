@@ -134,6 +134,21 @@ describe('User Management API (/api/users)', () => {
       expect(response.body.data[0].passwordHash).toBeUndefined();
       expect(response.body.data[0].email).toBe(mockUser.email);
     });
+
+    it('passes the active status filter to the user query', async () => {
+      findMany.mockResolvedValue([]);
+
+      await request(app)
+        .get('/api/users?isActive=false')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { isActive: false },
+        })
+      );
+    });
   });
 
   describe('GET /api/users/:id', () => {

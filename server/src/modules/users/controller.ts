@@ -14,10 +14,11 @@ export const getUsersHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { role, search } = req.query;
+    const { role, search, isActive } = req.query;
     const users = await getUsers({
       role: role as Role | undefined,
       search: search as string | undefined,
+      isActive: typeof isActive === 'string' ? isActive === 'true' : undefined,
     });
     res.status(200).json({ status: 'success', data: users });
   } catch (error) {
