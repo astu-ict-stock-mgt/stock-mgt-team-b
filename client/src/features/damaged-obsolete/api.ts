@@ -55,32 +55,46 @@ export const writeOffApi = {
   },
 
   getAll: async (params?: { status?: string }): Promise<WriteOffResponse[]> => {
-    const response = await apiClient.get<{ status: string; data: WriteOffResponse[] }>(API_BASE, { params });
+    const response = await apiClient.get<{ status: string; data: WriteOffResponse[] }>(API_BASE, {
+      params,
+    });
     return response.data.data || [];
   },
 
   getById: async (id: string): Promise<WriteOffResponse> => {
-    const response = await apiClient.get<{ status: string; data: WriteOffResponse }>(`${API_BASE}/${id}`);
+    const response = await apiClient.get<{ status: string; data: WriteOffResponse }>(
+      `${API_BASE}/${id}`
+    );
     return response.data.data;
   },
 
   approve: async (id: string): Promise<WriteOffResponse> => {
-    const response = await apiClient.put<{ status: string; data: WriteOffResponse }>(`${API_BASE}/${id}/approve`);
+    const response = await apiClient.put<{ status: string; data: WriteOffResponse }>(
+      `${API_BASE}/${id}/approve`
+    );
     return response.data.data;
   },
 
   reject: async (id: string, reason?: string): Promise<WriteOffResponse> => {
-    const response = await apiClient.put<{ status: string; data: WriteOffResponse }>(`${API_BASE}/${id}/reject`, { reason });
+    const response = await apiClient.put<{ status: string; data: WriteOffResponse }>(
+      `${API_BASE}/${id}/reject`,
+      { reason }
+    );
     return response.data.data;
   },
 
   dispose: async (id: string): Promise<WriteOffResponse> => {
-    const response = await apiClient.put<{ status: string; data: WriteOffResponse }>(`${API_BASE}/${id}/dispose`);
+    const response = await apiClient.put<{ status: string; data: WriteOffResponse }>(
+      `${API_BASE}/${id}/dispose`
+    );
     return response.data.data;
   },
 
   getInventoryItems: async (): Promise<InventoryItem[]> => {
-    const response = await apiClient.get<{ status: string; data: Array<{ id: string; name: string; itemCode: string }> }>('/inventory/items');
+    const response = await apiClient.get<{
+      status: string;
+      data: Array<{ id: string; name: string; itemCode: string }>;
+    }>('/inventory/items');
     const list = response.data.data || [];
     return list.map((i) => ({
       id: i.id,
