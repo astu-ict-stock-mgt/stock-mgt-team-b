@@ -1,4 +1,3 @@
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
@@ -185,6 +184,30 @@ describe('User Management API (/api/users)', () => {
             entityId: mockUser.id,
             details: { previousRole: 'STOREKEEPER', newRole: 'PAO' },
           }),
+        })
+      );
+    });
+
+    it('updates active status when requested by Administrator', async () => {
+      findUnique.mockResolvedValue(mockUser);
+      update.mockResolvedValue({ ...mockUser, isActive: false });
+
+      const response = await request(app)
+        .put(`/api/users/${mockUser.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ isActive: false })
+        .expect(200);
+
+      expect(response.body.data.isActive).toBe(false);
+      expect(update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: mockUser.id },
+          data: { isActive: false },
+        })
+      );
+      expect(auditLogCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ action: 'USER_DEACTIVATED' }),
         })
       );
     });

@@ -21,6 +21,7 @@ export interface UpdateUserData {
   lastName?: string;
   role?: Role;
   department?: string | null;
+  isActive?: boolean;
 }
 
 export interface GetUsersParams {
@@ -150,7 +151,8 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
     }
   }
 
-  const isRoleChanged = Boolean(data.role && data.role !== existingUser.role);
+  const isRoleChanged = data.role !== undefined && data.role !== existingUser.role;
+  const isActiveChanged = data.isActive !== undefined && data.isActive !== existingUser.isActive;
   const updatePayload: Record<string, unknown> = {};
 
   if (data.email !== undefined) updatePayload.email = data.email;
@@ -158,6 +160,7 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
   if (data.lastName !== undefined) updatePayload.lastName = data.lastName;
   if (data.role !== undefined) updatePayload.role = data.role;
   if (data.department !== undefined) updatePayload.department = data.department;
+  if (data.isActive !== undefined) updatePayload.isActive = data.isActive;
 
   if (data.password) {
     updatePayload.passwordHash = await bcrypt.hash(data.password, 10);
@@ -168,19 +171,18 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
     data: updatePayload,
   });
 
-  // Record role change in AuditLog table for compliance and traceability (SRS Section 3.1)
-  if (isRoleChanged && adminId) {
+  // Record administrator changes in AuditLog for compliance and traceability.
+  if ((isRoleChanged || isActiveChanged) && adminId) {
     try {
       await prisma.auditLog.create({
         data: {
           userId: adminId,
-          action: 'USER_ROLE_CHANGED',
+          action: isRoleChanged ? 'USER_ROLE_CHANGED' : data.isActive ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
           entity: 'User',
           entityId: updatedUser.id,
-          details: {
-            previousRole: existingUser.role,
-            newRole: updatedUser.role,
-          },
+          details: isRoleChanged
+            ? { previousRole: existingUser.role, newRole: updatedUser.role }
+            : { previousIsActive: existingUser.isActive, newIsActive: updatedUser.isActive },
         },
       });
     } catch {

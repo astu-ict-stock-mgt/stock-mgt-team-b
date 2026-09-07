@@ -8,6 +8,24 @@ interface FormErrors {
   password?: string;
 }
 
+interface SavedLogin {
+  email: string;
+  password: string;
+  role: string;
+}
+
+const SAVED_LOGINS_KEY = 'saved_role_logins';
+
+const readSavedLogins = (): SavedLogin[] => {
+  try {
+    const saved = localStorage.getItem(SAVED_LOGINS_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { submitLogin } = useLogin();
@@ -15,6 +33,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberDevice, setRememberDevice] = useState(false);
+  const [savedLogins, setSavedLogins] = useState<SavedLogin[]>(readSavedLogins);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [authError, setAuthError] = useState('');
@@ -23,6 +42,15 @@ export default function LoginPage() {
   // Google sign-in state
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState('');
+
+  const saveLoginProfile = (profile: SavedLogin) => {
+    const nextProfiles = [
+      profile,
+      ...savedLogins.filter((savedLogin) => savedLogin.email !== profile.email),
+    ].slice(0, 7);
+    setSavedLogins(nextProfiles);
+    localStorage.setItem(SAVED_LOGINS_KEY, JSON.stringify(nextProfiles));
+  };
 
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
@@ -62,8 +90,12 @@ export default function LoginPage() {
         password,
       });
 
+      if (rememberDevice) {
+        saveLoginProfile({ email, password, role: response.user.role });
+      }
+
       // Role-based redirection
-      if (response.user.role === 'ADMIN') {
+      if (response.user.role === 'ADMINISTRATOR') {
         navigate('/admin/dashboard');
       } else {
         navigate('/dashboard');
@@ -256,7 +288,15 @@ export default function LoginPage() {
                     setAuthError('');
                     setIsSubmitting(true);
                     try {
-                      await submitLogin({ email: account.email, password: 'password123' });
+                      const response = await submitLogin({
+                        email: account.email,
+                        password: 'password123',
+                      });
+                      saveLoginProfile({
+                        email: account.email,
+                        password: 'password123',
+                        role: response.user.role,
+                      });
                       navigate('/dashboard');
                     } catch (err: unknown) {
                       const error = err as {
@@ -274,6 +314,51 @@ export default function LoginPage() {
                 </button>
               ))}
             </div>
+            {savedLogins.length > 0 && (
+              <div className="mt-3 border-t border-blue-200 pt-3">
+                <p className="mb-2 text-[10px] font-bold tracking-wider text-blue-800 uppercase">
+                  Saved role logins
+                </p>
+                <div className="grid gap-1.5 sm:grid-cols-2">
+                  {savedLogins.map((savedLogin) => (
+                    <button
+                      key={savedLogin.email}
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={async () => {
+                        setEmail(savedLogin.email);
+                        setPassword(savedLogin.password);
+                        setAuthError('');
+                        setIsSubmitting(true);
+                        try {
+                          await submitLogin({
+                            email: savedLogin.email,
+                            password: savedLogin.password,
+                          });
+                          navigate('/dashboard');
+                        } catch (err: unknown) {
+                          const error = err as {
+                            response?: { data?: { message?: string } };
+                            message?: string;
+                          };
+                          setAuthError(
+                            error?.response?.data?.message || error?.message || 'Login failed.'
+                          );
+                        } finally {
+                          setIsSubmitting(false);
+                        }
+                      }}
+                      className="flex items-center justify-between rounded-lg border border-blue-200 bg-white px-3 py-2 text-left text-xs text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50"
+                    >
+                      <span className="font-semibold">{savedLogin.role.split('_').join(' ')}</span>
+                      <span className="ml-2 truncate text-[10px] text-slate-500">
+                        {savedLogin.email}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {authError && (
