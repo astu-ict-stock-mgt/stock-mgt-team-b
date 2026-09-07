@@ -123,13 +123,7 @@ export default function App() {
             <Route
               element={
                 <ProtectedRoute
-                  allowedRoles={[
-                    'STOREKEEPER',
-                    'STOCK_CLERK',
-                    'PAO',
-                    'ADMINISTRATOR',
-                    'ACCOUNTANT',
-                  ]}
+                  allowedRoles={['STOREKEEPER', 'STOCK_CLERK', 'PAO', 'ADMINISTRATOR']}
                 />
               }
             >
@@ -137,12 +131,28 @@ export default function App() {
             </Route>
 
             {/* Stock Issuing & Requisitions */}
-            <Route path="/stock-issuing" element={<IssuingView />} />
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={['DEPARTMENT_HEAD', 'PAO', 'STOREKEEPER', 'ADMINISTRATOR']}
+                />
+              }
+            >
+              <Route path="/stock-issuing" element={<IssuingView />} />
+            </Route>
 
             {/* Stock Receiving & GRNs */}
-            <Route path="/stock-receiving" element={<StockReceivingPage />} />
-            <Route path="/stock-receiving/grns" element={<StockReceivingPage />} />
-            <Route path="/stock-receiving/grns/:id" element={<GrnView />} />
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={['STOREKEEPER', 'STOCK_CLERK', 'PAO', 'ADMINISTRATOR']}
+                />
+              }
+            >
+              <Route path="/stock-receiving" element={<StockReceivingPage />} />
+              <Route path="/stock-receiving/grns" element={<StockReceivingPage />} />
+              <Route path="/stock-receiving/grns/:id" element={<GrnView />} />
+            </Route>
 
             {/* Damaged & Obsolete */}
             <Route
@@ -167,13 +177,7 @@ export default function App() {
             <Route
               element={
                 <ProtectedRoute
-                  allowedRoles={[
-                    'STOREKEEPER',
-                    'STOCK_CLERK',
-                    'PAO',
-                    'ADMINISTRATOR',
-                    'ACCOUNTANT',
-                  ]}
+                  allowedRoles={['STOREKEEPER', 'STOCK_CLERK', 'PAO', 'ADMINISTRATOR']}
                 />
               }
             >
