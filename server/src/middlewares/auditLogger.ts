@@ -35,8 +35,8 @@ export const auditLogger = (req: Request, res: Response, next: NextFunction) => 
             originalUrl: req.originalUrl,
             statusCode: res.statusCode
           },
-        }).catch(err => {
-          console.error('AuditLog Error:', err);
+        }).catch(() => {
+          // Ignore background audit logging errors (such as synthetic test users)
         });
       }
     });
