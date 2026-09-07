@@ -22,8 +22,16 @@ const prisma = new PrismaClient({
   adapter,
 });
 
-export const getAllItemsValuationResult = async () => {
+export const getAllItemsValuationResult = async (search?: string) => {
   const items = await prisma.inventoryItem.findMany({
+    where: search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { itemCode: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : undefined,
     include: {
       StockLot: {
         where: {
@@ -322,3 +330,21 @@ export const deleteStockLot = async (
 
   return deletedLot;
 };
+
+export const getAllWarehouses = async () => {
+  const warehouses = await prisma.warehouse.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, location: true },
+  });
+  return warehouses;
+};
+
+export const createWarehouseService = async (data: { name: string; location?: string }) => {
+  return await prisma.warehouse.create({
+    data: {
+      name: data.name,
+      location: data.location || null,
+    },
+  });
+};
+

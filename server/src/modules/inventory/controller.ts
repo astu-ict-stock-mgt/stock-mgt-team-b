@@ -11,7 +11,10 @@ import {
   deleteInventoryItem,
   updateStockLot,
   deleteStockLot,
+  getAllWarehouses,
+  createWarehouseService,
 } from './service.ts';
+
 
 type PrismaLikeError = {
   code?: string;
@@ -74,14 +77,15 @@ const handleControllerError = (
 };
 
 export const getInventoryItems = async (
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const data = await getAllItemsValuationResult();
+    const search = req.query.search as string | undefined;
+    const data = await getAllItemsValuationResult(search);
 
-    res.status(200).json(data);
+    res.status(200).json({ status: 'success', data });
   } catch (error: unknown) {
     next(error);
   }
@@ -96,11 +100,43 @@ export const getInventoryItemById = async (
     const { itemId } = req.params;
     const data = await getItemValuationResult(itemId!);
 
-    res.status(200).json(data);
+    res.status(200).json({ status: 'success', data });
   } catch (error: unknown) {
     handleControllerError(error, res, next, 'Inventory Item');
   }
 };
+
+export const getWarehouses = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const data = await getAllWarehouses();
+    res.status(200).json({ status: 'success', data });
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+export const createWarehouseController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { name, location } = req.body;
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      res.status(400).json({ status: 'error', message: 'Warehouse name is required.' });
+      return;
+    }
+    const warehouse = await createWarehouseService({ name: name.trim(), location });
+    res.status(201).json({ status: 'success', data: warehouse });
+  } catch (error: unknown) {
+    handleControllerError(error, res, next, 'Warehouse');
+  }
+};
+
 
 export const getInventoryItemStockLots = async (
   req: Request,

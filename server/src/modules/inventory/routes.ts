@@ -11,7 +11,9 @@ import {
   updateInventoryItemController, 
   updateStockLotController, 
   deleteInventoryItemController, 
-  deleteStockLotController 
+  deleteStockLotController,
+  getWarehouses,
+  createWarehouseController,
 } from './controller.ts';
 import { 
   validateCreateItem, 
@@ -27,8 +29,13 @@ const router = Router();
 // Apply global authentication across all inventory actions
 router.use(requireAuth);
 
+// Warehouse Operations
+router.get('/warehouses', getWarehouses);
+router.post('/warehouses', createWarehouseController);
+
 // Item Management Operations
 router.get('/', getInventoryItems);
+
 router.get('/items', getInventoryItems);
 router.get('/:itemId', validateItemParams, getInventoryItemById);
 router.get('/items/:itemId', validateItemParams, getInventoryItemById);
