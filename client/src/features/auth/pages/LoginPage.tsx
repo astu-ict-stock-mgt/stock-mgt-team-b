@@ -96,7 +96,7 @@ export default function LoginPage() {
 
       // Role-based redirection
       if (response.user.role === 'ADMINISTRATOR') {
-        navigate('/admin/dashboard');
+        navigate('/dashboard');
       } else {
         navigate('/dashboard');
       }
