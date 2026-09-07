@@ -1,5 +1,3 @@
-// client/src/App.tsx
-
 import { Route, Routes } from 'react-router-dom';
 
 import { AuthProvider } from './context/AuthContext';
@@ -10,23 +8,30 @@ import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage';
 
 import SuppliersPage from './features/suppliers/pages/SuppliersPage';
 import UsersPage from './features/users/pages/UsersPage';
+import RolesPage from './features/roles/pages/RolesPage';
+import SettingsPage from './features/settings/pages/SettingsPage';
 
 import { DashboardPage } from './features/stock-monitoring/pages/DashboardPage';
-
 import AuditLogPage from './features/audit-log/pages/AuditLogPage';
-
 import { StockTakingPage } from './features/stock-taking/pages/StockTakingPage';
+import ReportsPage from './features/reports/pages/ReportsPage';
+import DamagedObsoletePage from './features/damaged-obsolete/pages/DamagedObsoletePage';
+import StockReceivingPage from './features/stock-receiving/pages/StockReceivingPage';
+import GrnView from './features/stock-receiving/components/GrnView';
 
 import { Layout } from './components/Layout';
 import { PlaceholderPage } from './components/PlaceholderPage';
-
-import ReportsPage from './features/reports/pages/ReportsPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { InventoryTable } from './features/inventory/components/InventoryTable';
 import { ItemDetailView } from './features/inventory/components/ItemDetailView';
-
 import { IssuingView } from './features/stock-issuing/components/IssuingView';
 import { StockTransferPage } from './features/stock-transfer/pages/StockTransferPage';
+
+/** Wrap a page component in an ErrorBoundary so render errors show a helpful message */
+function Guarded({ children }: { children: React.ReactNode }) {
+  return <ErrorBoundary>{children}</ErrorBoundary>;
+}
 
 export default function App() {
   return (
@@ -35,48 +40,136 @@ export default function App() {
         {/* =========================
             PUBLIC AUTH ROUTES
             ========================= */}
-
         <Route path="/login" element={<LoginPage />} />
-
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-
         <Route path="/" element={<LoginPage />} />
 
         {/* =========================
-            PROTECTED APPLICATION ROUTES
+            PROTECTED APPLICATION ROUTES WITH RBAC
             ========================= */}
-
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-            {/* Dashboard - temporarily disabled */}
-            {<Route path="/dashboard" element={<DashboardPage />} />}
+            {/* Dashboard: All Roles */}
+            <Route path="/dashboard" element={<Guarded><DashboardPage /></Guarded>} />
 
-            {/* Reports - temporarily disabled */}
-            {<Route path="/reports" element={<ReportsPage />} />}
+            {/* Inventory Catalog: All Roles */}
+            <Route path="/inventory" element={<Guarded><InventoryTable /></Guarded>} />
+            <Route path="/inventory/:id" element={<Guarded><ItemDetailView /></Guarded>} />
 
-            <Route path="/users" element={<UsersPage />} />
+            {/* Stock Receiving (GRN): Admin, PAO, Storekeeper, Stock Clerk */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={['ADMINISTRATOR', 'PAO', 'STOREKEEPER', 'STOCK_CLERK']}
+                />
+              }
+            >
+              <Route path="/stock-receiving" element={<Guarded><StockReceivingPage /></Guarded>} />
+              <Route path="/stock-receiving/grns/:id" element={<Guarded><GrnView /></Guarded>} />
+            </Route>
 
-            <Route path="/roles" element={<PlaceholderPage title="Roles & Permissions" />} />
+            {/* Stock Issuing: All 7 Roles */}
+            <Route path="/stock-issuing" element={<Guarded><IssuingView /></Guarded>} />
 
-            <Route path="/stock-taking" element={<StockTakingPage />} />
+            {/* Stock Transfers: Admin, PAO, Storekeeper, Stock Clerk */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={['ADMINISTRATOR', 'PAO', 'STOREKEEPER', 'STOCK_CLERK']}
+                />
+              }
+            >
+              <Route path="/stock-transfer" element={<Guarded><StockTransferPage /></Guarded>} />
+            </Route>
 
-            <Route path="/audit-log" element={<AuditLogPage />} />
+            {/* Physical Stock Taking: Admin, PAO, Storekeeper, Stock Clerk, Accountant */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'ADMINISTRATOR',
+                    'PAO',
+                    'STOREKEEPER',
+                    'STOCK_CLERK',
+                    'ACCOUNTANT',
+                  ]}
+                />
+              }
+            >
+              <Route path="/stock-taking" element={<Guarded><StockTakingPage /></Guarded>} />
+            </Route>
 
-            <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+            {/* Damaged & Obsolete Write-Off: Admin, PAO, Storekeeper, Stock Clerk, Accountant */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'ADMINISTRATOR',
+                    'PAO',
+                    'STOREKEEPER',
+                    'STOCK_CLERK',
+                    'ACCOUNTANT',
+                  ]}
+                />
+              }
+            >
+              <Route path="/damaged-obsolete" element={<Guarded><DamagedObsoletePage /></Guarded>} />
+            </Route>
 
-            <Route path="/suppliers" element={<SuppliersPage />} />
+            {/* Suppliers: Admin, PAO, Storekeeper, Stock Clerk, Accountant */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'ADMINISTRATOR',
+                    'PAO',
+                    'STOREKEEPER',
+                    'STOCK_CLERK',
+                    'ACCOUNTANT',
+                  ]}
+                />
+              }
+            >
+              <Route path="/suppliers" element={<Guarded><SuppliersPage /></Guarded>} />
+            </Route>
 
-            {/* Stock Issuing & Requisitions */}
-            <Route path="/stock-issuing" element={<IssuingView />} />
+            {/* Reports: Admin, PAO, Accountant, Storekeeper, Stock Clerk, Dept Head */}
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'ADMINISTRATOR',
+                    'PAO',
+                    'ACCOUNTANT',
+                    'STOREKEEPER',
+                    'STOCK_CLERK',
+                    'DEPARTMENT_HEAD',
+                  ]}
+                />
+              }
+            >
+              <Route path="/reports" element={<Guarded><ReportsPage /></Guarded>} />
+            </Route>
 
-            <Route path="/stock-transfer" element={<StockTransferPage />} />
+            {/* Users Administration: Admin, PAO */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMINISTRATOR', 'PAO']} />}>
+              <Route path="/users" element={<Guarded><UsersPage /></Guarded>} />
+            </Route>
 
-            {/* Inventory */}
-            <Route path="/inventory" element={<InventoryTable />} />
+            {/* Roles & Permissions Matrix: All Roles */}
+            <Route path="/roles" element={<Guarded><RolesPage /></Guarded>} />
 
-            <Route path="/inventory/:id" element={<ItemDetailView />} />
+            {/* Audit Logs: Admin, PAO, Accountant */}
+            <Route
+              element={<ProtectedRoute allowedRoles={['ADMINISTRATOR', 'PAO', 'ACCOUNTANT']} />}
+            >
+              <Route path="/audit-log" element={<Guarded><AuditLogPage /></Guarded>} />
+            </Route>
 
-            {/* 404 */}
+            {/* Settings: All Roles */}
+            <Route path="/settings" element={<Guarded><SettingsPage /></Guarded>} />
+
+            {/* 404 Fallback */}
             <Route path="*" element={<PlaceholderPage title="Page Not Found" />} />
           </Route>
         </Route>
