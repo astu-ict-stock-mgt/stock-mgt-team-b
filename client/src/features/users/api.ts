@@ -14,7 +14,7 @@ export class ApiError extends Error {
 }
 
 export async function fetchUsers(params: FetchUsersParams = {}): Promise<PaginatedUsers> {
-  const { search = '', role = '', page = 1, pageSize = 10 } = params;
+  const { search = '', role = '', status = '', page = 1, pageSize = 10 } = params;
   const queryParams: Record<string, string> = {};
 
   if (search && search.trim()) {
@@ -23,6 +23,9 @@ export async function fetchUsers(params: FetchUsersParams = {}): Promise<Paginat
   if (role) {
     queryParams.role = role;
   }
+  if (status) {
+    queryParams.isActive = String(status === 'ACTIVE');
+  }
 
   const res = await apiClient.get<{ status: string; data: User[] }>('/users', {
     params: queryParams,
@@ -30,7 +33,7 @@ export async function fetchUsers(params: FetchUsersParams = {}): Promise<Paginat
 
   const allUsers: User[] = (res.data?.data || []).map((u) => ({
     ...u,
-    status: u.status || 'ACTIVE',
+    status: u.isActive === false ? 'INACTIVE' : 'ACTIVE',
   }));
 
   const totalCount = allUsers.length;
@@ -49,7 +52,7 @@ export async function fetchUserById(id: string): Promise<User> {
   const res = await apiClient.get<{ status: string; data: User }>(`/users/${id}`);
   return {
     ...res.data.data,
-    status: res.data.data.status || 'ACTIVE',
+    status: res.data.data.isActive === false ? 'INACTIVE' : 'ACTIVE',
   };
 }
 
@@ -61,12 +64,13 @@ export async function createUser(data: CreateUserDto): Promise<User> {
     lastName: data.lastName.trim(),
     role: data.role,
     department: data.department ? data.department.trim() : null,
+    ...(data.status !== undefined ? { isActive: data.status === 'ACTIVE' } : {}),
   };
 
   const res = await apiClient.post<{ status: string; data: User }>('/users', payload);
   return {
     ...res.data.data,
-    status: res.data.data.status || 'ACTIVE',
+    status: res.data.data.isActive === false ? 'INACTIVE' : 'ACTIVE',
   };
 }
 
@@ -80,6 +84,7 @@ export async function updateUser(id: string, data: UpdateUserDto): Promise<User>
   if (data.department !== undefined) {
     payload.department = data.department ? data.department.trim() : null;
   }
+  if (data.status !== undefined) payload.isActive = data.status === 'ACTIVE';
   if (data.password && data.password.trim()) {
     payload.password = data.password;
   }
@@ -87,7 +92,7 @@ export async function updateUser(id: string, data: UpdateUserDto): Promise<User>
   const res = await apiClient.put<{ status: string; data: User }>(`/users/${id}`, payload);
   return {
     ...res.data.data,
-    status: res.data.data.status || 'ACTIVE',
+    status: res.data.data.isActive === false ? 'INACTIVE' : 'ACTIVE',
   };
 }
 

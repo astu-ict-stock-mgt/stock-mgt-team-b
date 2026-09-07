@@ -16,6 +16,7 @@ export interface User {
   lastName: string;
   role: Role;
   department?: string | null;
+  isActive?: boolean;
   status?: UserStatus;
   createdAt: string;
   updatedAt?: string;
