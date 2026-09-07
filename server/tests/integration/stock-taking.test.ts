@@ -356,6 +356,46 @@ describe('Stock-taking API', () => {
     });
   });
 
+  it('retrieves global reconciliations across sessions for PAO', async () => {
+    mockPrisma.reconciliation.findMany.mockResolvedValue([
+      {
+        id: 'reconciliation-global-1',
+        stockTakeCountId: 'count-1',
+        warehouseId: 'warehouse-1',
+        inventoryItemId: 'item-1',
+        discrepancy: 3,
+        status: 'PENDING',
+        reason: null,
+        unitCost: null,
+        createdAt: new Date(),
+        stockTakeCount: {
+          stockTakeId: 'session-1',
+          systemQuantity: 10,
+          physicalQuantity: 13,
+          countedAt: new Date(),
+          counter: { firstName: 'Dawit', lastName: 'Bekele' },
+        },
+        inventoryItem: {
+          itemCode: 'LAP-DELL',
+          name: 'Dell Laptop',
+          category: { name: 'Electronics' },
+        },
+        warehouse: { name: 'Main Central' },
+        approver: null,
+      },
+    ]);
+    const token = createToken('PAO');
+
+    const response = await request(app)
+      .get('/api/stock-taking/reconciliations')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].id).toBe('reconciliation-global-1');
+    expect(response.body.data[0].itemCode).toBe('LAP-DELL');
+  });
+
   const setupPendingReconciliation = (discrepancy: number, systemQuantity = 100) => {
     mockPrisma.reconciliation.findUnique.mockResolvedValue({
       id: 'reconciliation-1',

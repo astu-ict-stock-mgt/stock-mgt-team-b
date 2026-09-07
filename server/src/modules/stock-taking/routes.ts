@@ -4,8 +4,11 @@ import {
   approveReconciliationHandler,
   completeStockTakeHandler,
   createStockTakeHandler,
+  getAllReconciliationsHandler,
   getReconciliationsHandler,
   getStockTakeHandler,
+  getWarehouseWorksheetHandler,
+  listStockTakesHandler,
   rejectReconciliationHandler,
   submitCountHandler,
 } from './controller.ts';
@@ -16,7 +19,7 @@ import {
   validateSubmitCount,
 } from './validation.ts';
 
-const operationalRoles = ['STOREKEEPER', 'STOCK_CLERK', 'PAO'] as const;
+const operationalRoles = ['STOREKEEPER', 'STOCK_CLERK', 'PAO', 'ADMINISTRATOR'] as const;
 const viewRoles = [
   'ADMINISTRATOR',
   'PAO',
@@ -28,6 +31,14 @@ const viewRoles = [
 
 const router = Router();
 
+// Sessions collection
+router.get(
+  '/',
+  requireAuth,
+  requireRole(...viewRoles),
+  listStockTakesHandler
+);
+
 router.post(
   '/',
   requireAuth,
@@ -35,34 +46,15 @@ router.post(
   validateCreateStockTake,
   createStockTakeHandler
 );
-router.post(
-  '/:sessionId/counts',
-  requireAuth,
-  requireRole(...operationalRoles),
-  validateSubmitCount,
-  submitCountHandler
-);
+
+// Global Reconciliations routes (MUST precede /:sessionId to avoid param collision)
 router.get(
-  '/:sessionId',
+  '/reconciliations',
   requireAuth,
   requireRole(...viewRoles),
-  validateSessionId,
-  getStockTakeHandler
+  getAllReconciliationsHandler
 );
-router.post(
-  '/:sessionId/complete',
-  requireAuth,
-  requireRole(...operationalRoles),
-  validateSessionId,
-  completeStockTakeHandler
-);
-router.get(
-  '/:sessionId/reconciliations',
-  requireAuth,
-  requireRole(...viewRoles),
-  validateSessionId,
-  getReconciliationsHandler
-);
+
 router.post(
   '/reconciliations/:reconciliationId/approve',
   requireAuth,
@@ -70,12 +62,54 @@ router.post(
   validateReconciliationAction,
   approveReconciliationHandler
 );
+
 router.post(
   '/reconciliations/:reconciliationId/reject',
   requireAuth,
   requireRole('PAO', 'ADMINISTRATOR'),
   validateReconciliationAction,
   rejectReconciliationHandler
+);
+
+// Individual session routes
+router.get(
+  '/:sessionId',
+  requireAuth,
+  requireRole(...viewRoles),
+  validateSessionId,
+  getStockTakeHandler
+);
+
+router.get(
+  '/:sessionId/worksheet',
+  requireAuth,
+  requireRole(...viewRoles),
+  validateSessionId,
+  getWarehouseWorksheetHandler
+);
+
+router.post(
+  '/:sessionId/counts',
+  requireAuth,
+  requireRole(...operationalRoles),
+  validateSubmitCount,
+  submitCountHandler
+);
+
+router.post(
+  '/:sessionId/complete',
+  requireAuth,
+  requireRole(...operationalRoles),
+  validateSessionId,
+  completeStockTakeHandler
+);
+
+router.get(
+  '/:sessionId/reconciliations',
+  requireAuth,
+  requireRole(...viewRoles),
+  validateSessionId,
+  getReconciliationsHandler
 );
 
 export default router;
