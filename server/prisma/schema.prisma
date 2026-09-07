@@ -137,14 +137,24 @@ model Warehouse {
 }
 
 model GoodsReceivingNote {
-  id           String   @id @default(uuid())
-  grnNumber    String   @unique
-  supplierId   String
-  warehouseId  String
-  receivedDate DateTime @default(now())
-  receivedBy   String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String    @id @default(uuid())
+  grnNumber       String    @unique
+  supplierId      String
+  warehouseId     String
+  receivedDate    DateTime  @default(now())
+  receivedBy      String
+  // Workflow status: DRAFT | PENDING_INSPECTION | INSPECTED | PENDING_PAO_APPROVAL | APPROVED | REJECTED
+  status          String    @default("DRAFT")
+  inspectedBy     String?
+  inspectedAt     DateTime?
+  inspectorNotes  String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  rejectedBy      String?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   supplier  Supplier                 @relation(fields: [supplierId], references: [id])
   warehouse Warehouse                @relation(fields: [warehouseId], references: [id])
@@ -158,8 +168,13 @@ model GoodsReceivingNoteItem {
   inventoryItemId  String
   quantity         Int
   unitCost         Float
-  inspectionStatus InspectionStatus
+  // Original inspection decision from the creation form (kept for backward compat)
+  inspectionStatus InspectionStatus @default(ACCEPTED)
   rejectionReason  String?
+  // Fields set by the Technical Inspector during the inspection stage
+  acceptedQty      Int?
+  damagedQty       Int?
+  inspectorRemarks String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 

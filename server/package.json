@@ -13,7 +13,7 @@
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "admin:create": "tsx scripts/create-admin.ts",
+    "seed": "tsx src/seed.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx dotenv-cli -e .env -- jest"
