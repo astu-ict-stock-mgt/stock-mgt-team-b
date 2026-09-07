@@ -144,15 +144,19 @@ export default function LoginPage() {
             </svg>
           </div>
           <div>
-            <span className="block text-xl font-bold text-white tracking-wide">LOGIX<span className="text-blue-500">STOCK</span></span>
-            <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">Enterprise Management</span>
+            <span className="block text-xl font-bold tracking-wide text-white">
+              LOGIX<span className="text-blue-500">STOCK</span>
+            </span>
+            <span className="text-xs font-medium tracking-wider text-slate-400 uppercase">
+              Enterprise Management
+            </span>
           </div>
         </div>
 
         {/* Bottom Hero & Live Metrics Display */}
         <div className="relative z-10">
           <div className="max-w-xl">
-            <h2 className="text-3xl font-extrabold text-white leading-tight">
+            <h2 className="text-3xl leading-tight font-extrabold text-white">
               Real-time inventory intelligence & supply chain tracking.
             </h2>
           </div>
@@ -160,7 +164,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Form Container */}
-      <div className="flex w-full flex-col justify-between bg-white px-6 py-10 lg:w-1/2 sm:px-12 lg:px-16">
+      <div className="flex w-full flex-col justify-between bg-white px-6 py-10 sm:px-12 lg:w-1/2 lg:px-16">
         {/* Mobile Header (Shown on small screens) */}
         <div className="flex items-center gap-3 lg:hidden">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white">
@@ -179,7 +183,9 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <span className="text-lg font-bold text-slate-900 tracking-wide">LOGIX<span className="text-blue-600">STOCK</span></span>
+          <span className="text-lg font-bold tracking-wide text-slate-900">
+            LOGIX<span className="text-blue-600">STOCK</span>
+          </span>
         </div>
 
         {/* Center Content Form */}
@@ -192,6 +198,83 @@ export default function LoginPage() {
               Welcome back. Enter your credentials to access the terminal.
             </p>
           </header>
+
+          {/* Quick Demo Logins Bar */}
+          <div className="mb-6 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/90 via-indigo-50/60 to-slate-50 p-4 shadow-sm">
+            <div className="mb-2.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-900 uppercase">
+                <span className="flex h-2 w-2 animate-pulse rounded-full bg-blue-600" />
+                Quick Demo Role Switch (1-Click Login)
+              </span>
+              <span className="text-[10px] font-medium text-blue-600">Password: password123</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+              {[
+                {
+                  role: 'Admin',
+                  email: 'admin@example.com',
+                  color: 'bg-purple-600 hover:bg-purple-700 text-white',
+                },
+                {
+                  role: 'PAO Officer',
+                  email: 'pao@example.com',
+                  color: 'bg-blue-700 hover:bg-blue-800 text-white',
+                },
+                {
+                  role: 'Storekeeper',
+                  email: 'storekeeper@example.com',
+                  color: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                },
+                {
+                  role: 'Stock Clerk',
+                  email: 'stockclerk@example.com',
+                  color: 'bg-cyan-700 hover:bg-cyan-800 text-white',
+                },
+                {
+                  role: 'Accountant',
+                  email: 'accountant@example.com',
+                  color: 'bg-amber-600 hover:bg-amber-700 text-white',
+                },
+                {
+                  role: 'Dept Head',
+                  email: 'depthead@example.com',
+                  color: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+                },
+                {
+                  role: 'Security',
+                  email: 'security@example.com',
+                  color: 'bg-rose-600 hover:bg-rose-700 text-white',
+                },
+              ].map((account) => (
+                <button
+                  key={account.role}
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={async () => {
+                    setEmail(account.email);
+                    setPassword('password123');
+                    setAuthError('');
+                    setIsSubmitting(true);
+                    try {
+                      await submitLogin({ email: account.email, password: 'password123' });
+                      navigate('/dashboard');
+                    } catch (err: unknown) {
+                      const error = err as {
+                        response?: { data?: { message?: string } };
+                        message?: string;
+                      };
+                      setAuthError(error?.response?.data?.message || 'Login failed.');
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold shadow-xs transition-transform active:scale-95 disabled:opacity-50 ${account.color}`}
+                >
+                  {account.role}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {authError && (
             <div
@@ -331,7 +414,9 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Or continue with</span>
+            <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              Or continue with
+            </span>
             <div className="h-px flex-1 bg-slate-200" />
           </div>
 
@@ -396,9 +481,13 @@ export default function LoginPage() {
         <footer className="mt-auto pt-6 text-center">
           <p className="text-xs text-slate-400">
             Need technical assistance? Contact your system administrator or{' '}
-            <a href="mailto:support@company.com" className="font-medium text-blue-600 hover:underline">
+            <a
+              href="mailto:support@company.com"
+              className="font-medium text-blue-600 hover:underline"
+            >
               IT Helpdesk
-            </a>.
+            </a>
+            .
           </p>
         </footer>
       </div>
