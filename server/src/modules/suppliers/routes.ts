@@ -34,10 +34,11 @@ router.get(
 router.post(
   '/',
   requireAuth,
-  requireRole('ADMINISTRATOR', 'PAO'),
+  requireRole('ADMINISTRATOR', 'PAO', 'STOREKEEPER', 'STOCK_CLERK'),
   validateCreateSupplier,
   createSupplierHandler
 );
+
 router.get(
   '/:id',
   requireAuth,
