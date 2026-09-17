@@ -168,7 +168,7 @@ export function TransferHistory() {
 
         {/* Scrollable table container */}
         <div className="flex-1 overflow-x-auto">
-          <table className="w-full min-w-[580px] border-collapse text-left text-xs sm:text-sm">
+          <table className="w-full min-w-[800px] border-collapse text-left text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/80">
                 <th

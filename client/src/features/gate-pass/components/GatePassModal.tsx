@@ -129,7 +129,7 @@ export const GatePassModal: React.FC<GatePassModalProps> = ({ gatePass, isOpen, 
               Authorized Items Manifest ({gatePass.items.length || gatePass.itemsCount} Items)
             </h3>
             <div className="overflow-hidden rounded-xl border border-gray-200">
-              <table className="min-w-full divide-y divide-gray-200 text-xs">
+              <table className="w-full min-w-[800px] divide-y divide-gray-200 text-xs">
                 <thead className="bg-gray-100 text-gray-700">
                   <tr>
                     <th className="px-4 py-2.5 text-left font-bold">#</th>

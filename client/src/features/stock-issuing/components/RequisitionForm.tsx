@@ -247,7 +247,7 @@ export const RequisitionForm: React.FC = () => {
               <h4 className="text-sm font-semibold text-gray-700">Requested Items Draft</h4>
 
               <div className="overflow-hidden rounded-lg border border-gray-200">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="w-full min-w-[800px] divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
@@ -368,7 +368,7 @@ export const RequisitionForm: React.FC = () => {
               </p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="w-full min-w-[800px] divide-y divide-gray-200">
               <thead className="bg-gray-50/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase">

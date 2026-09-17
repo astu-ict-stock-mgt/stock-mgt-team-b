@@ -135,7 +135,7 @@ export function AuditLogTable() {
       {/* Table Card */}
       <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
         <div className="overflow-x-auto p-2 sm:p-4">
-          <table className="min-w-full text-left">
+          <table className="w-full min-w-[800px] text-left">
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="px-4 py-4 text-xs font-semibold text-gray-500">Timestamp</th>

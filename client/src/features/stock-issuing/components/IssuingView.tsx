@@ -242,7 +242,7 @@ const StorekeeperQueue: React.FC = () => {
 
                     {/* Items List with Availability Warning Indicators */}
                     <div className="overflow-hidden rounded-lg border border-gray-200">
-                      <table className="min-w-full divide-y divide-gray-200 text-xs">
+                      <table className="w-full min-w-[800px] divide-y divide-gray-200 text-xs">
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-2 text-left font-semibold tracking-wider text-gray-500 uppercase">
@@ -333,7 +333,7 @@ const StorekeeperQueue: React.FC = () => {
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-xs">
+            <table className="w-full min-w-[800px] divide-y divide-gray-200 text-xs">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600 uppercase">

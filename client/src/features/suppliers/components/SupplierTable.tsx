@@ -122,7 +122,7 @@ export function SupplierTable() {
 
         {/* Table */}
         <div className="overflow-x-auto border-t border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200 text-left">
+          <table className="w-full min-w-[800px] divide-y divide-gray-200 text-left">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-4 text-xs font-semibold tracking-wider whitespace-nowrap text-gray-500 uppercase">

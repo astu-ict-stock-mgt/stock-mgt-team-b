@@ -331,7 +331,7 @@ export function UserTable() {
       {/* Main Data Table */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
+          <table className="w-full min-w-[800px] border-collapse text-left">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/75 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
                 <th scope="col" className="px-6 py-4">

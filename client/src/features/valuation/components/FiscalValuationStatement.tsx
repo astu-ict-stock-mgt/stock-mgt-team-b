@@ -86,7 +86,7 @@ export function FiscalValuationStatement({ data, loading }: FiscalValuationState
           </h4>
 
           <div className="overflow-hidden rounded-xl border border-gray-200">
-            <table className="w-full text-left text-xs sm:text-sm">
+            <table className="w-full min-w-[800px] text-left text-xs sm:text-sm">
               <thead className="border-b border-gray-200 bg-gray-50 text-[11px] font-bold text-gray-600 uppercase">
                 <tr>
                   <th className="px-5 py-3">Financial Line Item</th>
@@ -168,7 +168,7 @@ export function FiscalValuationStatement({ data, loading }: FiscalValuationState
               </h4>
             </div>
             <div className="overflow-hidden rounded-xl border border-gray-200">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[800px] text-left text-xs">
                 <thead className="border-b border-gray-200 bg-gray-50 font-bold text-gray-500 uppercase">
                   <tr>
                     <th className="px-3 py-2.5">Category</th>
@@ -208,7 +208,7 @@ export function FiscalValuationStatement({ data, loading }: FiscalValuationState
               </h4>
             </div>
             <div className="overflow-hidden rounded-xl border border-gray-200">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[800px] text-left text-xs">
                 <thead className="border-b border-gray-200 bg-gray-50 font-bold text-gray-500 uppercase">
                   <tr>
                     <th className="px-3 py-2.5">Warehouse</th>

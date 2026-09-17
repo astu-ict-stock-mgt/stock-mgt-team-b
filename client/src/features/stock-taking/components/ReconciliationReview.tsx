@@ -171,7 +171,7 @@ export const ReconciliationReview: React.FC = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-left text-xs">
+              <table className="w-full min-w-[800px] divide-y divide-gray-200 text-left text-xs">
                 <thead className="bg-gray-50 text-[11px] font-semibold text-gray-600 uppercase">
                   <tr>
                     <th className="px-5 py-3">Item Details</th>
@@ -269,7 +269,7 @@ export const ReconciliationReview: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-left text-xs">
+            <table className="w-full min-w-[800px] divide-y divide-gray-200 text-left text-xs">
               <thead className="bg-gray-50 text-[11px] font-semibold text-gray-600 uppercase">
                 <tr>
                   <th className="px-5 py-3">Item</th>

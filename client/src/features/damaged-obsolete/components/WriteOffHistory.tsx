@@ -183,7 +183,7 @@ export const WriteOffHistory: React.FC = () => {
               <p className="text-sm text-gray-400">Create a new request using the form above</p>
             </div>
           ) : (
-            <table className="w-full">
+            <table className="w-full min-w-[800px]">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">

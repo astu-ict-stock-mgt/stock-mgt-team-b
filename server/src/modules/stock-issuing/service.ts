@@ -1,3 +1,4 @@
+import { sendRequisitionStatusEmail, sendLowStockAlertEmail } from '../../utils/mailer.js';
 import { getPrisma } from '../../config/db.ts';
 import { AppError } from '../../middlewares/errorHandler.ts';
 import { applyFifoConsumption, InsufficientStockError } from '../inventory/fifo.ts';
@@ -341,6 +342,12 @@ export const approveRequisition = async (id: string, approverId: string) => {
       },
     });
 
+    if (updated.requester?.email) {
+      sendRequisitionStatusEmail(updated.requester.email, updated.requisitionNumber, 'APPROVED').catch(console.error);
+    }
+    if (updated.requester?.email) {
+      sendRequisitionStatusEmail(updated.requester.email, updated.requisitionNumber, 'REJECTED', reason).catch(console.error);
+    }
     return formatRequisitionResponse(updated);
   } finally {
     await safeDisconnect(prisma);
@@ -377,6 +384,12 @@ export const rejectRequisition = async (id: string, approverId: string, reason?:
       },
     });
 
+    if (updated.requester?.email) {
+      sendRequisitionStatusEmail(updated.requester.email, updated.requisitionNumber, 'APPROVED').catch(console.error);
+    }
+    if (updated.requester?.email) {
+      sendRequisitionStatusEmail(updated.requester.email, updated.requisitionNumber, 'REJECTED', reason).catch(console.error);
+    }
     return formatRequisitionResponse(updated);
   } finally {
     await safeDisconnect(prisma);
@@ -513,6 +526,32 @@ export const issueRequisition = async (
           },
         },
       });
+
+      if (updated.requester?.email) {
+        sendRequisitionStatusEmail(updated.requester.email, updated.requisitionNumber, 'ISSUED').catch(console.error);
+      }
+
+      // Check for low stock
+      for (const lineItem of updated.items) {
+        const item = lineItem.inventoryItem;
+        const bin = await tx.binCard.findUnique({
+          where: {
+            inventoryItemId_warehouseId: {
+              inventoryItemId: item.id,
+              warehouseId: warehouseIdOverride ?? item.warehouseId,
+            }
+          }
+        });
+        const currentStock = bin ? bin.balance : 0;
+        
+        if (currentStock <= item.minLevel) {
+          const storekeepers = await tx.user.findMany({ where: { role: 'STOREKEEPER', isActive: true } });
+          const emails = storekeepers.map((u) => u.email).filter(Boolean);
+          if (emails.length > 0) {
+            sendLowStockAlertEmail(emails, item.itemCode, item.name, currentStock, item.minLevel).catch(console.error);
+          }
+        }
+      }
 
       return formatRequisitionResponse(updated);
     });

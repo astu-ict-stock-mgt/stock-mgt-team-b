@@ -298,7 +298,7 @@ export function LowStockTable() {
       {/* Main Table Card */}
       <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
+          <table className="w-full min-w-[800px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-600 uppercase">
                 <th

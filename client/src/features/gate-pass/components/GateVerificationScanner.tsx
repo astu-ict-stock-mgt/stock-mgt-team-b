@@ -169,7 +169,7 @@ export const GateVerificationScanner: React.FC = () => {
                       Cleared Material Manifest ({result.gatePass.items.length} Items)
                     </h4>
                     <div className="overflow-hidden rounded-xl border border-gray-200">
-                      <table className="min-w-full divide-y divide-gray-200 text-xs">
+                      <table className="w-full min-w-[800px] divide-y divide-gray-200 text-xs">
                         <thead className="bg-gray-50 text-gray-600">
                           <tr>
                             <th className="px-4 py-2 text-left font-semibold">Item Code</th>
@@ -240,7 +240,7 @@ export const GateVerificationScanner: React.FC = () => {
                     Authorized Items Under This SIV ({result.document.items?.length || 0})
                   </h4>
                   <div className="overflow-hidden rounded-xl border border-gray-200">
-                    <table className="min-w-full divide-y divide-gray-200 text-xs">
+                    <table className="w-full min-w-[800px] divide-y divide-gray-200 text-xs">
                       <thead className="bg-gray-50 text-gray-600">
                         <tr>
                           <th className="px-4 py-2 text-left font-semibold">Item Code</th>
