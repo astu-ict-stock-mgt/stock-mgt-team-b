@@ -21,6 +21,7 @@ process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 
 jest.unstable_mockModule('../../src/generated/prisma/client.js', () => ({
   PrismaClient: jest.fn(() => ({ user: { findUnique } })),
+  Prisma: {},
 }));
 
 const { default: app } = await import('../../src/app.ts');
@@ -76,6 +77,22 @@ describe('authentication and role middleware', () => {
   it('rejects missing and invalid bearer tokens', async () => {
     await request(protectedApp).get('/protected').expect(401);
     await request(protectedApp).get('/protected').set('Authorization', 'Bearer invalid').expect(401);
+  });
+
+  it('rejects expired tokens with user-friendly session expired message', async () => {
+    // Generate a token that expired 1 hour ago
+    const expiredToken = jwt.sign(
+      { sub: 'user-1', email: 'admin@example.com', role: 'ADMINISTRATOR' },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '-1h' }
+    );
+
+    const res = await request(protectedApp)
+      .get('/protected')
+      .set('Authorization', `Bearer ${expiredToken}`)
+      .expect(401);
+
+    expect(res.body.message).toBe('Your session has expired. Please log out and sign in again.');
   });
 
   it('blocks authenticated users without the required role', async () => {

@@ -1,5 +1,5 @@
-import { useLocation } from 'react-router-dom';
-import { Menu, Bell, Settings, User as UserIcon } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Menu, Bell, Settings, User as UserIcon, LogOut } from 'lucide-react';
 import { useAuth } from '../features/auth/hooks';
 
 interface TopbarProps {
@@ -7,8 +7,14 @@ interface TopbarProps {
 }
 
 export function Topbar({ onMenuClick }: TopbarProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const getPageMeta = (pathname: string) => {
     switch (pathname) {
@@ -109,9 +115,22 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             <UserIcon className="h-6 w-6 text-gray-500" />
           </div>
           <div className="hidden text-sm sm:block">
-            <p className="font-semibold text-gray-900">{user?.username || 'Marcus Vance'}</p>
+            <p className="font-semibold text-gray-900">
+              {user ? `${user.firstName} ${user.lastName}` : 'Marcus Vance'}
+            </p>
             <p className="text-xs font-medium text-gray-500">{user?.role || 'ADMINISTRATOR'}</p>
           </div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="ml-1 flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            title="Sign Out"
+            aria-label="Sign Out"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden md:inline">Sign Out</span>
+          </button>
         </div>
       </div>
     </header>

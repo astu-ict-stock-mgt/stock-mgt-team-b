@@ -51,6 +51,10 @@ export const createReceiving = async (
         throw new AppError('Supplier not found', 404);
       }
 
+      if (supplier.isActive === false) {
+        throw new AppError('Supplier is inactive', 400);
+      }
+
       const warehouse = await tx.warehouse.findUnique({
         where: { id: input.warehouseId },
       });
@@ -215,3 +219,92 @@ export const createReceiving = async (
     await prisma.$disconnect();
   }
 };
+
+export const listReceivingNotes = async (filters?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}) => {
+  const prisma = createPrismaClient();
+  try {
+    const where: Record<string, unknown> = {};
+    if (filters?.search) {
+      where.OR = [
+        { grnNumber: { contains: filters.search, mode: 'insensitive' } },
+        { supplier: { name: { contains: filters.search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const total = await prisma.goodsReceivingNote.count({ where });
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 50;
+    const skip = (page - 1) * limit;
+
+    const notes = await prisma.goodsReceivingNote.findMany({
+      where,
+      include: {
+        supplier: true,
+        warehouse: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        items: {
+          include: {
+            inventoryItem: true,
+          },
+        },
+      },
+      orderBy: { receivedDate: 'desc' },
+      skip,
+      take: limit,
+    });
+
+    return {
+      data: notes,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+export const getReceivingNoteById = async (id: string) => {
+  const prisma = createPrismaClient();
+  try {
+    const grn = await prisma.goodsReceivingNote.findUnique({
+      where: { id },
+      include: {
+        supplier: true,
+        warehouse: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        items: {
+          include: {
+            inventoryItem: true,
+          },
+        },
+      },
+    });
+    if (!grn) {
+      throw new AppError('Goods receiving note not found', 404);
+    }
+    return grn;
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+

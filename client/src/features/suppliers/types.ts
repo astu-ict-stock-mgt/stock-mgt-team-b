@@ -1,16 +1,22 @@
 export interface Supplier {
-  supplierId: string;
-  companyName: string;
-  contactPerson: string;
-  businessPhone: string;
-  contactEmail: string;
-  status: 'Active' | 'Inactive';
+  id: string;
+  name: string;
+  contactName: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateSupplierDto {
-  companyName: string;
-  contactPerson: string;
-  businessPhone: string;
-  contactEmail: string;
-  status: 'Active' | 'Inactive';
+  name: string;
+  contactName?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  isActive?: boolean;
 }
+
+export type UpdateSupplierDto = Partial<CreateSupplierDto>;

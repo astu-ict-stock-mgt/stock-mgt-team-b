@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { getPrisma } from '../../config/db.ts';
 import { AppError } from '../../middlewares/errorHandler.ts';
 import type { Role } from '../../middlewares/rbac.ts';
 import 'dotenv/config';
@@ -26,17 +25,11 @@ export interface UpdateUserData {
 
 export interface GetUsersParams {
   role?: Role;
-  isActive?: boolean | string;
   search?: string;
+  isActive?: boolean;
 }
 
-const getPrisma = (): PrismaClient => {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL must be configured');
-  }
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
-};
+
 
 // Helper function to strip passwordHash before returning user objects to clients (SRS Section 3.2)
 const sanitizeUser = (user: {
@@ -70,7 +63,7 @@ export const getUsers = async (params: GetUsersParams = {}) => {
   }
 
   if (params.isActive !== undefined) {
-    where.isActive = typeof params.isActive === 'string' ? params.isActive === 'true' : Boolean(params.isActive);
+    where.isActive = params.isActive;
   }
 
   if (params.search) {
@@ -119,7 +112,6 @@ export const createUser = async (data: CreateUserData, adminId: string) => {
       lastName: data.lastName,
       role: data.role,
       department: data.department ?? null,
-      isActive: true,
     },
   });
 
@@ -176,6 +168,25 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
     data: updatePayload,
   });
 
+  const isStatusChanged = Boolean(
+    data.isActive !== undefined && data.isActive !== existingUser.isActive
+  );
+  if (isStatusChanged && adminId) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: adminId,
+          action: data.isActive ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
+          entity: 'User',
+          entityId: updatedUser.id,
+          details: { email: updatedUser.email },
+        },
+      });
+    } catch {
+      // Prevent audit failure from blocking user update in mock setups
+    }
+  }
+
   // Record role change in AuditLog table for compliance and traceability (SRS Section 3.1)
   if (isRoleChanged && adminId) {
     try {
@@ -199,7 +210,6 @@ export const updateUser = async (id: string, data: UpdateUserData, adminId: stri
   return sanitizeUser(updatedUser);
 };
 
-// Soft delete: deactivate user (isActive: false) to maintain foreign key integrity in transactions
 export const deactivateUser = async (id: string, adminId: string) => {
   const prisma = getPrisma();
   const existingUser = await prisma.user.findUnique({ where: { id } });
@@ -208,7 +218,7 @@ export const deactivateUser = async (id: string, adminId: string) => {
     throw new AppError('User not found', 404);
   }
 
-  const deactivatedUser = await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: { id },
     data: { isActive: false },
   });
@@ -225,9 +235,9 @@ export const deactivateUser = async (id: string, adminId: string) => {
         },
       });
     } catch {
-      // Prevent audit failure from blocking user deactivation in mock setups
+      // Prevent audit failure from blocking user execution
     }
   }
 
-  return sanitizeUser(deactivatedUser);
+  return sanitizeUser(updatedUser);
 };

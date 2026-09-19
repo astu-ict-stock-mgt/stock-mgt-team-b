@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, AlertCircle, Eye, EyeOff, UserCheck, ShieldCheck } from 'lucide-react';
 import { useCreateUser, useUpdateUser } from '../hooks';
 import { ApiError } from '../api';
@@ -57,7 +57,7 @@ interface FormErrors {
   general?: string;
 }
 
-export function UserFormModal({ isOpen, onClose, userToEdit }: UserFormModalProps) {
+function UserFormInner({ isOpen, onClose, userToEdit }: UserFormModalProps) {
   const isEditMode = Boolean(userToEdit);
   const { mutateAsync: createUser, isPending: isCreating } = useCreateUser();
   const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
@@ -72,44 +72,17 @@ export function UserFormModal({ isOpen, onClose, userToEdit }: UserFormModalProp
     password: string;
     status: UserStatus;
   }>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    role: 'STOCK_CLERK',
-    department: '',
+    firstName: userToEdit?.firstName || '',
+    lastName: userToEdit?.lastName || '',
+    email: userToEdit?.email || '',
+    role: userToEdit?.role || 'STOCK_CLERK',
+    department: userToEdit?.department || '',
     password: '',
-    status: 'ACTIVE',
+    status: userToEdit?.status ?? 'ACTIVE',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
-
-  // Sync form data when editing
-  useEffect(() => {
-    if (userToEdit) {
-      setFormData({
-        firstName: userToEdit.firstName,
-        lastName: userToEdit.lastName,
-        email: userToEdit.email,
-        role: userToEdit.role,
-        department: userToEdit.department || '',
-        password: '',
-        status: userToEdit.status,
-      });
-    } else {
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        role: 'STOCK_CLERK',
-        department: '',
-        password: '',
-        status: 'ACTIVE',
-      });
-    }
-    setErrors({});
-    setShowPassword(false);
-  }, [userToEdit, isOpen]);
 
   if (!isOpen) return null;
 
@@ -201,38 +174,30 @@ export function UserFormModal({ isOpen, onClose, userToEdit }: UserFormModalProp
 
       onClose();
     } catch (err: unknown) {
-      if (err instanceof ApiError) {
-        if (
-          err.field === 'email' ||
-          err.statusCode === 409 ||
-          err.message.toLowerCase().includes('email')
-        ) {
-          setErrors((prev) => ({
-            ...prev,
-            email: err.message || 'This email address is already in use by another user.',
-          }));
-        } else {
-          setErrors((prev) => ({
-            ...prev,
-            general: err.message || 'Failed to save user. Please try again.',
-          }));
-        }
-      } else if (err instanceof Error) {
-        if (err.message.toLowerCase().includes('email')) {
-          setErrors((prev) => ({
-            ...prev,
-            email: err.message,
-          }));
-        } else {
-          setErrors((prev) => ({
-            ...prev,
-            general: err.message,
-          }));
-        }
+      const axiosMsg =
+        typeof err === 'object' && err !== null && 'response' in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      const message =
+        axiosMsg ||
+        (err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'An unexpected error occurred. Please check network connection.');
+
+      if (
+        message.toLowerCase().includes('email') ||
+        message.toLowerCase().includes('already exists')
+      ) {
+        setErrors((prev) => ({
+          ...prev,
+          email: message,
+        }));
       } else {
         setErrors((prev) => ({
           ...prev,
-          general: 'An unexpected error occurred. Please check network connection.',
+          general: message,
         }));
       }
     }
@@ -509,5 +474,17 @@ export function UserFormModal({ isOpen, onClose, userToEdit }: UserFormModalProp
         </form>
       </div>
     </div>
+  );
+}
+
+export function UserFormModal({ isOpen, onClose, userToEdit }: UserFormModalProps) {
+  if (!isOpen) return null;
+  return (
+    <UserFormInner
+      key={userToEdit ? userToEdit.id : 'create-new-user'}
+      isOpen={isOpen}
+      onClose={onClose}
+      userToEdit={userToEdit}
+    />
   );
 }

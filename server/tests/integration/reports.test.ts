@@ -47,6 +47,7 @@ jest.unstable_mockModule('../../src/generated/prisma/client.js', () => ({
       create: auditLogCreate,
     },
   })),
+  Prisma: {},
 }));
 
 const { default: app } = await import('../../src/app.ts');
@@ -168,7 +169,7 @@ const mockSuppliers = [
     contactName: 'Abebe Kebede',
     email: 'info@ethiotelecomsupplies.et',
     phone: '+251911223344',
-    StockTransaction: [
+    stockTransactions: [
       {
         id: 'tx-001',
         type: 'RECEIVE',

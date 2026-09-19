@@ -51,7 +51,7 @@ export function IssuingReportTable({ data, loading, searchQuery }: IssuingReport
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs sm:text-sm">
+        <table className="w-full min-w-[800px] text-left text-xs sm:text-sm">
           <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
             <tr>
               <th className="px-5 py-3.5">Issue Voucher No</th>

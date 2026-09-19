@@ -25,4 +25,55 @@
   h4 {
     @apply font-semibold text-gray-900;
   }
+
+  /* Print Styles */
+  @media print {
+    /* Hide application controls when printing */
+    button,
+    input,
+    select,
+    nav {
+      display: none !important;
+    }
+
+    /* Remove screen-only background and spacing */
+    body {
+      background: white !important;
+      color: black !important;
+    }
+
+    /* Make the report use the full printable page */
+    .min-h-screen {
+      min-height: auto !important;
+    }
+
+    /* Keep report tables readable on paper */
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+    }
+
+    th,
+    td {
+      border: 1px solid #000 !important;
+      padding: 6px !important;
+      color: #000 !important;
+    }
+
+    /* Prevent report sections from being split unnecessarily */
+    table,
+    tr,
+    .rounded-2xl {
+      break-inside: avoid;
+    }
+
+    /* Remove decorative screen effects */
+    .shadow-xs,
+    .shadow-sm,
+    .shadow-md,
+    .shadow-lg,
+    .shadow-xl {
+      box-shadow: none !important;
+    }
+  }
 }

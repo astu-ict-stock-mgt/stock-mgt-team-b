@@ -1,6 +1,6 @@
 // client/src/features/inventory/api.ts
 
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 
 // ============================================================
 // TYPES
@@ -49,12 +49,6 @@ export interface PaginatedResponse<T> {
 }
 
 // ============================================================
-// API BASE
-// ============================================================
-
-const API_BASE = '/api';
-
-// ============================================================
 // API FUNCTIONS
 // ============================================================
 
@@ -67,43 +61,52 @@ export const inventoryApi = {
     if (filters?.page) params.append('page', String(filters.page || 1));
     if (filters?.limit) params.append('limit', String(filters.limit || 10));
 
-    const response = await axios.get(`${API_BASE}/inventory?${params.toString()}`);
+    const response = await apiClient.get(`/inventory?${params.toString()}`);
+    if (Array.isArray(response.data)) {
+      return {
+        data: response.data,
+        total: response.data.length,
+        page: filters?.page || 1,
+        limit: filters?.limit || response.data.length || 1,
+        totalPages: 1,
+      };
+    }
     return response.data;
   },
 
   // Get a single inventory item by ID
   getById: async (id: string): Promise<InventoryItem> => {
-    const response = await axios.get(`${API_BASE}/inventory/${id}`);
+    const response = await apiClient.get(`/inventory/${id}`);
     return response.data;
   },
 
   // Get lots for a specific item (for detail view)
   getLotsByItemId: async (itemId: string): Promise<InventoryLot[]> => {
-    const response = await axios.get(`${API_BASE}/inventory/${itemId}/lots`);
+    const response = await apiClient.get(`/inventory/${itemId}/lots`);
     return response.data;
   },
 
   // Create new inventory item
   create: async (data: Partial<InventoryItem>): Promise<InventoryItem> => {
-    const response = await axios.post(`${API_BASE}/inventory`, data);
+    const response = await apiClient.post('/inventory', data);
     return response.data;
   },
 
   // Update inventory item
   update: async (id: string, data: Partial<InventoryItem>): Promise<InventoryItem> => {
-    const response = await axios.put(`${API_BASE}/inventory/${id}`, data);
+    const response = await apiClient.put(`/inventory/${id}`, data);
     return response.data;
   },
 
   // Delete inventory item
   delete: async (id: string): Promise<{ message: string }> => {
-    const response = await axios.delete(`${API_BASE}/inventory/${id}`);
+    const response = await apiClient.delete(`/inventory/${id}`);
     return response.data;
   },
 
   // Get categories for filter
   getCategories: async (): Promise<string[]> => {
-    const response = await axios.get(`${API_BASE}/inventory/categories`);
+    const response = await apiClient.get('/inventory/categories');
     return response.data;
   },
 };

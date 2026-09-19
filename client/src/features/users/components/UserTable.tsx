@@ -14,6 +14,9 @@ import {
   UserX,
   Building2,
   Mail,
+  CheckCircle2,
+  AlertCircle,
+  X,
 } from 'lucide-react';
 import { useGetUsers, useDeleteUser, useToggleUserStatus } from '../hooks';
 import { UserFormModal, SRS_ROLES } from './UserFormModal';
@@ -106,6 +109,19 @@ export function UserTable() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+
+  // Auto-dismiss feedback message after 5 seconds
+  useEffect(() => {
+    if (feedback) {
+      const timer = setTimeout(() => setFeedback(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedback]);
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -155,16 +171,45 @@ export function UserTable() {
   const handleDelete = (user: User) => {
     if (
       window.confirm(
-        `Are you sure you want to delete user account "${user.firstName} ${user.lastName}" (${user.email})?`
+        `Are you sure you want to deactivate user account "${user.firstName} ${user.lastName}" (${user.email})?`
       )
     ) {
-      deleteUser(user.id);
+      deleteUser(user.id, {
+        onSuccess: () => {
+          setFeedback({
+            type: 'success',
+            message: `User account "${user.firstName} ${user.lastName}" was deactivated successfully.`,
+          });
+        },
+        onError: (err: unknown) => {
+          const msg = err instanceof Error ? err.message : 'Failed to deactivate user account.';
+          setFeedback({
+            type: 'error',
+            message: msg,
+          });
+        },
+      });
     }
     setActiveDropdownId(null);
   };
 
   const handleToggle = (user: User) => {
-    toggleStatus(user);
+    const nextStatus = user.status === 'ACTIVE' ? 'deactivated' : 'activated';
+    toggleStatus(user, {
+      onSuccess: () => {
+        setFeedback({
+          type: 'success',
+          message: `User "${user.firstName} ${user.lastName}" ${nextStatus} successfully.`,
+        });
+      },
+      onError: (err: unknown) => {
+        const msg = err instanceof Error ? err.message : 'Failed to update user status.';
+        setFeedback({
+          type: 'error',
+          message: msg,
+        });
+      },
+    });
     setActiveDropdownId(null);
   };
 
@@ -187,7 +232,34 @@ export function UserTable() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-4">
+      {/* Action Notification / Feedback Banner */}
+      {feedback && (
+        <div
+          className={`flex items-center justify-between rounded-xl border p-4 text-sm transition-all ${
+            feedback.type === 'success'
+              ? 'border-green-200 bg-green-50 text-green-800'
+              : 'border-red-200 bg-red-50 text-red-800'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            {feedback.type === 'success' ? (
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" />
+            ) : (
+              <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
+            )}
+            <span className="font-medium">{feedback.message}</span>
+          </div>
+          <button
+            onClick={() => setFeedback(null)}
+            className="rounded-lg p-1 text-gray-400 hover:bg-black/5 hover:text-gray-700"
+            aria-label="Dismiss message"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Top Filter and Actions Bar */}
       <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -259,7 +331,7 @@ export function UserTable() {
       {/* Main Data Table */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
+          <table className="w-full min-w-[800px] border-collapse text-left">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/75 text-[11px] font-bold tracking-wider text-gray-500 uppercase">
                 <th scope="col" className="px-6 py-4">

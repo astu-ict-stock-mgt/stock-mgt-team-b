@@ -22,6 +22,8 @@ export const validateReportFilters = [
     .optional()
     .isIn(['RECEIVE', 'ISSUE', 'TRANSFER', 'ADJUSTMENT'])
     .withMessage('Invalid transaction type filter'),
+  query('state').optional().isString().trim(),
+  query('search').optional().isString().trim(),
   handleValidationErrors,
 ];
 

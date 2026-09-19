@@ -1,12 +1,12 @@
 // client/src/features/damaged-obsolete/api.ts
 
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 
 // Types
 export interface WriteOffRequest {
   id?: string;
   itemId: string;
-  itemName: string;
+  itemName?: string;
   quantity: number;
   reasonCode: 'DAMAGED' | 'OBSOLETE' | 'EXPIRED' | 'OTHER';
   reasonDescription?: string;
@@ -45,11 +45,9 @@ export interface InventoryItem {
   unit: string;
 }
 
-const API_BASE = '/api';
-
 export const writeOffApi = {
   create: async (data: WriteOffRequest): Promise<WriteOffResponse> => {
-    const response = await axios.post(`${API_BASE}/write-off`, {
+    const response = await apiClient.post('/write-off', {
       ...data,
       requestedAt: new Date().toISOString(),
     });
@@ -57,33 +55,52 @@ export const writeOffApi = {
   },
 
   getAll: async (params?: { status?: string }): Promise<WriteOffResponse[]> => {
-    const response = await axios.get(`${API_BASE}/write-off`, { params });
+    const response = await apiClient.get('/write-off', { params });
     return response.data;
   },
 
   getById: async (id: string): Promise<WriteOffResponse> => {
-    const response = await axios.get(`${API_BASE}/write-off/${id}`);
+    const response = await apiClient.get(`/write-off/${id}`);
     return response.data;
   },
 
   approve: async (id: string): Promise<WriteOffResponse> => {
-    const response = await axios.put(`${API_BASE}/write-off/${id}/approve`);
+    const response = await apiClient.put(`/write-off/${id}/approve`);
     return response.data;
   },
 
   reject: async (id: string, reason?: string): Promise<WriteOffResponse> => {
-    const response = await axios.put(`${API_BASE}/write-off/${id}/reject`, { reason });
+    const response = await apiClient.put(`/write-off/${id}/reject`, { reason });
     return response.data;
   },
 
   dispose: async (id: string): Promise<WriteOffResponse> => {
-    const response = await axios.put(`${API_BASE}/write-off/${id}/dispose`);
+    const response = await apiClient.put(`/write-off/${id}/dispose`);
     return response.data;
   },
 
   getInventoryItems: async (): Promise<InventoryItem[]> => {
-    const response = await axios.get(`${API_BASE}/inventory/items`);
-    return response.data;
+    const response = await apiClient.get('/inventory');
+    const items = Array.isArray(response.data) ? response.data : (response.data?.data ?? []);
+    return items.map(
+      (item: {
+        id: string;
+        name: string;
+        itemCode?: string;
+        sku?: string;
+        quantity?: number;
+        totalQuantity?: number;
+        category?: string;
+        unit?: string;
+      }) => ({
+        id: item.id,
+        name: item.name,
+        code: item.itemCode ?? item.sku ?? '',
+        quantity: item.quantity ?? item.totalQuantity ?? 0,
+        category: item.category ?? 'General',
+        unit: item.unit ?? 'pcs',
+      })
+    );
   },
 };
 

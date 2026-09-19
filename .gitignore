@@ -1,6 +1,7 @@
 node_modules/
 .env
 .DS_Store
+.gitkeep
 
 # Server build
 server/build/
@@ -12,3 +13,6 @@ client/.next/
 client/out/
 client/build/
 client/coverage/
+*.tsbuildinfo
+create-issues.js
+temp_issue_body.md

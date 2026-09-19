@@ -168,10 +168,11 @@ export function LowStockTable() {
                 aria-label="Filter by category"
               >
                 <option value="ALL">All Categories</option>
-                <option value="IT Equipment">IT Equipment</option>
-                <option value="Networking">Networking</option>
-                <option value="Hardware & Components">Hardware & Components</option>
-                <option value="Office Supplies">Office Supplies</option>
+                {Array.from(new Set(rawItems.map((i) => i.category).filter(Boolean))).map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -186,9 +187,11 @@ export function LowStockTable() {
               aria-label="Filter by warehouse"
             >
               <option value="ALL">All Warehouses</option>
-              <option value="Central ICT Warehouse">Central ICT Warehouse</option>
-              <option value="Main Store Building B">Main Store Building B</option>
-              <option value="Server Room Vault">Server Room Vault</option>
+              {Array.from(new Set(rawItems.map((i) => i.warehouse).filter(Boolean))).map((wh) => (
+                <option key={wh} value={wh}>
+                  {wh}
+                </option>
+              ))}
             </select>
 
             {/* Export CSV Button */}
@@ -295,7 +298,7 @@ export function LowStockTable() {
       {/* Main Table Card */}
       <div className="overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
+          <table className="w-full min-w-[800px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold tracking-wider text-gray-600 uppercase">
                 <th

@@ -10,11 +10,11 @@ interface SupplierFormModalProps {
 }
 
 const emptyForm: CreateSupplierDto = {
-  companyName: '',
-  contactPerson: '',
-  businessPhone: '',
-  contactEmail: '',
-  status: 'Active',
+  name: '',
+  contactName: '',
+  phone: '',
+  email: '',
+  address: '',
 };
 
 // Inner component that re-mounts (resets state) when supplierId changes via key prop
@@ -24,14 +24,15 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
   const { mutate: updateSupplier, isPending: isUpdating } = useUpdateSupplier();
   const isPending = isCreating || isUpdating;
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateSupplierDto>(
     supplierToEdit
       ? {
-          companyName: supplierToEdit.companyName,
-          contactPerson: supplierToEdit.contactPerson,
-          businessPhone: supplierToEdit.businessPhone,
-          contactEmail: supplierToEdit.contactEmail,
-          status: supplierToEdit.status,
+          name: supplierToEdit.name,
+          contactName: supplierToEdit.contactName || '',
+          phone: supplierToEdit.phone || '',
+          email: supplierToEdit.email || '',
+          address: supplierToEdit.address || '',
         }
       : emptyForm
   );
@@ -45,13 +46,17 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     if (isEditMode && supplierToEdit) {
       updateSupplier(
-        { id: supplierToEdit.supplierId, data: formData },
+        { id: supplierToEdit.id, data: formData },
         {
           onSuccess: () => {
             onClose();
             setFormData(emptyForm);
+          },
+          onError: (err: Error) => {
+            setErrorMessage(err.message || 'Failed to update supplier');
           },
         }
       );
@@ -60,6 +65,9 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
         onSuccess: () => {
           onClose();
           setFormData(emptyForm);
+        },
+        onError: (err: Error) => {
+          setErrorMessage(err.message || 'Failed to create supplier');
         },
       });
     }
@@ -82,81 +90,81 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
+          {errorMessage && (
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+              {errorMessage}
+            </div>
+          )}
           <div className="space-y-4">
             <div>
-              <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                 Company Name
               </label>
               <input
                 type="text"
-                id="companyName"
-                name="companyName"
+                id="name"
+                name="name"
                 required
-                value={formData.companyName}
+                value={formData.name}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="contactName" className="block text-sm font-medium text-gray-700">
                 Contact Person
               </label>
               <input
                 type="text"
-                id="contactPerson"
-                name="contactPerson"
-                required
-                value={formData.contactPerson}
+                id="contactName"
+                name="contactName"
+                value={formData.contactName || ''}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="businessPhone" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                 Business Phone
               </label>
               <input
                 type="tel"
-                id="businessPhone"
-                name="businessPhone"
-                required
-                value={formData.businessPhone}
+                id="phone"
+                name="phone"
+                value={formData.phone || ''}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Contact Email
               </label>
               <input
                 type="email"
-                id="contactEmail"
-                name="contactEmail"
-                required
-                value={formData.contactEmail}
+                id="email"
+                name="email"
+                value={formData.email || ''}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                Status
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                Address
               </label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
+              <input
+                type="text"
+                id="address"
+                name="address"
+                value={formData.address || ''}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
+              />
             </div>
           </div>
 
@@ -184,5 +192,5 @@ function SupplierFormInner({ isOpen, onClose, supplierToEdit }: SupplierFormModa
 
 // Public wrapper — passes a key so the inner form remounts on each supplier change
 export function SupplierFormModal(props: SupplierFormModalProps) {
-  return <SupplierFormInner key={props.supplierToEdit?.supplierId ?? 'new'} {...props} />;
+  return <SupplierFormInner key={props.supplierToEdit?.id ?? 'new'} {...props} />;
 }
