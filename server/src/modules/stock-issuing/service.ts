@@ -346,7 +346,7 @@ export const approveRequisition = async (id: string, approverId: string) => {
       sendRequisitionStatusEmail(updated.requester.email, updated.requisitionNumber, 'APPROVED').catch(console.error);
     }
     if (updated.requester?.email) {
-      sendRequisitionStatusEmail(updated.requester.email, updated.requisitionNumber, 'REJECTED', reason).catch(console.error);
+      sendRequisitionStatusEmail(updated.requester.email, updated.requisitionNumber, 'REJECTED', updated.rejectionReason || 'No reason provided').catch(console.error);
     }
     return formatRequisitionResponse(updated);
   } finally {
