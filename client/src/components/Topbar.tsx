@@ -33,7 +33,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       case '/audit-log':
         return { section: 'Security', title: 'System Audit Logs' };
       default:
-        return { section: 'System', title: 'Stock Management Platform' };
         return { section: 'System', title: 'ASTU Stock Management System -- ASMS' };
     }
   };

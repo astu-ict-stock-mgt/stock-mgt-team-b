@@ -123,7 +123,7 @@ export default function LoginPage() {
           <img
             src="/astu-logo.png"
             alt="ASTU Logo"
-            className="mx-auto mb-5 h-20 w-20 object-contain"
+            className="mx-auto mb-4 h-20 w-20 object-contain"
           />
 
           <h1 id="login-title" className="text-2xl font-bold tracking-tight text-slate-900">
