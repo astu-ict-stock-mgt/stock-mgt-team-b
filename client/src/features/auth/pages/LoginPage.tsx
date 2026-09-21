@@ -127,7 +127,7 @@ export default function LoginPage() {
           />
 
           <h1 id="login-title" className="text-2xl font-bold tracking-tight text-slate-900">
-            ASMS -- ASTU Stock Management System
+            ASTU Stock Management System -- ASMS
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">Sign in to manage ASTU inventory</p>

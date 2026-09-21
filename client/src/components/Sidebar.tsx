@@ -153,10 +153,10 @@ export function Sidebar({ onClose }: SidebarProps) {
       {/* Logo Area */}
       <div className="flex items-center justify-between border-b border-gray-800 px-6 py-6">
         <div className="flex items-center gap-3">
-          <img src="/astu-logo.png" alt="ASMS Logo" className="h-10 w-10 object-contain" />
+          <img src="/astu-logo.png" alt="ASTU Logo" className="h-10 w-10 object-contain" />
           <div>
-            <h1 className="text-sm font-bold tracking-wider text-white">ASMS</h1>
-            <p className="text-[10px] text-gray-400">ASTU Stock Management</p>
+            <h1 className="text-sm font-bold tracking-wider text-white">ASTU</h1>
+            <p className="text-[10px] text-gray-400">Stock Management System</p>
           </div>
         </div>
         {/* Close button — only on mobile */}
