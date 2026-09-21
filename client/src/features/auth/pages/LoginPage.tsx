@@ -120,18 +120,17 @@ export default function LoginPage() {
         aria-labelledby="login-title"
       >
         <header className="mb-8 text-center">
-          <div
-            className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm"
-            aria-hidden="true"
-          >
-            <span className="text-xl font-bold">SM</span>
-          </div>
+          <img
+            src="/astu-logo.png"
+            alt="ASTU Logo"
+            className="mx-auto mb-5 h-20 w-20 object-contain"
+          />
 
           <h1 id="login-title" className="text-2xl font-bold tracking-tight text-slate-900">
-            Stock Management System
+            ASMS -- ASTU Stock Management System
           </h1>
 
-          <p className="mt-2 text-sm text-slate-500">Sign in to manage corporate inventory</p>
+          <p className="mt-2 text-sm text-slate-500">Sign in to manage ASTU inventory</p>
         </header>
 
         {isSessionExpired && (

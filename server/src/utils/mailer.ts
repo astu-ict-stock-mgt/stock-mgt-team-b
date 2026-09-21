@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport(
       }
 );
 
-const defaultFrom = process.env.FROM_EMAIL || '"Stock Management System" <no-reply@stockmgt.com>';
+const defaultFrom = process.env.FROM_EMAIL || '"ASMS -- ASTU Stock Management System" <no-reply@stockmgt.com>';
 
 export const sendRequisitionStatusEmail = async (
   to: string,
@@ -43,7 +43,7 @@ export const sendRequisitionStatusEmail = async (
       html += `<p><strong>Reason/Note:</strong> ${reason}</p>`;
     }
 
-    html += `<p>Please log in to the Stock Management System to view details.</p></div>`;
+    html += `<p>Please log in to ASMS -- ASTU Stock Management System to view details.</p></div>`;
 
     await transporter.sendMail({
       from: defaultFrom,
