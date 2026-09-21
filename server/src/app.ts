@@ -3,6 +3,9 @@ import routes from './routes/index.ts';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.ts';
 import { auditLogger } from './middlewares/auditLogger.ts';
 
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger.ts';
+
 const app = express();
 
 app.use(express.json());
@@ -11,6 +14,19 @@ app.use(express.urlencoded({ extended: true }));
 // Health check
 app.get('/api/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'API is running' });
+});
+
+// Swagger API Documentation & Interactive Console
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'ASMS API Documentation & Testing',
+  })
+);
+app.get('/api/docs.json', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // Global Audit Logger
