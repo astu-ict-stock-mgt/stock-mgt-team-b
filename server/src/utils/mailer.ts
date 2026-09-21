@@ -5,7 +5,7 @@ const isTest = process.env.NODE_ENV === 'test';
 
 const transporter = nodemailer.createTransport(
   isTest
-    ? { jsonTransport: true }
+    ? { jsonTransport: true } as any
     : {
         host: process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io',
         port: parseInt(process.env.SMTP_PORT || '2525', 10),
