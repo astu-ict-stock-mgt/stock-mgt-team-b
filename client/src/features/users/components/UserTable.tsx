@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { useGetUsers, useDeleteUser, useToggleUserStatus } from '../hooks';
+import { useAuth } from '../../auth/hooks';
 import { UserFormModal, SRS_ROLES } from './UserFormModal';
 import type { User, Role, UserStatus } from '../types';
 
@@ -142,6 +143,7 @@ export function UserTable() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const { user: currentUser } = useAuth();
   const { data, isLoading, isError, refetch } = useGetUsers({
     search: debouncedSearch,
     role: selectedRole,
@@ -169,6 +171,15 @@ export function UserTable() {
   };
 
   const handleDelete = (user: User) => {
+    if (currentUser && currentUser.id === user.id) {
+      setFeedback({
+        type: 'error',
+        message: 'You cannot deactivate your own active administrator account.',
+      });
+      setActiveDropdownId(null);
+      return;
+    }
+
     if (
       window.confirm(
         `Are you sure you want to deactivate user account "${user.firstName} ${user.lastName}" (${user.email})?`
@@ -194,6 +205,15 @@ export function UserTable() {
   };
 
   const handleToggle = (user: User) => {
+    if (currentUser && currentUser.id === user.id && user.status === 'ACTIVE') {
+      setFeedback({
+        type: 'error',
+        message: 'You cannot deactivate your own active administrator account.',
+      });
+      setActiveDropdownId(null);
+      return;
+    }
+
     const nextStatus = user.status === 'ACTIVE' ? 'deactivated' : 'activated';
     toggleStatus(user, {
       onSuccess: () => {
@@ -506,7 +526,10 @@ export function UserTable() {
 
                       {/* Action Dropdown Menu */}
                       <td className="px-6 py-4 text-right">
-                        <div className="relative inline-block text-left" ref={dropdownRef}>
+                        <div
+                          className="relative inline-block text-left"
+                          ref={isDropdownOpen ? dropdownRef : null}
+                        >
                           <button
                             onClick={() => setActiveDropdownId(isDropdownOpen ? null : user.id)}
                             className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none"
@@ -527,7 +550,8 @@ export function UserTable() {
 
                               <button
                                 onClick={() => handleToggle(user)}
-                                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                                disabled={currentUser?.id === user.id && user.status === 'ACTIVE'}
+                                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
                               >
                                 {user.status === 'ACTIVE' ? (
                                   <>
@@ -546,7 +570,13 @@ export function UserTable() {
 
                               <button
                                 onClick={() => handleDelete(user)}
-                                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                                disabled={currentUser?.id === user.id}
+                                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                title={
+                                  currentUser?.id === user.id
+                                    ? 'Cannot delete your own account'
+                                    : 'Delete Account'
+                                }
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                                 Delete Account
